@@ -1,0 +1,29 @@
+# Local HTTP (Development)
+:80 {
+    handle /api/* {
+        reverse_proxy api:3001
+    }
+
+    handle /* {
+        reverse_proxy web:3000
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}
+
+# Local HTTPS (LAN / Secure Context Mode)
+# Replace local.hr-platform.lan with local hostname when configuring internal TLS
+local.hr-platform.lan:443 {
+    tls internal
+
+    handle /api/* {
+        reverse_proxy api:3001
+    }
+
+    handle /* {
+        reverse_proxy web:3000
+    }
+}

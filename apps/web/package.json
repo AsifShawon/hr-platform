@@ -1,0 +1,41 @@
+{
+  "name": "@hr/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@hr/card-kit": "workspace:*",
+    "@hr/config": "workspace:*",
+    "@hr/domain": "workspace:*",
+    "@hr/fixtures": "workspace:*",
+    "@hr/i18n": "workspace:*",
+    "@hr/schemas": "workspace:*",
+    "@hr/ui": "workspace:*",
+    "lucide-react": "^1.34.0",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.1",
+    "@types/node": "^22.13.5",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^10.9.0",
+    "eslint-config-next": "^16.3.2",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
+  }
+}

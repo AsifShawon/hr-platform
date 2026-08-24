@@ -1,0 +1,691 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PermissionType {
+  PEOPLE_VIEW         @map("people.view")
+  PEOPLE_EDIT         @map("people.edit")
+  IDENTITY_REVEAL     @map("identity.reveal")
+  IDENTITY_EDIT       @map("identity.edit")
+  CARDS_DESIGN        @map("cards.design")
+  CARDS_PRINT         @map("cards.print")
+  CARDS_ISSUE         @map("cards.issue")
+  CARDS_REVOKE        @map("cards.revoke")
+  EXPORTS_CREATE      @map("exports.create")
+  ORGANIZATION_MANAGE @map("organization.manage")
+  USERS_MANAGE        @map("users.manage")
+  ROLES_MANAGE        @map("roles.manage")
+  AUDIT_VIEW          @map("audit.view")
+  BACKUP_MANAGE       @map("backup.manage")
+  SYSTEM_MANAGE       @map("system.manage")
+}
+
+model SystemInstallation {
+  id             String    @id @default(uuid())
+  isActivated    Boolean   @default(false) @map("is_activated")
+  activatedAt    DateTime? @map("activated_at")
+  deploymentMode String    @default("local") @map("deployment_mode")
+  lanEnabled     Boolean   @default(false) @map("lan_enabled")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@map("system_installations")
+}
+
+model Tenant {
+  id                     String                  @id @default(uuid())
+  slug                   String                  @unique
+  name                   String
+  createdAt              DateTime                @default(now()) @map("created_at")
+  updatedAt              DateTime                @updatedAt @map("updated_at")
+
+  organizations          Organization[]
+  locations              Location[]
+  orgUnits               OrgUnit[]
+  people                 Person[]
+  employments            Employment[]
+  identityDocuments      IdentityDocument[]
+  customFieldDefinitions CustomFieldDefinition[]
+  customFieldValues      CustomFieldValue[]
+  users                  User[]
+  roles                  Role[]
+  auditEvents            AuditEvent[]
+  jobQueues              JobQueue[]
+  provisioningTokens     ProvisioningToken[]
+  mediaAssets            MediaAsset[]
+  phoneHandoffTokens     PhoneHandoffToken[]
+  cardFormats            CardFormat[]
+  cardTemplates          CardTemplate[]
+  templateVersions       TemplateVersion[]
+  templateAssignments    TemplateAssignment[]
+
+  @@map("tenants")
+}
+
+enum LocationType {
+  HEADQUARTERS
+  OFFICE
+  FACTORY
+  BRANCH
+  SITE
+  WAREHOUSE
+  OTHER
+}
+
+enum OrgUnitType {
+  DIVISION
+  DEPARTMENT
+  SECTION
+  TEAM
+  LINE
+  OTHER
+}
+
+model Organization {
+  id                 String       @id @default(uuid())
+  tenantId           String       @map("tenant_id")
+  name               String
+  displayName        String?      @map("display_name")
+  code               String
+  logoPath           String?      @map("logo_path")
+  primaryColor       String       @default("#134E4A") @map("primary_color")
+  secondaryColor     String       @default("#0F766E") @map("secondary_color")
+  accentColor        String       @default("#14B8A6") @map("accent_color")
+  locale             String       @default("en-US")
+  timezone           String       @default("Asia/Dhaka")
+  address            Json?
+  contactEmail       String?      @map("contact_email")
+  contactPhone       String?      @map("contact_phone")
+  employeeNumberRule Json?        @map("employee_number_rule")
+  isDefault          Boolean      @default(true) @map("is_default")
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  tenant             Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  locations          Location[]
+  orgUnits           OrgUnit[]
+  employments        Employment[]
+  roleGrants         RoleGrant[]
+  cardTemplates      CardTemplate[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("organizations")
+}
+
+model Location {
+  id             String       @id @default(uuid())
+  tenantId       String       @map("tenant_id")
+  organizationId String       @map("organization_id")
+  name           String
+  code           String
+  type           LocationType @default(OFFICE)
+  address        Json?
+  contactPhone   String?      @map("contact_phone")
+  isDefault      Boolean      @default(false) @map("is_default")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orgUnits       OrgUnit[]
+  employments    Employment[]
+  roleGrants     RoleGrant[]
+
+  @@unique([organizationId, code])
+  @@index([tenantId])
+  @@index([organizationId])
+  @@map("locations")
+}
+
+model OrgUnit {
+  id             String       @id @default(uuid())
+  tenantId       String       @map("tenant_id")
+  organizationId String       @map("organization_id")
+  parentId       String?      @map("parent_id")
+  name           String
+  nameBangla     String?      @map("name_bangla")
+  code           String
+  type           OrgUnitType  @default(DEPARTMENT)
+  locationId     String?      @map("location_id")
+  isArchived     Boolean      @default(false) @map("is_archived")
+  sortOrder      Int          @default(0) @map("sort_order")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  tenant         Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         OrgUnit?     @relation("OrgUnitHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children       OrgUnit[]    @relation("OrgUnitHierarchy")
+  location       Location?    @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  employments    Employment[]
+
+  @@unique([organizationId, parentId, name])
+  @@unique([organizationId, code])
+  @@index([tenantId])
+  @@index([organizationId])
+  @@index([parentId])
+  @@map("org_units")
+}
+
+// ==============================================================================
+// Phase 4: Person, Employment, Identity Document & Custom Fields
+// ==============================================================================
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  UNDISCLOSED
+}
+
+enum EmploymentStatus {
+  PREBOARDING
+  ACTIVE
+  ON_LEAVE
+  INACTIVE
+  SEPARATED
+}
+
+enum JobCategory {
+  EXECUTIVE
+  MANAGEMENT
+  STAFF
+  OPERATOR
+  WORKER
+  CONTRACTOR
+  INTERN
+  OTHER
+}
+
+enum IdentityDocumentType {
+  NID
+  SMART_NID
+  BIRTH_CERTIFICATE
+  PASSPORT
+  DRIVING_LICENSE
+  OTHER
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+  BOOLEAN
+}
+
+model Person {
+  id                String             @id @default(uuid())
+  tenantId          String             @map("tenant_id")
+  displayName       String             @map("display_name")
+  displayNameLatin  String?            @map("display_name_latin")
+  displayNameNative String?            @map("display_name_native")
+  givenName         String?            @map("given_name")
+  familyName        String?            @map("family_name")
+  middleName        String?            @map("middle_name")
+  phoneticName      String?            @map("phonetic_name")
+  dateOfBirth       DateTime?          @map("date_of_birth") @db.Date
+  gender            Gender             @default(UNDISCLOSED)
+  bloodGroup        String?            @map("blood_group")
+  primaryPhone      String?            @map("primary_phone")
+  primaryEmail      String?            @map("primary_email")
+  address           Json?
+  photoMediaId      String?            @map("photo_media_id")
+  version           Int                @default(1)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employments       Employment[]
+  identityDocuments IdentityDocument[]
+  customFieldValues CustomFieldValue[]
+  mediaAssets       MediaAsset[]       @relation("PersonMediaAssets")
+  photoMedia        MediaAsset?        @relation("PersonPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, displayName])
+  @@index([tenantId, displayNameNative])
+  @@index([tenantId, primaryPhone])
+  @@index([tenantId, primaryEmail])
+  @@map("people")
+}
+
+model Employment {
+  id                String             @id @default(uuid())
+  tenantId          String             @map("tenant_id")
+  personId          String             @map("person_id")
+  organizationId    String             @map("organization_id")
+  locationId        String?            @map("location_id")
+  orgUnitId         String?            @map("org_unit_id")
+  employeeNumber    String             @map("employee_number")
+  jobTitle          String             @map("job_title")
+  jobCategory       JobCategory        @default(STAFF) @map("job_category")
+  joinDate          DateTime           @map("join_date") @db.Date
+  endDate           DateTime?          @map("end_date") @db.Date
+  status            EmploymentStatus   @default(ACTIVE)
+  isPrimary         Boolean            @default(true) @map("is_primary")
+  version           Int                @default(1)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person            Person             @relation(fields: [personId], references: [id], onDelete: Cascade)
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location          Location?          @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  orgUnit           OrgUnit?           @relation(fields: [orgUnitId], references: [id], onDelete: SetNull)
+  customFieldValues CustomFieldValue[]
+
+  @@unique([tenantId, organizationId, employeeNumber])
+  @@index([tenantId, organizationId, status])
+  @@index([tenantId, locationId])
+  @@index([tenantId, orgUnitId])
+  @@index([tenantId, joinDate])
+  @@index([tenantId, employeeNumber])
+  @@map("employments")
+}
+
+model IdentityDocument {
+  id                      String               @id @default(uuid())
+  tenantId                String               @map("tenant_id")
+  personId                String               @map("person_id")
+  documentType            IdentityDocumentType @map("document_type")
+  country                 String               @default("BGD")
+  documentNumberEncrypted String               @map("document_number_encrypted")
+  documentNumberMasked    String               @map("document_number_masked")
+  documentNumberHash      String               @map("document_number_hash")
+  issueDate               DateTime?            @map("issue_date") @db.Date
+  expiryDate              DateTime?            @map("expiry_date") @db.Date
+  isVerified              Boolean              @default(false) @map("is_verified")
+  createdAt               DateTime             @default(now()) @map("created_at")
+  updatedAt               DateTime             @updatedAt @map("updated_at")
+
+  tenant                  Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person                  Person               @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, documentNumberHash])
+  @@index([tenantId, personId])
+  @@map("identity_documents")
+}
+
+model CustomFieldDefinition {
+  id              String             @id @default(uuid())
+  tenantId        String             @map("tenant_id")
+  organizationId  String?            @map("organization_id")
+  name            String
+  key             String
+  fieldType       CustomFieldType    @map("field_type")
+  options         Json?
+  isRequired      Boolean            @default(false) @map("is_required")
+  validationRegex String?            @map("validation_regex")
+  sortOrder       Int                @default(0) @map("sort_order")
+  isActive        Boolean            @default(true) @map("is_active")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  tenant          Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  values          CustomFieldValue[]
+
+  @@unique([tenantId, key])
+  @@map("custom_field_definitions")
+}
+
+model CustomFieldValue {
+  id                String                @id @default(uuid())
+  tenantId          String                @map("tenant_id")
+  fieldDefinitionId String                @map("field_definition_id")
+  personId          String?               @map("person_id")
+  employmentId      String?               @map("employment_id")
+  valueText         String?               @map("value_text")
+  valueNumber       Float?                @map("value_number")
+  valueDate         DateTime?             @map("value_date") @db.Date
+  valueBoolean      Boolean?              @map("value_boolean")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  tenant            Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  definition        CustomFieldDefinition @relation(fields: [fieldDefinitionId], references: [id], onDelete: Cascade)
+  person            Person?               @relation(fields: [personId], references: [id], onDelete: Cascade)
+  employment        Employment?           @relation(fields: [employmentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, personId])
+  @@index([tenantId, employmentId])
+  @@map("custom_field_values")
+}
+
+model User {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  username             String
+  email                String?
+  passwordHash         String              @map("password_hash")
+  isTemporaryBootstrap Boolean             @default(false) @map("is_temporary_bootstrap")
+  mustChangePassword   Boolean             @default(false) @map("must_change_password")
+  isActive             Boolean             @default(true) @map("is_active")
+  failedLoginAttempts  Int                 @default(0) @map("failed_login_attempts")
+  lockedUntil          DateTime?           @map("locked_until")
+  lastLoginAt          DateTime?           @map("last_login_at")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleGrants           RoleGrant[]
+  sessions             Session[]
+  recoveryCodes        RecoveryCode[]
+  provisioningTokens   ProvisioningToken[]
+
+  @@unique([tenantId, username])
+  @@index([tenantId])
+  @@map("users")
+}
+
+model RecoveryCode {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  codeHash  String    @map("code_hash")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("recovery_codes")
+}
+
+enum ProvisioningTokenType {
+  FIRST_OWNER_ACTIVATION
+  PASSWORD_RESET
+}
+
+model ProvisioningToken {
+  id        String                @id @default(uuid())
+  tenantId  String                @map("tenant_id")
+  userId    String                @map("user_id")
+  tokenHash String                @unique @map("token_hash")
+  type      ProvisioningTokenType
+  expiresAt DateTime              @map("expires_at")
+  usedAt    DateTime?             @map("used_at")
+  createdAt DateTime              @default(now()) @map("created_at")
+
+  tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([userId])
+  @@map("provisioning_tokens")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  name        String
+  description String?
+  isBuiltIn   Boolean          @default(false) @map("is_built_in")
+  permissions PermissionType[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  roleGrants  RoleGrant[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model RoleGrant {
+  id             String        @id @default(uuid())
+  userId         String        @map("user_id")
+  roleId         String        @map("role_id")
+  organizationId String?       @map("organization_id")
+  locationId     String?       @map("location_id")
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role           Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location       Location?     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([roleId])
+  @@index([organizationId])
+  @@index([locationId])
+  @@map("role_grants")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  tokenHash    String   @unique @map("token_hash")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  lastActiveAt DateTime @default(now()) @map("last_active_at")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model AuditEvent {
+  id         String   @id @default(uuid())
+  tenantId   String   @map("tenant_id")
+  actorId    String?  @map("actor_id")
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("audit_events")
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model JobQueue {
+  id          String    @id @default(uuid())
+  tenantId    String    @map("tenant_id")
+  type        String
+  payload     Json
+  status      JobStatus @default(PENDING)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3) @map("max_attempts")
+  lockedAt    DateTime? @map("locked_at")
+  lockedBy    String?   @map("locked_by")
+  failedReason String?  @map("failed_reason")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([status, lockedAt])
+  @@map("job_queues")
+}
+
+model MediaAsset {
+  id                  String   @id @default(uuid())
+  tenantId            String   @map("tenant_id")
+  personId            String?  @map("person_id")
+  storageKeyMaster    String   @map("storage_key_master")
+  storageKeyCardReady String?  @map("storage_key_card_ready")
+  storageKeyThumbnail String?  @map("storage_key_thumbnail")
+  mimeType            String   @map("mime_type")
+  fileSizeBytes       Int      @map("file_size_bytes")
+  width               Int
+  height              Int
+  checksumSha256      String   @map("checksum_sha256")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person              Person?  @relation("PersonMediaAssets", fields: [personId], references: [id], onDelete: SetNull)
+  personPhotos        Person[] @relation("PersonPhoto")
+
+  @@index([tenantId])
+  @@index([tenantId, personId])
+  @@map("media_assets")
+}
+
+model PhoneHandoffToken {
+  id           String    @id @default(uuid())
+  tenantId     String    @map("tenant_id")
+  tokenHash    String    @unique @map("token_hash")
+  slotId       String    @map("slot_id")
+  expiresAt    DateTime  @map("expires_at")
+  isConsumed   Boolean   @default(false) @map("is_consumed")
+  consumedAt   DateTime? @map("consumed_at")
+  mediaAssetId String?   @map("media_asset_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+  @@map("phone_handoff_tokens")
+}
+
+// ==============================================================================
+// Phase 6: Card Formats & Constrained Template Engine Models
+// ==============================================================================
+
+enum CardOrientation {
+  VERTICAL
+  HORIZONTAL
+}
+
+enum CardFormatPreset {
+  COMPANY_VERTICAL_60X90
+  ISO_ID1_HORIZONTAL
+  ISO_ID1_VERTICAL
+  CUSTOM
+}
+
+enum TemplatePresetId {
+  CLASSIC_VERTICAL
+  MODERN_STRIPE
+  PHOTO_FOCUS
+  FACTORY_INDUSTRIAL
+  CONTRACTOR
+  VISITOR
+}
+
+enum TemplateVersionStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum TemplateAssignmentTarget {
+  WORKER_OVERRIDE
+  JOB_CATEGORY
+  ORG_UNIT
+  LOCATION
+  ORGANIZATION
+  SYSTEM
+}
+
+model CardFormat {
+  id          String           @id @default(uuid())
+  tenantId    String           @map("tenant_id")
+  name        String
+  preset      CardFormatPreset @default(COMPANY_VERTICAL_60X90)
+  widthMm     Decimal          @map("width_mm") @db.Decimal(6, 2)
+  heightMm    Decimal          @map("height_mm") @db.Decimal(6, 2)
+  bleedMm     Decimal          @default(3.00) @map("bleed_mm") @db.Decimal(4, 2)
+  safeAreaMm  Decimal          @default(3.00) @map("safe_area_mm") @db.Decimal(4, 2)
+  orientation CardOrientation  @default(VERTICAL)
+  isCustom    Boolean          @default(false) @map("is_custom")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  templates   CardTemplate[]
+
+  @@index([tenantId])
+  @@map("card_formats")
+}
+
+model CardTemplate {
+  id              String               @id @default(uuid())
+  tenantId        String               @map("tenant_id")
+  organizationId  String?              @map("organization_id")
+  formatId        String?              @map("format_id")
+  name            String
+  description     String?
+  presetId        TemplatePresetId     @default(CLASSIC_VERTICAL) @map("preset_id")
+  activeVersionId String?              @map("active_version_id")
+  isArchived      Boolean              @default(false) @map("is_archived")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organization    Organization?        @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  format          CardFormat?          @relation(fields: [formatId], references: [id], onDelete: SetNull)
+  versions        TemplateVersion[]
+  assignments     TemplateAssignment[]
+
+  @@index([tenantId])
+  @@index([tenantId, organizationId])
+  @@map("card_templates")
+}
+
+model TemplateVersion {
+  id                  String                @id @default(uuid())
+  templateId          String                @map("template_id")
+  tenantId            String                @map("tenant_id")
+  versionNumber       Int                   @map("version_number")
+  status              TemplateVersionStatus @default(DRAFT)
+  layoutSchemaVersion String                @default("1.0.0") @map("layout_schema_version")
+  layout              Json
+  checksumSha256      String?               @map("checksum_sha256")
+  publishedAt         DateTime?             @map("published_at")
+  publishedByUserId   String?               @map("published_by_user_id")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  template            CardTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, versionNumber])
+  @@index([tenantId])
+  @@index([templateId, status])
+  @@map("template_versions")
+}
+
+model TemplateAssignment {
+  id         String                   @id @default(uuid())
+  tenantId   String                   @map("tenant_id")
+  templateId String                   @map("template_id")
+  targetType TemplateAssignmentTarget @map("target_type")
+  targetId   String?                  @map("target_id")
+  priority   Int                      @default(50)
+  createdAt  DateTime                 @default(now()) @map("created_at")
+  updatedAt  DateTime                 @updatedAt @map("updated_at")
+
+  tenant     Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  template   CardTemplate             @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, targetType, targetId])
+  @@map("template_assignments")
+}
+
+

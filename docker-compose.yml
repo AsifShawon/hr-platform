@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hr-postgres-prod
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secure_production_password}
+      POSTGRES_DB: hr_platform_prod
+    # Note: Port is NOT exposed to host in production-like profile (isolated in internal network)
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hr_platform_prod"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: hr-api
+    environment:
+      NODE_ENV: production
+      PORT_API: 3001
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres_secure_production_password}@postgres:5432/hr_platform_prod?schema=public
+      APP_SECRET: ${APP_SECRET:-production_secure_secret_min32characterslong}
+      APP_URL: http://localhost
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.worker
+    container_name: hr-worker
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres_secure_production_password}@postgres:5432/hr_platform_prod?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web
+    container_name: hr-web
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: hr-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres_prod_data:
+    name: hr_postgres_prod_data
+  caddy_data:
+  caddy_config:

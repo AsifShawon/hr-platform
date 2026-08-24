@@ -1,0 +1,18 @@
+﻿employee_id,display_name,display_name_native,department,job_title,employment_status,join_date,location,employee_type,photo_file,card_status
+EMP-0001,Aarav Mehta,আরব মেহতা,Administration,Office Manager,Active,3/15/2021,Dhaka HQ,Full-Time,EMP-0001.jpg,Issued
+EMP-0002,Nusrat Ahmed,নুসরাত আহমেদ,Human Resources,HR Executive,Active,7/10/2022,Dhaka HQ,Full-Time,EMP-0002.jpg,Issued
+EMP-0003,Rahim Chowdhury,রহিম চৌধুরী,Production,Production Supervisor,Active,1/22/2020,Gazipur Factory,Full-Time,EMP-0003.jpg,Issued
+EMP-0004,Sadia Karim,সাদিয়া করিম,Finance,Accounts Officer,Active,2/18/2023,Dhaka HQ,Full-Time,EMP-0004.jpg,Issued
+EMP-0005,Imran Hossain,ইমরান হোসাইন,Production,Machine Operator,Active,1/5/2024,Gazipur Factory,Contract,EMP-0005.jpg,Issued
+EMP-0006,Tanvir Hasan,তানভীর হাসান,IT,System Administrator,Active,11/9/2021,Dhaka HQ,Full-Time,EMP-0006.jpg,Issued
+EMP-0007,Faria Islam,ফারিয়া ইসলাম,Quality Assurance,QA Engineer,Active,5/14/2022,Gazipur Factory,Full-Time,EMP-0007.jpg,Issued
+EMP-0008,Shakib Ahmed,শাকিব আহমেদ,Logistics,Warehouse Coordinator,Active,8/30/2020,Chittagong Depot,Full-Time,EMP-0008.jpg,Issued
+EMP-0009,Maya Sen,মায়া সেন,Marketing,Marketing Specialist,Active,9/12/2023,Dhaka HQ,Full-Time,EMP-0009.jpg,Ready
+EMP-0010,Hasan Ali,হাসান আলী,Security,Security Officer,Active,6/20/2019,Gazipur Factory,Contract,EMP-0010.jpg,Issued
+EMP-0011,Lamia Noor,লামিয়া নূর,Customer Support,Support Executive,Active,3/1/2024,Dhaka HQ,Full-Time,EMP-0011.jpg,Ready
+EMP-0012,Rafiq Islam,রফিক ইসলাম,Maintenance,Electrical Technician,Active,12/11/2021,Gazipur Factory,Full-Time,EMP-0012.jpg,Issued
+EMP-0013,Anika Roy,অনিকা রায়,Design,Graphic Designer,Active,4/25/2023,Dhaka HQ,Full-Time,EMP-0013.jpg,Pending Review
+EMP-0014,Farhan Kabir,ফারহান কবির,Procurement,Procurement Officer,Active,10/5/2022,Dhaka HQ,Full-Time,EMP-0014.jpg,Issued
+EMP-0015,Jannat Ara,জান্নাত আরা,Training,Training Coordinator,Active,2/14/2024,Dhaka HQ,Full-Time,EMP-0015.jpg,Ready
+EMP-0016,Kamal Uddin,কামাল উদ্দিন,Production,Line Manager,Active,7/18/2018,Gazipur Factory,Full-Time,EMP-0016.jpg,Issued
+EMP-0017,Sohana Akter,সোহানা আক্তার,Compliance,Compliance Officer,Active,6/9/2023,Dhaka HQ,Full-Time,EMP-0017.jpg,Pending Review

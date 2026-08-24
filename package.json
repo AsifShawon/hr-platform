@@ -1,0 +1,23 @@
+{
+  "name": "hr-platform",
+  "private": true,
+  "packageManager": "pnpm@10.5.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "lint": "turbo run lint",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "test": "turbo run test",
+    "test:e2e": "pnpm --filter @hr/web test:e2e",
+    "db:migrate": "pnpm --filter @hr/db db:migrate",
+    "db:seed": "pnpm --filter @hr/db db:seed",
+    "db:generate": "pnpm --filter @hr/db db:generate"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.2",
+    "turbo": "^2.4.4",
+    "typescript": "^5.7.3"
+  }
+}

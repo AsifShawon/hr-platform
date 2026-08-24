@@ -1,0 +1,27 @@
+{
+  "name": "@hr/fixtures",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hr/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^3.0.7",
+    "typescript": "^5.7.3"
+  }
+}
