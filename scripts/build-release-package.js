@@ -111,7 +111,9 @@ async function buildReleaseManifest() {
     'utf8',
   );
 
-  console.log(`Release manifest and SBOM generated with ${components.length} production components.`);
+  console.log(
+    `Release manifest and SBOM generated with ${components.length} production components.`,
+  );
 }
 
 buildReleaseManifest().catch((err) => {

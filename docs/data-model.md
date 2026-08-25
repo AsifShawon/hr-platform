@@ -299,3 +299,67 @@ Deterministic assignment rules mapping templates to employment criteria.
 - `priority` (Integer): Evaluation priority (default: `50`).
 - `created_at` (Timestamp): Rule creation timestamp.
 - `updated_at` (Timestamp): Last modification timestamp.
+
+### 2.16 `import_jobs`
+
+Tracks batch worker import operations from CSV and photo ZIP archives.
+
+- `id` (UUID, Primary Key): Unique import job identifier.
+- `tenant_id` (UUID, FK -> `tenants.id`): Tenant scoping.
+- `status` (Enum): `PENDING`, `VALIDATING`, `READY`, `COMMITTING`, `COMPLETED`, `FAILED`.
+- `filename` (String): Uploaded source filename.
+- `file_size` (Integer): Archive size in bytes.
+- `total_rows` / `valid_rows` / `error_rows` / `imported_rows`: Ingestion statistics.
+- `dry_run_results` / `errors` (JSON): Validation diagnostics and pre-commit summaries.
+
+### 2.17 `export_jobs`
+
+Tracks portable data exports with signed download tokens.
+
+- `id` (UUID, Primary Key): Unique export job identifier.
+- `tenant_id` (UUID, FK -> `tenants.id`): Tenant scoping.
+- `status` (Enum): `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`.
+- `download_token_hash` (String, Optional): SHA-256 hashed single-use token.
+- `expires_at` (Timestamp): Token expiry.
+- `filters` / `counts` (JSON): Export scope parameters and record counts.
+
+### 2.18 `backup_jobs` & `backup_schedules`
+
+Manages AES-256-GCM encrypted `.hrbackup` bundle history and manual retention schedules.
+
+- `backup_jobs`: `id`, `tenant_id`, `filename`, `file_size`, `checksum_sha256`, `status`, `completed_at`, `manifest_summary`.
+- `backup_schedules`: `id`, `tenant_id`, `frequency`, `retention_count`, `last_run_at`.
+
+---
+
+## 4. Pending Schema Models (Phase 2 Roadmap)
+
+The following tables will be created in **Phase 2 (Card Issuance & Revocation Engine)**:
+
+### `card_issues` (Pending Phase 2)
+
+Immutable records of printed physical credentials.
+
+- `id` (UUID, Primary Key): Unique card issuance record.
+- `tenant_id` (UUID, FK -> `tenants.id`): Tenant scoping.
+- `person_id` (UUID, FK -> `people.id`): Target worker.
+- `employment_id` (UUID, FK -> `employments.id`): Target employment.
+- `template_version_id` (UUID, FK -> `template_versions.id`): Layout snapshot reference.
+- `card_serial` (String, Unique): Printed alphanumeric unique serial (e.g. `CARD-2026-00001`).
+- `issue_number` (Integer): Incremental issue sequence for worker (1 = Initial, 2+ = Reprint).
+- `issue_reason` (Enum): `INITIAL`, `DAMAGED`, `LOST`, `STOLEN`, `NAME_CHANGE`, `TITLE_CHANGE`, `EXPIRED`, `OTHER`.
+- `reason_notes` (String, Optional): Mandatory explanation text for replacements.
+- `status` (Enum): `PENDING_PRINT`, `PRINTED`, `ACTIVE`, `REPLACED`, `REVOKED`.
+- `printed_snapshot` (JSON): Immutable copy of all printed values (names, titles, photo hash) at time of issue.
+- `issued_by_user_id` (UUID, FK -> `users.id`): Authorizing operator.
+- `issued_at` (Timestamp): Timestamp when card was printed/issued.
+- `revoked_at` (Timestamp, Optional): Revocation timestamp.
+- `revoked_by_user_id` (UUID, FK -> `users.id`, Optional): Operator who revoked credential.
+- `revocation_reason` (String, Optional): Explanation for card revocation.
+
+### `print_jobs` & `print_job_items` (Pending Phase 3)
+
+Manages batch PDF rendering and print queue status.
+
+- `print_jobs`: Batch container with `status` (`QUEUED`, `RENDERING`, `COMPLETED`, `FAILED`), format (`A4_SHEET`, `LETTER_SHEET`, `INDIVIDUAL_PDF`), total items, output file path.
+- `print_job_items`: Individual card items in batch with grid coordinates `(sheet_number, row, col, side)`.

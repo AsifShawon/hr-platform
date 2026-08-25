@@ -1,13 +1,37 @@
 # Project Status
 
-## Current Status: Phase 12 Completed (Release-Quality Test Matrix, Accessibility & Validation Execution)
+## Current Status: Phase 0 Baseline Re-Established — Release Gate: NOT READY
 
-- **Active Phase:** Phase 12 Complete -> Ready for General Release & Deployment Packaging
+- **Active Phase:** Phase 0 (Repository Truth & Local-Only Baseline)
 - **Last Updated:** 2026-08-25
+- **Release Status Verdict:** **NOT READY / BLOCKED** (Missing core card issuance lifecycle, background queue execution, bundled font binaries, and container worker dependencies).
+
+> [!WARNING]
+> **Audit Notice (2026-08-25)**  
+> A comprehensive code inspection revealed that while foundational features (Authentication, Org Tree, Worker Registry, Camera Studio, Geometry, Template Customizer, Single PDF Preview Render, CSV Import/Export, and AES-256 Backups) are implemented, **Phase 8 (Card Issuance, Print Queue & Batch Production) was skipped during initial development**. Historical claims in Phases 12 and 13 regarding card replacement workflows, reprint reason logging, and background queue processing were based on UI stubs and mock tests. This status document has been updated to reflect code reality.
+
+### Active Remediation Roadmap to Pilot Readiness
+
+```mermaid
+graph TD
+    Phase0[Phase 0: Baseline & Truth<br/>COMPLETED] --> Phase1[Phase 1: Self-Hosted Fonts & Worker Docker Fix]
+    Phase1 --> Phase2[Phase 2: Card Issuance & Revocation Domain/Schema]
+    Phase2 --> Phase3[Phase 3: PostgreSQL Background Queue & Batch PDF Worker]
+    Phase3 --> Phase4[Phase 4: Production Queue, Reprint & Revocation UI]
+    Phase4 --> Phase5[Phase 5: Real Full-Stack E2E Matrix & Release Gate]
+```
+
+---
 
 ### Completed Milestones
 
-#### Phase 0: Repository Foundation & Quality Gates
+#### Phase 0: Repository Truth & Local-Only Baseline (Re-established 2026-08-25)
+
+- [x] Comprehensive repository audit completed across all models, routes, workers, and tests.
+- [x] Product decision locked: strictly local-only / on-premises operation (Single PC or Private LAN).
+- [x] SaaS toggle removed from `/login` and "Request Access" fake modals removed from landing page `/`.
+- [x] Route, model, and test classifications cataloged with P0/P1/P2 defect register.
+- [x] Release gate honestly marked as **NOT READY**.
 
 - [x] Workspace governance rules normalized into `.agents/rules/00-core.md` (Always On).
 - [x] Antigravity workflows established (`/plan-phase` and `/verify-phase`).
@@ -252,18 +276,11 @@
 
 #### Phase 12: Release-Quality Test Matrix, Accessibility & Validation Execution
 
+> [!NOTE]
+> **Limitation Notice (2026-08-25):** While WCAG AA accessibility, responsive viewports, and unit suites passed, the 10-journey E2E matrix relied on mock network interceptions (`page.route()`). Specifically, Journey 6 did not test actual card issuance, reprint reason modal, or revocation logic because Phase 8 models were not yet in the DB. A full, non-mocked E2E test suite will be executed in Phase 5.
+
 - [x] **10-Journey Functional E2E Matrix (`apps/web/e2e/release-e2e-matrix.spec.ts`)**:
-  - Full end-to-end multi-viewport Playwright execution covering all 10 critical user journeys:
-    1. Fresh local activation ceremony and company profile setup (`/activate`, `/admin/company`).
-    2. System Owner provisions custom roles and scoped user accounts (`/admin/roles`, `/admin/users`).
-    3. HR Operator registers worker with Latin & Bengali script and photo (`/people/new`).
-    4. HR Manager configures bilingual physical card template and assignment (`/cards/templates`, `/cards/assignments`).
-    5. Print Operator inspects physical calibration and exact 60 × 90 mm geometry (`/cards/calibration`).
-    6. Card replacement workflow with required reprint reason and revocation audit.
-    7. Data export gating and sensitive field exclusion policy (`/import-export/export`).
-    8. CSV & ZIP ingestion pipeline with pre-commit dry-run simulation (`/import-export/import`).
-    9. AES-256-GCM encrypted backup generation and safe restore pre-flight (`/admin/backups`, `/admin/restore`).
-    10. LAN secure context mode and root CA trust management (`/admin/system`).
+  - Full end-to-end multi-viewport Playwright execution covering 10 user journeys (Mocked network contracts).
 - [x] **WCAG 2.2 AA Accessibility & Assistive Navigation Suite (`apps/web/e2e/accessibility-wcag.spec.ts`)**:
   - Automated `axe-core` accessibility scans passing with 0 violations across all major routes (`/`, `/login`, `/dashboard`, `/people`, `/people/new`, `/cards/calibration`).
   - Keyboard navigation, visible focus indicators, `tabIndex={0}` on scrollable table regions, and modal `Escape` key listeners verified.
@@ -277,13 +294,11 @@
   - 90/90 tests passing across Desktop Chromium, Mobile Chrome (360×640 px), Tablet Chrome (768×1024 px), Desktop Standard (1280×800 px), and Desktop Wide (1440×900 px).
 - [x] **Performance & Workload Benchmark (`tests/k6/load-test-matrix.js`)**:
   - k6 workload definitions for 50 VUs sustained concurrency with strict p95 $\le 350\text{ms}$ thresholds.
-- [x] **Comprehensive Quality Gates**:
-  - TypeScript typechecking passing 100% across all 20 turbo tasks (`pnpm typecheck`).
-  - Unit and chaos test suites passing 100% (`pnpm test`).
-  - Playwright multi-viewport release matrix passing **90/90 tests** (`pnpm test:e2e`).
-  - Production Next.js build clean and passing (`pnpm build`).
 
 #### Phase 13: On-Premises MVP Production Packaging & Clean-Machine Pilot
+
+> [!NOTE]
+> **Limitation Notice (2026-08-25):** The production Docker worker image (`Dockerfile.worker`) requires system Chromium packages to run Playwright in Alpine, and font binary files must be bundled (scheduled for Phase 1). The SBOM (`release/sbom.json`) will be re-generated from `pnpm-lock.yaml` in Phase 5.
 
 - [x] **Production Compose Mesh (`docker-compose.prod.yml`)**:
   - Pinned service images (`node:22-alpine`, `postgres:16.4-alpine`, `caddy:2.8.4-alpine`) with bounded CPU/RAM limits.
@@ -294,10 +309,6 @@
   - Unified commands for Linux and Windows: `install`, `start`, `stop`, `status`, `backup`, `upgrade`, `lan-enable`, `lan-disable`, and `support-bundle`.
   - Initial installation defaults to loopback-only binding (`127.0.0.1`) until activation ceremony finishes.
   - One-click LAN enablement with automated internal TLS and mobile Root CA download.
-- [x] **Release Manifest, SBOM & Provenance**:
-  - Cryptographic SHA-256 integrity manifest generated for all bundle files (`release/release-manifest.json`).
-  - CycloneDX-compliant `release/sbom.json` documenting all production package dependencies with zero development fixtures.
-  - Zero cloud dependencies, zero external CDNs, self-hosted Noto Sans and Noto Sans Bengali font assets.
 - [x] **Pilot Runbooks & Acceptance Guidelines**:
   - Comprehensive Pilot Administrator Guide ([`docs/PILOT-RUNBOOK.md`](file:///d:/Github%20repos/hr-platform/docs/PILOT-RUNBOOK.md)).
   - Hardware, OS, and Firewall Prerequisites ([`docs/PREREQUISITES.md`](file:///d:/Github%20repos/hr-platform/docs/PREREQUISITES.md)).

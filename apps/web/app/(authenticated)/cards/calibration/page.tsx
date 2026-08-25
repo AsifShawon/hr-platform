@@ -233,7 +233,9 @@ export default function PrintCalibrationPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label htmlFor="calib-card-width" className="text-[11px] text-slate-600 block">Measured Width (mm)</label>
+                    <label htmlFor="calib-card-width" className="text-[11px] text-slate-600 block">
+                      Measured Width (mm)
+                    </label>
                     <Input
                       id="calib-card-width"
                       aria-label="Measured Width (mm)"
@@ -246,7 +248,9 @@ export default function PrintCalibrationPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label htmlFor="calib-card-height" className="text-[11px] text-slate-600 block">Measured Height (mm)</label>
+                    <label htmlFor="calib-card-height" className="text-[11px] text-slate-600 block">
+                      Measured Height (mm)
+                    </label>
                     <Input
                       id="calib-card-height"
                       aria-label="Measured Height (mm)"

@@ -5,7 +5,6 @@ import Link from 'next/link';
 import {
   ShieldCheck,
   Server,
-  Cloud,
   CheckCircle2,
   Lock,
   Printer,
@@ -13,21 +12,16 @@ import {
   Users,
   Building2,
   FileCheck,
-  HelpCircle,
   Menu,
   X,
-  ExternalLink,
   ChevronRight,
   Database,
   Key,
-  Layers,
-  Sparkles,
 } from 'lucide-react';
 import {
   Button,
   Badge,
   CardPreviewChrome,
-  Dialog,
   Accordion,
   Tabs,
   TableShell,
@@ -36,42 +30,12 @@ import {
   TableRow,
   TableHead,
   TableCell,
-  Input,
-  FormGroup,
 } from '@hr/ui';
 import { FICTIONAL_WORKERS } from '@hr/fixtures';
 
 export default function LandingPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [activePreviewTab, setActivePreviewTab] = useState('registry');
-  const [requestSubmitted, setRequestSubmitted] = useState(false);
-  const [requestForm, setRequestForm] = useState({
-    name: '',
-    email: '',
-    organization: '',
-    deploymentType: 'on-prem',
-    workerCount: '50-250',
-  });
-
-  const handleRequestSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setRequestSubmitted(true);
-  };
-
-  const resetRequestModal = () => {
-    setIsRequestModalOpen(false);
-    setTimeout(() => {
-      setRequestSubmitted(false);
-      setRequestForm({
-        name: '',
-        email: '',
-        organization: '',
-        deploymentType: 'on-prem',
-        workerCount: '50-250',
-      });
-    }, 200);
-  };
 
   const faqItems = [
     {
@@ -130,7 +94,7 @@ export default function LandingPage() {
                 HR ID Platform
               </span>
               <span className="text-[10px] font-medium tracking-wider text-[#0F766E] uppercase">
-                Local-First & SaaS
+                Local-First On-Premises
               </span>
             </div>
           </Link>
@@ -147,7 +111,7 @@ export default function LandingPage() {
               How It Works
             </a>
             <a href="#deployment" className="hover:text-[#0F766E] transition-colors">
-              Local Installation
+              Local Modes
             </a>
             <a href="#security" className="hover:text-[#0F766E] transition-colors">
               Security
@@ -160,21 +124,13 @@ export default function LandingPage() {
             </a>
           </nav>
 
-          {/* Action CTAs (Sign In & Request Access) */}
+          {/* Action CTA (Sign In) */}
           <div className="hidden sm:flex items-center gap-3">
             <Link href="/login">
-              <Button variant="ghost" size="sm">
-                Sign In
+              <Button variant="primary" size="sm" rightIcon={<ChevronRight className="w-4 h-4" />}>
+                Sign In to System
               </Button>
             </Link>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setIsRequestModalOpen(true)}
-              rightIcon={<ChevronRight className="w-4 h-4" />}
-            >
-              Request Access
-            </Button>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -238,20 +194,10 @@ export default function LandingPage() {
             </nav>
             <div className="pt-4 border-t border-slate-100 flex flex-col gap-2.5">
               <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="outline" className="w-full justify-center">
-                  Sign In
+                <Button variant="primary" className="w-full justify-center">
+                  Sign In to System
                 </Button>
               </Link>
-              <Button
-                variant="primary"
-                className="w-full justify-center"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsRequestModalOpen(true);
-                }}
-              >
-                Request Access
-              </Button>
             </div>
           </div>
         )}
@@ -270,34 +216,37 @@ export default function LandingPage() {
               <div className="lg:col-span-7 space-y-6 text-left">
                 <div className="inline-flex items-center gap-2 rounded-full bg-teal-100/80 px-3.5 py-1 text-xs font-semibold text-[#134E4A] border border-teal-200">
                   <span className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
-                  Enterprise Grade • 60 × 90 mm Bilingual Standard
+                  Local-First • 60 × 90 mm Bilingual Standard
                 </div>
 
                 <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0F172A] leading-[1.12]">
                   Professional employee ID cards—
-                  <span className="text-[#0F766E] block mt-1">from your server or ours.</span>
+                  <span className="text-[#0F766E] block mt-1">
+                    on your local workstation or server.
+                  </span>
                 </h1>
 
                 <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
                   An international, local-first employee registry and high-precision ID card
-                  issuance system. Capture webcam or mobile photos over your LAN, preview bilingual
-                  English-front/Bangla-back cards, and produce print-ready vector PDFs with an
-                  immutable audit trail.
+                  issuance system. Capture webcam or mobile photos over your private LAN, preview
+                  bilingual English-front/Bangla-back cards, and produce print-ready vector PDFs
+                  with an immutable audit trail.
                 </p>
 
                 {/* Hero CTAs */}
                 <div className="flex flex-wrap items-center gap-4 pt-2">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={() => setIsRequestModalOpen(true)}
-                    rightIcon={<ChevronRight className="w-4 h-4" />}
-                  >
-                    Request Access
-                  </Button>
                   <Link href="/login">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      rightIcon={<ChevronRight className="w-4 h-4" />}
+                    >
+                      Sign In to Platform
+                    </Button>
+                  </Link>
+                  <Link href="/cards/calibration">
                     <Button variant="outline" size="lg">
-                      Sign In to System
+                      Printer Calibration
                     </Button>
                   </Link>
                 </div>
@@ -599,7 +548,7 @@ export default function LandingPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Local On-Premises Card */}
+              {/* Local Workstation Card */}
               <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 shadow-sm flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-4">
@@ -608,9 +557,9 @@ export default function LandingPage() {
                         <Server className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900">Local On-Premises</h3>
+                        <h3 className="text-xl font-bold text-slate-900">Single-PC Workstation</h3>
                         <span className="text-xs text-slate-500 font-medium">
-                          Self-Hosted on Company Server or PC
+                          Dedicated PC (Loopback 127.0.0.1)
                         </span>
                       </div>
                     </div>
@@ -618,95 +567,91 @@ export default function LandingPage() {
                   </div>
 
                   <p className="text-sm text-slate-600 mb-6">
-                    Designed for factories, government contractors, and security-first enterprises
-                    requiring full data sovereignty and offline continuity.
+                    Ideal for small offices or isolated print stations operating completely offline
+                    on a single Windows or Linux computer.
                   </p>
 
                   <ul className="space-y-3 text-sm text-slate-700">
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Data resides on your own PostgreSQL & local disk</span>
+                      <span>Attached USB webcams & card printers supported</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Protected loopback bootstrap (no vendor backdoors)</span>
+                      <span>Protected loopback bootstrap (no external network exposure)</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Zero outbound CDN, analytics, or licensing calls</span>
+                      <span>Zero outbound CDN, telemetry, or cloud calls</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>One-click encrypted ZIP backups with manifest check</span>
+                      <span>One-click encrypted `.hrbackup` bundles with self-verification</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-slate-100">
-                  <Button
-                    variant="outline"
-                    className="w-full justify-center"
-                    onClick={() => setIsRequestModalOpen(true)}
-                  >
-                    Request On-Prem Installer
-                  </Button>
+                  <Link href="/login" className="w-full">
+                    <Button variant="outline" className="w-full justify-center">
+                      Launch Local System
+                    </Button>
+                  </Link>
                 </div>
               </div>
 
-              {/* Managed Hosted SaaS Card */}
+              {/* Private Factory LAN Card */}
               <div className="bg-white rounded-2xl border-2 border-[#134E4A]/30 p-8 shadow-md flex flex-col justify-between relative overflow-hidden">
                 <div className="absolute top-0 right-0 bg-[#134E4A] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                  Enterprise Cloud
+                  Multi-Operator LAN
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-teal-100/60 rounded-xl text-[#134E4A]">
-                        <Cloud className="w-6 h-6" />
+                        <Building2 className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-slate-900">Managed Hosted SaaS</h3>
+                        <h3 className="text-xl font-bold text-slate-900">Private Factory LAN</h3>
                         <span className="text-xs text-slate-500 font-medium">
-                          Dedicated Multi-Tenant Cloud
+                          Internal Factory Wi-Fi / Local Subnet
                         </span>
                       </div>
                     </div>
                   </div>
 
                   <p className="text-sm text-slate-600 mb-6">
-                    Ideal for multi-site organizations desiring managed infrastructure, automated
-                    backups, and remote employee onboarding.
+                    Designed for factory floors and HR departments where multiple operators register
+                    workers and use smartphones for photo capture over internal Wi-Fi.
                   </p>
 
                   <ul className="space-y-3 text-sm text-slate-700">
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Tenant isolation from day one via scoped keys</span>
+                      <span>Secure LAN TLS via internal Caddy certificate authority</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Platform-operator provisioning (no public self-signup)</span>
+                      <span>Real-time smartphone photo capture over LAN via QR tokens</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Automated point-in-time database backups</span>
+                      <span>Role-based access control with scoped permissions</span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Multi-region S3-compatible asset storage</span>
+                      <span>Isolated PostgreSQL database inside private container network</span>
                     </li>
                   </ul>
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-slate-100">
-                  <Button
-                    variant="primary"
-                    className="w-full justify-center"
-                    onClick={() => setIsRequestModalOpen(true)}
-                  >
-                    Request Hosted Access
-                  </Button>
+                  <Link href="/login" className="w-full">
+                    <Button variant="primary" className="w-full justify-center">
+                      Sign In to System
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -868,25 +813,26 @@ export default function LandingPage() {
               Ready to modernize your employee ID card workflow?
             </h2>
             <p className="text-teal-100 text-base sm:text-lg max-w-2xl mx-auto">
-              Get in touch with our team to request an on-premises pilot installer or provision a
-              dedicated enterprise cloud workspace.
+              Access your local installation to manage workers, capture portraits, and print
+              exact-scale physical ID cards.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => setIsRequestModalOpen(true)}
-                className="bg-[#14B8A6] text-[#134E4A] hover:bg-teal-300 font-bold"
-              >
-                Request Access
-              </Button>
               <Link href="/login">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="bg-[#14B8A6] text-[#134E4A] hover:bg-teal-300 font-bold"
+                >
+                  Sign In to Platform
+                </Button>
+              </Link>
+              <Link href="/cards/calibration">
                 <Button
                   variant="outline"
                   size="lg"
                   className="border-teal-700 bg-teal-900/50 text-white hover:bg-teal-800"
                 >
-                  Sign In to Platform
+                  Printer Calibration
                 </Button>
               </Link>
             </div>
@@ -937,7 +883,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <a href="#deployment" className="hover:text-[#0F766E]">
-                    On-Prem vs SaaS
+                    Local Modes
                   </a>
                 </li>
               </ul>
@@ -982,13 +928,9 @@ export default function LandingPage() {
                   </Link>
                 </li>
                 <li>
-                  <button
-                    type="button"
-                    onClick={() => setIsRequestModalOpen(true)}
-                    className="hover:text-[#0F766E] text-left"
-                  >
-                    Request Access
-                  </button>
+                  <Link href="/cards/calibration" className="hover:text-[#0F766E]">
+                    Physical Calibration
+                  </Link>
                 </li>
               </ul>
             </div>
@@ -1002,104 +944,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
-      {/* 11. Request Access Dialog Modal */}
-      <Dialog
-        isOpen={isRequestModalOpen}
-        onClose={resetRequestModal}
-        title="Request Access to Platform"
-        description="Enter your organization details to request an on-premises deployment package or hosted workspace."
-      >
-        {requestSubmitted ? (
-          <div className="py-6 text-center space-y-4">
-            <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900">Request Received</h4>
-            <p className="text-sm text-slate-600 max-w-sm mx-auto">
-              Thank you, <span className="font-semibold">{requestForm.name}</span>. An enterprise
-              administrator will review your request for{' '}
-              <span className="font-semibold">{requestForm.organization}</span> and issue an
-              activation package.
-            </p>
-            <Button variant="primary" className="mt-4" onClick={resetRequestModal}>
-              Done
-            </Button>
-          </div>
-        ) : (
-          <form onSubmit={handleRequestSubmit} className="space-y-4 mt-2">
-            <FormGroup label="Full Name" htmlFor="req-name" isRequired>
-              <Input
-                id="req-name"
-                required
-                placeholder="e.g. Tanvir Ahmed"
-                value={requestForm.name}
-                onChange={(e) => setRequestForm({ ...requestForm, name: e.target.value })}
-              />
-            </FormGroup>
-
-            <FormGroup label="Work Email" htmlFor="req-email" isRequired>
-              <Input
-                id="req-email"
-                type="email"
-                required
-                placeholder="you@company.com"
-                value={requestForm.email}
-                onChange={(e) => setRequestForm({ ...requestForm, email: e.target.value })}
-              />
-            </FormGroup>
-
-            <FormGroup label="Organization / Company Name" htmlFor="req-org" isRequired>
-              <Input
-                id="req-org"
-                required
-                placeholder="e.g. Apex Industrial Group"
-                value={requestForm.organization}
-                onChange={(e) => setRequestForm({ ...requestForm, organization: e.target.value })}
-              />
-            </FormGroup>
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormGroup label="Deployment Mode" htmlFor="req-deploy">
-                <select
-                  id="req-deploy"
-                  value={requestForm.deploymentType}
-                  onChange={(e) =>
-                    setRequestForm({ ...requestForm, deploymentType: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-                >
-                  <option value="on-prem">Local On-Premises</option>
-                  <option value="hosted">Managed Cloud SaaS</option>
-                </select>
-              </FormGroup>
-
-              <FormGroup label="Worker Count" htmlFor="req-count">
-                <select
-                  id="req-count"
-                  value={requestForm.workerCount}
-                  onChange={(e) => setRequestForm({ ...requestForm, workerCount: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-                >
-                  <option value="1-50">1 - 50</option>
-                  <option value="50-250">50 - 250</option>
-                  <option value="250-1000">250 - 1,000</option>
-                  <option value="1000+">1,000+</option>
-                </select>
-              </FormGroup>
-            </div>
-
-            <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-              <Button variant="ghost" type="button" onClick={resetRequestModal}>
-                Cancel
-              </Button>
-              <Button variant="primary" type="submit">
-                Submit Request
-              </Button>
-            </div>
-          </form>
-        )}
-      </Dialog>
     </div>
   );
 }

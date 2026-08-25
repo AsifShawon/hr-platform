@@ -78,9 +78,7 @@ test.describe('Phase 12: Release-Quality 10-Journey E2E Test Matrix', () => {
   });
 
   // Journey 1: Fresh Local Activation & First Company Setup
-  test('Journey 1: Fresh local activation ceremony and company profile setup', async ({
-    page,
-  }) => {
+  test('Journey 1: Fresh local activation ceremony and company profile setup', async ({ page }) => {
     await page.route('**/api/system/status', async (route) => {
       await route.fulfill({
         status: 200,
@@ -260,7 +258,9 @@ test.describe('Phase 12: Release-Quality 10-Journey E2E Test Matrix', () => {
     page,
   }) => {
     await page.goto('/cards/calibration');
-    await expect(page.locator('h1', { hasText: 'Physical Print Calibration & Alignment' })).toBeVisible();
+    await expect(
+      page.locator('h1', { hasText: 'Physical Print Calibration & Alignment' }),
+    ).toBeVisible();
     await expect(page.locator('text=Acceptable Tolerances')).toBeVisible();
     await expect(page.locator('text=50.0 mm Test Line:')).toBeVisible();
   });
@@ -291,7 +291,11 @@ test.describe('Phase 12: Release-Quality 10-Journey E2E Test Matrix', () => {
               jobCategory: 'STAFF',
               joinDate: '2023-05-15',
               status: 'ACTIVE',
-              organization: { id: 'org-lba-1', name: 'London Boy Apparel Ltd.', displayName: 'London Boy Apparel' },
+              organization: {
+                id: 'org-lba-1',
+                name: 'London Boy Apparel Ltd.',
+                displayName: 'London Boy Apparel',
+              },
             },
             employments: [],
             identityDocuments: [],

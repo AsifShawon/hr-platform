@@ -336,9 +336,7 @@ extract the CSV, link relative photos, and validate integrity checksums.
 /**
  * Retrieves the exported ZIP file buffer given a valid download token
  */
-export async function getExportDownloadStream(
-  downloadToken: string,
-): Promise<{
+export async function getExportDownloadStream(downloadToken: string): Promise<{
   filePath: string;
   fileName: string;
   fileSizeBytes: number;

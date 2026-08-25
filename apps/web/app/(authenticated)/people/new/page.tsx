@@ -463,7 +463,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="employeeNumber" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="employeeNumber"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Employee Number (Unique ID) *
                 </label>
                 <Input
@@ -476,7 +479,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-location" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-location"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Location / Facility
                 </label>
                 <select
@@ -498,7 +504,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-org-unit" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-org-unit"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Department / Section / Line
                 </label>
                 <select
@@ -520,7 +529,9 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="jobTitle" className="block text-xs font-bold text-slate-700 mb-1">Job Title *</label>
+                <label htmlFor="jobTitle" className="block text-xs font-bold text-slate-700 mb-1">
+                  Job Title *
+                </label>
                 <Input
                   id="jobTitle"
                   value={formData.jobTitle}
@@ -531,7 +542,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-job-category" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-job-category"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Job Category *
                 </label>
                 <select
@@ -553,7 +567,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-join-date" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-join-date"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Join Date (YYYY-MM-DD) *
                 </label>
                 <Input
@@ -566,7 +583,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-status" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-status"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Initial Status *
                 </label>
                 <select
@@ -669,7 +689,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-gender" className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                <label
+                  htmlFor="worker-gender"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
+                  Gender
+                </label>
                 <select
                   id="worker-gender"
                   aria-label="Gender"
@@ -685,7 +710,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-blood-group" className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
+                <label
+                  htmlFor="worker-blood-group"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
+                  Blood Group
+                </label>
                 <Input
                   id="worker-blood-group"
                   value={formData.bloodGroup}
@@ -695,7 +725,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label htmlFor="worker-phone" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-phone"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Primary Phone Number
                 </label>
                 <Input
@@ -708,7 +741,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label htmlFor="worker-email" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="worker-email"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Primary Email Address
                 </label>
                 <Input
@@ -747,7 +783,10 @@ export default function AddWorkerWizardPage() {
               {formData.hasIdentityDoc && (
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in">
                   <div>
-                    <label htmlFor="worker-id-doc-type" className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label
+                      htmlFor="worker-id-doc-type"
+                      className="block text-[11px] font-bold text-slate-700 mb-1"
+                    >
                       Document Type *
                     </label>
                     <select

@@ -6,18 +6,17 @@ test.describe('Landing Page & Public Shell', () => {
 
     // Hero headline and subhead
     await expect(page.locator('h1', { hasText: 'Professional employee ID cards' })).toBeVisible();
-    await expect(page.locator('text=from your server or ours.').first()).toBeVisible();
+    await expect(page.locator('text=on your local workstation or server.').first()).toBeVisible();
 
     // CTAs exist
-    const requestAccessBtn = page.getByRole('button', { name: 'Request Access' }).first();
-    await expect(requestAccessBtn).toBeVisible();
-    const signInLink = page.getByRole('link', { name: 'Sign In' }).first();
-    await expect(signInLink).toBeVisible();
+    const signInBtn = page.getByRole('link', { name: 'Sign In to Platform' }).first();
+    await expect(signInBtn).toBeVisible();
 
-    // No public signup anywhere
+    // No public signup or SaaS request access anywhere
     await expect(page.locator('text=Start Free')).toHaveCount(0);
     await expect(page.locator('text=Sign up')).toHaveCount(0);
     await expect(page.locator('text=Create Account')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
 
     // Bilingual Card Visuals rendered
     await expect(page.locator('text=Apex Industrial').first()).toBeVisible();
@@ -45,29 +44,13 @@ test.describe('Landing Page & Public Shell', () => {
     await expect(page.locator('text=Live Physical Layout Engine')).toBeVisible();
   });
 
-  test('request access modal opens, submits, and closes cleanly', async ({ page }) => {
+  test('presents local deployment modes and direct calibration links', async ({ page }) => {
     await page.goto('/');
 
-    // Open Request Access Dialog
-    await page.getByRole('button', { name: 'Request Access' }).first().click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.locator('text=Request Access to Platform')).toBeVisible();
-
-    // Fill form
-    await page.fill('#req-name', 'Rahim Chowdhury');
-    await page.fill('#req-email', 'rahim@example.com');
-    await page.fill('#req-org', 'Chowdhury Mills Ltd');
-
-    // Submit
-    await page.getByRole('button', { name: 'Submit Request' }).click();
-
-    // Confirmation
-    await expect(page.locator('text=Request Received')).toBeVisible();
-    await expect(page.locator('text=Chowdhury Mills Ltd')).toBeVisible();
-
-    // Close
-    await page.getByRole('button', { name: 'Done' }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // Deployment mode cards
+    await expect(page.locator('text=Single-PC Workstation')).toBeVisible();
+    await expect(page.locator('text=Private Factory LAN')).toBeVisible();
+    await expect(page.locator('text=Air-Gapped Ready').first()).toBeVisible();
   });
 
   test('FAQ accordion expands and collapses', async ({ page }) => {
@@ -103,7 +86,7 @@ test.describe('Landing Page & Public Shell', () => {
 });
 
 test.describe('Sign-In Presentation Shell', () => {
-  test('renders two-column visual, mode switcher, and show/hide password toggle', async ({
+  test('renders two-column visual, local system badge, and show/hide password toggle', async ({
     page,
   }) => {
     await page.goto('/login');
@@ -111,6 +94,11 @@ test.describe('Sign-In Presentation Shell', () => {
     // Header & Privacy
     await expect(page.locator('h2', { hasText: 'Sign in to your organization' })).toBeVisible();
     await expect(page.locator('text=Strict Privacy & Tenant Isolation')).toBeVisible();
+
+    // Local System Badge & recovery guidance
+    await expect(page.locator('text=Local On-Premises System')).toBeVisible();
+    await expect(page.locator('text=Local Node')).toBeVisible();
+    await expect(page.locator('text=Contact your System Owner')).toBeVisible();
 
     // Password input toggle
     const passwordInput = page.locator('#auth-password');
@@ -125,19 +113,16 @@ test.describe('Sign-In Presentation Shell', () => {
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  test('switches between Hosted Enterprise and Local On-Premises modes', async ({ page }) => {
+  test('enforces local recovery guidance without public password reset or SaaS links', async ({
+    page,
+  }) => {
     await page.goto('/login');
 
-    // Default is Hosted
-    await expect(page.locator('text=Forgot password?')).toBeVisible();
-    await expect(page.locator('text=Need an account? Request access')).toBeVisible();
-
-    // Switch to Local Mode
-    await page.getByRole('button', { name: 'Local' }).click();
-    await expect(page.locator('text=Local On-Premises System')).toBeVisible();
-    await expect(page.locator('text=Local System')).toBeVisible();
+    // Local-only invariants
     await expect(page.locator('text=Contact your System Owner')).toBeVisible();
     await expect(page.locator('text=Forgot password?')).toHaveCount(0);
+    await expect(page.locator('text=Request access')).toHaveCount(0);
+    await expect(page.locator('text=Hosted Enterprise')).toHaveCount(0);
   });
 
   test('simulates generic authentication feedback without account-existence disclosure', async ({

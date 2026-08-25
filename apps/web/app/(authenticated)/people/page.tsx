@@ -656,7 +656,10 @@ export default function PeopleRegistryPage() {
 
             <form onSubmit={handleBulkStatusChange} className="mt-4 space-y-4">
               <div>
-                <label htmlFor="bulk-target-status" className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="bulk-target-status"
+                  className="block text-xs font-bold text-slate-700 mb-1"
+                >
                   Target Status *
                 </label>
                 <select

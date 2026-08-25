@@ -5,6 +5,7 @@ import {
   updateOrganization,
   getTenantOrganizations,
   getOrganizationById,
+  OrganizationNotFoundError,
   DuplicateOrganizationCodeError,
 } from '../src/services/organization.service.js';
 import {

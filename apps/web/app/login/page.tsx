@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import {
   ShieldCheck,
   Server,
-  Cloud,
   ArrowLeft,
   Lock,
   AlertCircle,
@@ -17,7 +16,6 @@ import { Button, Input, ShowHidePasswordInput, FormGroup, Badge, CardPreviewChro
 
 export default function LoginPage() {
   const router = useRouter();
-  const [deploymentMode, setDeploymentMode] = useState<'hosted' | 'local'>('hosted');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -128,56 +126,22 @@ export default function LoginPage() {
 
       {/* Right Column: Sign-In Presentation Form */}
       <div className="lg:col-span-7 flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-12 max-w-xl mx-auto w-full">
-        {/* Environment Mode Switcher */}
+        {/* System Mode Indicator */}
         <div className="mb-8 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
-            {deploymentMode === 'local' ? (
-              <Server className="w-5 h-5 text-[#0F766E]" />
-            ) : (
-              <Cloud className="w-5 h-5 text-[#134E4A]" />
-            )}
+            <Server className="w-5 h-5 text-[#0F766E]" />
             <div>
               <span className="text-xs font-bold text-slate-800 block">
-                {deploymentMode === 'local' ? 'Local On-Premises System' : 'Hosted Enterprise SaaS'}
+                Local On-Premises System
               </span>
               <span className="text-[11px] text-slate-500">
-                {deploymentMode === 'local'
-                  ? 'Air-Gapped LAN Node: 127.0.0.1 / 192.168.x.x'
-                  : 'Multi-Tenant Cloud Workspace'}
+                Air-Gapped LAN Node: 127.0.0.1 / Private Network
               </span>
             </div>
           </div>
-
-          <div className="flex rounded-lg bg-slate-200/80 p-0.5 text-xs font-semibold">
-            <button
-              type="button"
-              onClick={() => {
-                setDeploymentMode('hosted');
-                setErrorMessage(null);
-              }}
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                deploymentMode === 'hosted'
-                  ? 'bg-white text-[#134E4A] shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Hosted
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setDeploymentMode('local');
-                setErrorMessage(null);
-              }}
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                deploymentMode === 'local'
-                  ? 'bg-white text-[#0F766E] shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Local
-            </button>
-          </div>
+          <Badge variant="primary" size="sm">
+            Local Node
+          </Badge>
         </div>
 
         {/* Main Sign-In Card */}
@@ -187,20 +151,13 @@ export default function LoginPage() {
               <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                 Sign in to your organization
               </h2>
-              {deploymentMode === 'local' ? (
-                <Badge variant="primary" size="sm">
-                  Local System
-                </Badge>
-              ) : (
-                <Badge variant="secondary" size="sm">
-                  Enterprise
-                </Badge>
-              )}
+              <Badge variant="primary" size="sm">
+                Local System
+              </Badge>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
-              {deploymentMode === 'local'
-                ? 'Enter your local operator credentials to access the on-premises card registry.'
-                : 'Enter your work email and password to access your dedicated enterprise workspace.'}
+              Enter your local operator credentials to access the on-premises employee registry and
+              ID card system.
             </p>
           </div>
 
@@ -225,7 +182,7 @@ export default function LoginPage() {
             >
               <CheckCircle2 className="w-5 h-5 text-[#0F766E] shrink-0 mt-0.5" />
               <div>
-                <span className="font-semibold block">Phase 1 Presentation Active</span>
+                <span className="font-semibold block">System Notification</span>
                 <span className="text-xs text-teal-800">{infoMessage}</span>
               </div>
             </div>
@@ -233,17 +190,13 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <FormGroup
-              label={deploymentMode === 'local' ? 'Username' : 'Work Email or Username'}
-              htmlFor="auth-username"
-              isRequired
-            >
+            <FormGroup label="Username or Work Email" htmlFor="auth-username" isRequired>
               <Input
                 id="auth-username"
                 type="text"
                 autoComplete="username"
                 required
-                placeholder={deploymentMode === 'local' ? 'admin' : 'tanvir@company.com'}
+                placeholder="admin"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -260,34 +213,15 @@ export default function LoginPage() {
               />
             </FormGroup>
 
-            {/* Mode-Specific Helper Links */}
+            {/* Local Recovery Helper Link */}
             <div className="flex items-center justify-between text-xs pt-1">
-              {deploymentMode === 'hosted' ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setInfoMessage(
-                        'Password reset instructions have been forwarded to your registered security administrator.',
-                      )
-                    }
-                    className="text-[#0F766E] hover:text-[#134E4A] font-semibold hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                  <Link href="/" className="text-slate-500 hover:text-slate-800 hover:underline">
-                    Need an account? Request access
-                  </Link>
-                </>
-              ) : (
-                <div className="w-full flex items-center justify-between text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 text-[11px]">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
-                    On-Premises recovery:
-                  </span>
-                  <span className="font-semibold text-slate-700">Contact your System Owner</span>
-                </div>
-              )}
+              <div className="w-full flex items-center justify-between text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 text-[11px]">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                  On-Premises recovery:
+                </span>
+                <span className="font-semibold text-slate-700">Contact your System Owner</span>
+              </div>
             </div>
 
             {/* Submit Button */}

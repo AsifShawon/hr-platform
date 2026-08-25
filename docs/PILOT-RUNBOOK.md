@@ -1,4 +1,5 @@
 ﻿# HR Platform On-Premises MVP: Pilot Runbook & Operational Guide
+
 **Version:** `v1.0.0-pilot.1` | **Target Deployment:** Clean On-Premises Host (Windows 11 / Ubuntu 22.04 LTS)
 
 ---
@@ -6,6 +7,7 @@
 ## 1. Quick-Start Checklist for System Administrators
 
 ### 1.1 Fresh Installation (Loopback Mode)
+
 1. Extract the release archive to your deployment directory (e.g., `C:\hr-platform` or `/opt/hr-platform`).
 2. Run the platform bootstrap script:
    - **Linux / macOS**: `./pilot.sh install`
@@ -13,6 +15,7 @@
 3. The installer generates cryptographic keys in `.env`, starts PostgreSQL, applies schema migrations, and launches all services bound to loopback `127.0.0.1`.
 
 ### 1.2 Initial Activation Ceremony
+
 1. Open your browser on the host machine to `http://localhost/activate`.
 2. Follow the 3-step activation wizard:
    - Provide the initial bootstrap key `admin/admin`.
@@ -22,6 +25,7 @@
 3. The temporary `admin/admin` bootstrap hash is permanently destroyed upon completion.
 
 ### 1.3 Factory LAN Enablement (Smartphone Capture & Multi-Workstation)
+
 1. After activation is complete, enable LAN access:
    - **Linux**: `./pilot.sh lan-enable`
    - **Windows**: `.\pilot.ps1 lan-enable`
@@ -35,27 +39,29 @@
 
 ## 2. Day-to-Day Operations & Maintenance
 
-| Operational Task | Linux Command | Windows Command |
-|---|---|---|
-| **Check System Status** | `./pilot.sh status` | `.\pilot.ps1 status` |
-| **Start Stack** | `./pilot.sh start` | `.\pilot.ps1 start` |
-| **Graceful Shutdown** | `./pilot.sh stop` | `.\pilot.ps1 stop` |
-| **Immediate Backup** | `./pilot.sh backup` | `.\pilot.ps1 backup` |
-| **Safe Upgrade** | `./pilot.sh upgrade` | `.\pilot.ps1 upgrade` |
+| Operational Task            | Linux Command               | Windows Command              |
+| --------------------------- | --------------------------- | ---------------------------- |
+| **Check System Status**     | `./pilot.sh status`         | `.\pilot.ps1 status`         |
+| **Start Stack**             | `./pilot.sh start`          | `.\pilot.ps1 start`          |
+| **Graceful Shutdown**       | `./pilot.sh stop`           | `.\pilot.ps1 stop`           |
+| **Immediate Backup**        | `./pilot.sh backup`         | `.\pilot.ps1 backup`         |
+| **Safe Upgrade**            | `./pilot.sh upgrade`        | `.\pilot.ps1 upgrade`        |
 | **Generate Support Bundle** | `./pilot.sh support-bundle` | `.\pilot.ps1 support-bundle` |
-| **Restrict to Localhost** | `./pilot.sh lan-disable` | `.\pilot.ps1 lan-disable` |
+| **Restrict to Localhost**   | `./pilot.sh lan-disable`    | `.\pilot.ps1 lan-disable`    |
 
 ---
 
 ## 3. Data Storage & Physical Backup Layout
 
 All persistent state is stored in Docker named volumes with strict permissions:
+
 - **`hr_postgres_prod_data`**: PostgreSQL relational database (tenant data, workers, roles, logs).
 - **`hr_media_prod_data`**: Encrypted photos, derivatives (300 DPI master, thumbnail), and organization logos.
 - **`hr_backup_prod_data`**: AES-256-GCM encrypted `.hrbackup` bundles.
 - **`hr_caddy_prod_data`**: Local TLS Root CA private key and issued certificates.
 
 ### 3.1 Copying Backups Offsite
+
 Backups stored in `hr_backup_prod_data` are standalone, authenticated AES-256-GCM packages. You can safely copy `.hrbackup` files to offsite USB drives or network shares. They contain zero plaintext secrets and cannot be decrypted without the system encryption passphrase.
 
 ---

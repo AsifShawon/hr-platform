@@ -4,13 +4,13 @@ import { check, sleep } from 'k6';
 // Performance Thresholds for Local-Pilot Workload
 export const options = {
   stages: [
-    { duration: '5s', target: 20 },  // Ramp-up to 20 virtual users
+    { duration: '5s', target: 20 }, // Ramp-up to 20 virtual users
     { duration: '15s', target: 50 }, // Sustained load at 50 VUs (simulating busy factory morning)
-    { duration: '5s', target: 0 },   // Ramp-down
+    { duration: '5s', target: 0 }, // Ramp-down
   ],
   thresholds: {
     http_req_duration: ['p(95)<350', 'p(99)<500'], // P95 under 350ms budget
-    http_req_failed: ['rate<0.01'],                 // Error rate strictly < 1%
+    http_req_failed: ['rate<0.01'], // Error rate strictly < 1%
   },
 };
 
@@ -37,9 +37,9 @@ export default function () {
     `${BASE_URL}/api/people?page=${searchParams.page}&limit=${searchParams.limit}&search=${searchParams.search}&status=${searchParams.status}`,
     {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
-    }
+    },
   );
 
   check(searchRes, {

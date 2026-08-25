@@ -68,6 +68,8 @@ export default function CompanySettingsPage() {
   const [padLength, setPadLength] = useState(4);
   const [nextSequence, setNextSequence] = useState(1001);
 
+  const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadOrg = async () => {
@@ -97,6 +99,12 @@ export default function CompanySettingsPage() {
             setNextSequence(firstOrg.employeeNumberRule.nextSequence || 1001);
           }
         }
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setMessage({
+          type: 'error',
+          text: data.message || 'Failed to load organization settings.',
+        });
       }
     } catch {
       setMessage({ type: 'error', text: 'Failed to load organization settings.' });
@@ -111,32 +119,52 @@ export default function CompanySettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!org) return;
+    if (!name.trim()) {
+      setMessage({ type: 'error', text: 'Legal entity name is required.' });
+      return;
+    }
+
     setIsSaving(true);
     setMessage(null);
 
+    const payload = {
+      name: name.trim(),
+      displayName: displayName.trim() || null,
+      primaryColor,
+      secondaryColor,
+      accentColor,
+      locale,
+      timezone,
+      address: { street, city, postalCode, country },
+      contactEmail: contactEmail.trim() || null,
+      contactPhone: contactPhone.trim() || null,
+      employeeNumberRule: {
+        prefix,
+        padLength: Number(padLength),
+        nextSequence: Number(nextSequence),
+      },
+    };
+
     try {
-      const res = await fetch(`/api/organizations/${org.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          displayName: displayName || null,
-          primaryColor,
-          secondaryColor,
-          accentColor,
-          locale,
-          timezone,
-          address: { street, city, postalCode, country },
-          contactEmail: contactEmail || null,
-          contactPhone: contactPhone || null,
-          employeeNumberRule: {
-            prefix,
-            padLength: Number(padLength),
-            nextSequence: Number(nextSequence),
-          },
-        }),
-      });
+      let res: Response;
+      if (org) {
+        res = await fetch(`/api/organizations/${org.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } else {
+        const code =
+          name
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '_')
+            .slice(0, 20) || 'MAIN_ORG';
+        res = await fetch('/api/organizations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, code }),
+        });
+      }
 
       const data = await res.json();
       if (res.ok) {
@@ -154,10 +182,20 @@ export default function CompanySettingsPage() {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !org) return;
+    if (!file) return;
+
+    if (!org) {
+      setMessage({
+        type: 'error',
+        text: 'Please save company settings first to establish organization identity before uploading a logo.',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     if (file.size > 2 * 1024 * 1024) {
       setMessage({ type: 'error', text: 'Logo file size exceeds 2MB limit.' });
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -179,6 +217,7 @@ export default function CompanySettingsPage() {
           type: 'success',
           text: 'Company logo uploaded and sanitized (EXIF stripped) successfully.',
         });
+        setLogoTimestamp(Date.now());
         loadOrg();
       } else {
         setMessage({ type: 'error', text: data.message || 'Failed to upload logo.' });
@@ -187,6 +226,7 @@ export default function CompanySettingsPage() {
       setMessage({ type: 'error', text: 'Network error uploading logo.' });
     } finally {
       setIsUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -275,7 +315,7 @@ export default function CompanySettingsPage() {
           <div className="relative h-24 w-24 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 shadow-inner">
             {org?.logoPath ? (
               <img
-                src={`/api/organizations/${org.id}/logo?t=${Date.now()}`}
+                src={`/api/organizations/${org.id}/logo?t=${logoTimestamp}`}
                 alt="Company Logo"
                 className="h-full w-full object-contain p-2"
               />

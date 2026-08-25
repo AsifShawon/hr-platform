@@ -65,6 +65,27 @@ export interface ResolvedAuthContext {
   isActivated: boolean;
 }
 
+export function mapPrismaToPermission(prismaPerm: PermissionType): Permission {
+  const map: Record<PermissionType, Permission> = {
+    [PermissionType.PEOPLE_VIEW]: Permission.PEOPLE_VIEW,
+    [PermissionType.PEOPLE_EDIT]: Permission.PEOPLE_EDIT,
+    [PermissionType.IDENTITY_REVEAL]: Permission.IDENTITY_REVEAL,
+    [PermissionType.IDENTITY_EDIT]: Permission.IDENTITY_EDIT,
+    [PermissionType.CARDS_DESIGN]: Permission.CARDS_DESIGN,
+    [PermissionType.CARDS_PRINT]: Permission.CARDS_PRINT,
+    [PermissionType.CARDS_ISSUE]: Permission.CARDS_ISSUE,
+    [PermissionType.CARDS_REVOKE]: Permission.CARDS_REVOKE,
+    [PermissionType.EXPORTS_CREATE]: Permission.EXPORTS_CREATE,
+    [PermissionType.ORGANIZATION_MANAGE]: Permission.ORGANIZATION_MANAGE,
+    [PermissionType.USERS_MANAGE]: Permission.USERS_MANAGE,
+    [PermissionType.ROLES_MANAGE]: Permission.ROLES_MANAGE,
+    [PermissionType.AUDIT_VIEW]: Permission.AUDIT_VIEW,
+    [PermissionType.BACKUP_MANAGE]: Permission.BACKUP_MANAGE,
+    [PermissionType.SYSTEM_MANAGE]: Permission.SYSTEM_MANAGE,
+  };
+  return map[prismaPerm];
+}
+
 export async function validateSession(token: string): Promise<ResolvedAuthContext | null> {
   if (!token) return null;
 
@@ -126,7 +147,10 @@ export async function validateSession(token: string): Promise<ResolvedAuthContex
   const permissionSet = new Set<Permission>();
   for (const role of roles) {
     for (const p of role.permissions) {
-      permissionSet.add(p as unknown as Permission);
+      const domainPerm = mapPrismaToPermission(p);
+      if (domainPerm) {
+        permissionSet.add(domainPerm);
+      }
     }
   }
 

@@ -522,7 +522,9 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
   const safeFrontName = escapeHtml(frontName);
   const safeBanglaName = escapeHtml(banglaName);
   const safeOrgName = escapeHtml(worker.orgName || 'COMPANY NAME');
-  const safeOrgNameBangla = escapeHtml(worker.orgNameBangla || worker.orgName || 'প্রতিষ্ঠানের নাম');
+  const safeOrgNameBangla = escapeHtml(
+    worker.orgNameBangla || worker.orgName || 'প্রতিষ্ঠানের নাম',
+  );
 
   const renderFrontCardHtml = () => `
     <div class="card-page front-page" style="width: ${widthMm}mm; height: ${heightMm}mm; background-color: ${theme.backgroundColor}; color: ${theme.textColor};">

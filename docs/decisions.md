@@ -132,3 +132,20 @@
   6. Implemented loopback gating on fresh installs, LAN mode toggling, Caddy internal TLS CA certificate export, and mobile device-trust guides for iOS and Android.
   7. Built System Health Dashboard (`/admin/system`) with component matrix, low disk space warnings (<10% or <2GB), and one-click redacted support bundle generation.
 - **Consequences:** Guarantees data recoverability, air-gapped security, zero unauthorized LAN exposure, and reliable smartphone camera capture across on-premises factory networks.
+
+## DEC-0011: Local-Only Product Boundary and Baseline Truth Reconciliation
+
+- **Date:** 2026-08-25
+- **Status:** Accepted
+- **Context:** An audit of the repository revealed skipped implementation milestones (Card Issuance Lifecycle, Print Queue Processing, Reprint Reason Logging, Revocation Audit) despite misleading claims in later phase documents. A clear product boundary is required: this MVP release is strictly for local-only, single-workstation, or private factory LAN deployment.
+- **Decision:**
+  1. Re-established Phase 0 truth baseline and marked release status as `NOT READY / BLOCKED` until missing core capabilities are implemented and honestly verified.
+  2. Defined the local-only runtime boundary: removed hosted SaaS switchers, pricing comparisons, and fake "Request Access" modals from the web application (`/` and `/login`).
+  3. Preserved `tenant_id` columns and clean storage/network interfaces in the data model and API to ensure zero-rewrite upgradability to hosted SaaS in future phases without enabling cloud behavior now.
+  4. Scheduled a 5-phase remediation roadmap:
+     - Phase 1: Self-Hosted Font Bundling & Container Worker Fix.
+     - Phase 2: Card Issuance & Revocation Domain/Schema Engine.
+     - Phase 3: PostgreSQL Background Queue & Batch PDF Worker.
+     - Phase 4: Production Card Queue, Reprint & Revocation UI.
+     - Phase 5: Honest Full-Stack E2E Matrix & Release Gate Verification.
+- **Consequences:** Eliminates documentation ambiguity, aligns UI and marketing copy with on-premises reality, establishes an honest quality baseline, and provides a clear technical roadmap to MVP release readiness.
