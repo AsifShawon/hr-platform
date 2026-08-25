@@ -26,5 +26,9 @@ COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 
+RUN chown -R node:node /app
+
+USER node
+
 EXPOSE 3001
 CMD ["node", "apps/api/dist/server.js"]

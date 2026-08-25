@@ -1,0 +1,22 @@
+# Caddy Configuration: Loopback-Only Protected Mode (Default)
+# Binds strictly to localhost (127.0.0.1) until activation and deliberate LAN enablement
+:80 {
+    handle /api/* {
+        reverse_proxy api:3001 {
+            header_up X-Forwarded-Proto http
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    handle /* {
+        reverse_proxy web:3000 {
+            header_up X-Forwarded-Proto http
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

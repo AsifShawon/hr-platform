@@ -204,31 +204,40 @@ export const organizationRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   // 6. GET /api/organizations/:id/logo - Stream logo securely
-  fastify.get('/api/organizations/:id/logo', async (request, reply) => {
-    const { id } = request.params as { id: string };
-    // Allow unauthenticated/authenticated retrieval with security headers
-    const tenantId = request.user?.tenantId;
+  fastify.get(
+    '/api/organizations/:id/logo',
+    { preHandler: [fastify.requirePermission(Permission.PEOPLE_VIEW)] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const tenantId = request.user!.tenantId;
 
-    const org = await getOrganizationById(
-      tenantId || (await prisma.organization.findUnique({ where: { id } }))?.tenantId || '',
-      id,
-    );
-    if (!org || !org.logoPath) {
-      return reply
-        .code(404)
-        .send({ statusCode: 404, error: 'Not Found', message: 'Logo not found.' });
-    }
+      try {
+        const org = await getOrganizationById(tenantId, id);
+        if (!org || !org.logoPath) {
+          return reply
+            .code(404)
+            .send({ statusCode: 404, error: 'Not Found', message: 'Logo not found.' });
+        }
 
-    const file = await getLogoFile(org.logoPath);
-    if (!file) {
-      return reply
-        .code(404)
-        .send({ statusCode: 404, error: 'Not Found', message: 'Logo file not found on disk.' });
-    }
+        const file = await getLogoFile(org.logoPath);
+        if (!file) {
+          return reply
+            .code(404)
+            .send({ statusCode: 404, error: 'Not Found', message: 'Logo file not found on disk.' });
+        }
 
-    reply.header('Content-Type', file.mimeType);
-    reply.header('Cache-Control', 'public, max-age=86400');
-    reply.header('X-Content-Type-Options', 'nosniff');
-    return reply.send(file.buffer);
-  });
+        reply.header('Content-Type', file.mimeType);
+        reply.header('Cache-Control', 'private, max-age=86400');
+        reply.header('X-Content-Type-Options', 'nosniff');
+        return reply.send(file.buffer);
+      } catch (err) {
+        if (err instanceof OrganizationNotFoundError) {
+          return reply
+            .code(404)
+            .send({ statusCode: 404, error: 'Not Found', message: 'Logo not found.' });
+        }
+        throw err;
+      }
+    },
+  );
 };

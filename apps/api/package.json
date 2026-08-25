@@ -21,15 +21,20 @@
     "@hr/config": "workspace:*",
     "@hr/db": "workspace:*",
     "@hr/domain": "workspace:*",
+    "@hr/fixtures": "workspace:*",
     "@hr/schemas": "workspace:*",
     "@hr/worker": "workspace:*",
     "@node-rs/argon2": "^2.1.0",
+    "adm-zip": "^0.6.0",
+    "archiver": "^8.0.0",
     "fastify": "^5.2.1",
     "fastify-plugin": "^6.0.0",
     "pino": "^9.6.0",
     "sharp": "^0.35.3"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
+    "@types/archiver": "^8.0.0",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3",
     "vitest": "^3.0.7"

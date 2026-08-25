@@ -1,0 +1,30 @@
+# Caddy Configuration: Trusted Factory LAN Mode (Internal TLS)
+# Serves automated internal TLS for trusted phone camera capture and multi-station access
+:80 {
+    redir https://{host}{uri} permanent
+}
+
+:443 {
+    tls internal {
+        on_demand
+    }
+
+    handle /api/* {
+        reverse_proxy api:3001 {
+            header_up X-Forwarded-Proto https
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    handle /* {
+        reverse_proxy web:3000 {
+            header_up X-Forwarded-Proto https
+            header_up X-Real-IP {remote_host}
+        }
+    }
+
+    log {
+        output stdout
+        format console
+    }
+}

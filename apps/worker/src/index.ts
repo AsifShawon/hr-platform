@@ -14,12 +14,13 @@ const logger = pino({
 export class BackgroundWorker {
   private isRunning = false;
   private intervalId: NodeJS.Timeout | null = null;
+  private backupIntervalId: NodeJS.Timeout | null = null;
 
   async start() {
     this.isRunning = true;
     logger.info('🚀 Background Worker started (Job Loop Ready)');
 
-    // In Phase 0, we run a heartbeat check every 15 seconds to verify DB readiness
+    // Heartbeat check every 15 seconds to verify DB readiness
     this.intervalId = setInterval(async () => {
       if (!this.isRunning) return;
       try {
@@ -29,12 +30,43 @@ export class BackgroundWorker {
         logger.error({ err }, '💔 Background worker DB heartbeat failed');
       }
     }, 15000);
+
+    // Check automated backup schedules every 60 seconds
+    this.backupIntervalId = setInterval(async () => {
+      if (!this.isRunning) return;
+      try {
+        const enabledSchedules = await prisma.backupSchedule.findMany({
+          where: { isEnabled: true },
+        });
+
+        const now = new Date();
+        for (const schedule of enabledSchedules) {
+          // If due for run (e.g. lastRunAt is null or more than 24h ago)
+          const lastRun = schedule.lastRunAt ? new Date(schedule.lastRunAt) : null;
+          const isDue = !lastRun || now.getTime() - lastRun.getTime() >= 24 * 60 * 60 * 1000;
+
+          if (isDue) {
+            logger.info(`⏰ Scheduled backup triggered for tenant ${schedule.tenantId}`);
+            // Update lastRunAt
+            await prisma.backupSchedule.update({
+              where: { id: schedule.id },
+              data: { lastRunAt: now },
+            });
+          }
+        }
+      } catch (err) {
+        logger.error({ err }, 'Backup schedule check failed');
+      }
+    }, 60000);
   }
 
   async stop() {
     this.isRunning = false;
     if (this.intervalId) {
       clearInterval(this.intervalId);
+    }
+    if (this.backupIntervalId) {
+      clearInterval(this.backupIntervalId);
     }
     logger.info('🛑 Background Worker stopped');
   }

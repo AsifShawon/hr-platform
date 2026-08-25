@@ -140,4 +140,42 @@ describe('Phase 6 & 7: Card-Kit Geometry, Print Math & Document Engine Tests', (
     expect(shortSize).toBe(11);
     expect(longSize).toBe(7.5); // Scaled down to floor
   });
+
+  it('sanitizes and escapes all user-supplied HTML/scripts in generateCardHtmlDocument (SEC-CRIT-01)', () => {
+    const layout = createClassicVerticalPreset();
+    const maliciousWorker = {
+      displayName: '<script>alert("xss")</script>',
+      displayNameLatin: '<img src=x onerror=alert(1)>',
+      displayNameNative: '<iframe src="javascript:alert(1)"></iframe>',
+      employeeNumber: 'EMP-"><script>bad()</script>',
+      jobTitle: 'Lead & Chief <CEO>',
+      department: 'R&D "Top Secret"',
+      bloodGroup: 'A+ <script>',
+      emergencyContact: '+880 1711 <script>',
+      orgName: 'Acme & Co <script>',
+      orgNameBangla: 'একমি & কোং <script>',
+    };
+
+    const html = generateCardHtmlDocument({
+      layout,
+      worker: maliciousWorker,
+      side: 'duplex',
+    });
+
+    // Verify unescaped tags are NOT present
+    expect(html).not.toContain('<script>alert("xss")</script>');
+    expect(html).not.toContain('<img src=x onerror=alert(1)>');
+    expect(html).not.toContain('<iframe src="javascript:alert(1)">');
+    expect(html).not.toContain('<script>bad()</script>');
+    expect(html).not.toContain('<CEO>');
+
+    // Verify properly escaped entity representations
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+    expect(html).toContain('&lt;iframe src=&quot;javascript:alert(1)&quot;&gt;&lt;/iframe&gt;');
+    expect(html).toContain('EMP-&quot;&gt;&lt;script&gt;bad()&lt;/script&gt;');
+    expect(html).toContain('Lead &amp; Chief &lt;CEO&gt;');
+    expect(html).toContain('R&amp;D &quot;Top Secret&quot;');
+    expect(html).toContain('Acme &amp; Co &lt;script&gt;');
+    expect(html).toContain('একমি &amp; কোং &lt;script&gt;');
+  });
 });

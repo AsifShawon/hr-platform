@@ -307,6 +307,7 @@ export default function PeopleRegistryPage() {
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
             <select
+              aria-label="Filter by employment status"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);
@@ -323,6 +324,7 @@ export default function PeopleRegistryPage() {
             </select>
 
             <select
+              aria-label="Filter by job category"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
@@ -417,6 +419,7 @@ export default function PeopleRegistryPage() {
                 <th className="py-3.5 px-4 w-10">
                   <input
                     type="checkbox"
+                    aria-label="Select all workers"
                     checked={people.length > 0 && selectedIds.size === people.length}
                     onChange={toggleSelectAll}
                     className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
@@ -472,6 +475,7 @@ export default function PeopleRegistryPage() {
                       <td className="py-3.5 px-4">
                         <input
                           type="checkbox"
+                          aria-label={`Select worker ${person.displayName}`}
                           checked={isSelected}
                           onChange={() => toggleSelectRow(emp?.id)}
                           className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
@@ -599,6 +603,7 @@ export default function PeopleRegistryPage() {
 
           <div className="flex items-center gap-2">
             <select
+              aria-label="Rows per page"
               value={pagination.limit}
               onChange={(e) =>
                 setPagination((prev) => ({ ...prev, limit: Number(e.target.value), page: 1 }))
@@ -616,6 +621,7 @@ export default function PeopleRegistryPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Previous Page"
                 onClick={() => setPagination((prev) => ({ ...prev, page: prev.page - 1 }))}
                 disabled={!pagination.hasPrevPage}
               >
@@ -628,6 +634,7 @@ export default function PeopleRegistryPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                aria-label="Next Page"
                 onClick={() => setPagination((prev) => ({ ...prev, page: prev.page + 1 }))}
                 disabled={!pagination.hasNextPage}
               >
@@ -649,10 +656,12 @@ export default function PeopleRegistryPage() {
 
             <form onSubmit={handleBulkStatusChange} className="mt-4 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="bulk-target-status" className="block text-xs font-bold text-slate-700 mb-1">
                   Target Status *
                 </label>
                 <select
+                  id="bulk-target-status"
+                  aria-label="Target Status"
                   value={bulkNewStatus}
                   onChange={(e) => setBulkNewStatus(e.target.value as EmploymentStatus)}
                   className="w-full h-10 px-3 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"

@@ -148,4 +148,30 @@ describe('Phase 3: Organization & Location Administration', () => {
       await expect(deleteLocation(tenantId, loc.id)).rejects.toThrow(LocationInUseError);
     });
   });
+
+  describe('Security & Multi-Tenant Isolation (SEC-HIGH-01)', () => {
+    it('prevents cross-tenant organization retrieval and scopes requests strictly to authenticated tenant', async () => {
+      // Create second tenant
+      const otherTenant = await prisma.tenant.create({
+        data: {
+          slug: `other-tenant-${Date.now()}`,
+          name: 'Other Tenant',
+        },
+      });
+
+      try {
+        const otherOrg = await createOrganization(otherTenant.id, {
+          name: 'Confidential Enterprise',
+          code: 'CONF_ENT',
+        });
+
+        // Attempting to retrieve otherTenant's org using tenantId must fail
+        await expect(getOrganizationById(tenantId, otherOrg.id)).rejects.toThrow(
+          OrganizationNotFoundError,
+        );
+      } finally {
+        await prisma.tenant.delete({ where: { id: otherTenant.id } }).catch(() => {});
+      }
+    });
+  });
 });

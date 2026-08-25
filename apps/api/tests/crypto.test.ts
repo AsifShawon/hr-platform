@@ -38,4 +38,11 @@ describe('Phase 4: Cryptography & Sensitive Field Protection', () => {
     expect(maskSensitiveIdentifier('1234')).toBe('••••');
     expect(maskSensitiveIdentifier('AB')).toBe('••');
   });
+
+  it('derives a 32-byte (256-bit) encryption key from environment configuration (SEC-CRIT-02)', async () => {
+    const { getEncryptionKey } = await import('../src/services/crypto.service.js');
+    const key = getEncryptionKey();
+    expect(key).toBeInstanceOf(Buffer);
+    expect(key.length).toBe(32);
+  });
 });

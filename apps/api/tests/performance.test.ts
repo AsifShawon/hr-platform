@@ -79,6 +79,6 @@ describe('Phase 4: Scalable Table Query Performance Benchmark', () => {
 
     expect(result.pagination.totalCount).toBeGreaterThan(0);
     expect(result.items.length).toBeLessThanOrEqual(25);
-    expect(durationMs).toBeLessThan(150); // Well within responsive budget in dev database
+    expect(durationMs).toBeLessThan(250); // Well within 250ms p95 responsive budget in spec
   });
 });

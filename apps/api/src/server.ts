@@ -21,6 +21,10 @@ import { customFieldRoutes } from './routes/custom-fields.js';
 import { mediaRoutes } from './routes/media.js';
 import { templateRoutes } from './routes/templates.js';
 import { renderRoutes } from './routes/render.js';
+import { importRoutes } from './routes/imports.js';
+import { exportRoutes } from './routes/exports.js';
+import { backupRoutes } from './routes/backups.js';
+import { restoreRoutes } from './routes/restore.js';
 
 export function buildServer() {
   const server = Fastify({
@@ -36,7 +40,19 @@ export function buildServer() {
   });
 
   server.register(helmet, {
-    contentSecurityPolicy: env.NODE_ENV === 'production',
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
   });
 
   server.register(cookie, {
@@ -45,10 +61,45 @@ export function buildServer() {
 
   server.register(sensible);
 
-  // Register Multipart for secure media/photo uploads (10MB file limit)
+  // CSRF Defense: Verify Origin / Referer on state-changing requests (POST, PUT, PATCH, DELETE)
+  server.addHook('preValidation', async (request, reply) => {
+    const mutatingMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (!mutatingMethods.includes(request.method)) {
+      return;
+    }
+
+    const origin = request.headers.origin || request.headers.referer;
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        const appUrl = new URL(env.APP_URL);
+        const isAllowedOrigin =
+          originUrl.host === appUrl.host ||
+          originUrl.hostname === 'localhost' ||
+          originUrl.hostname === '127.0.0.1' ||
+          originUrl.hostname.endsWith('.lan');
+
+        if (!isAllowedOrigin) {
+          return reply.code(403).send({
+            statusCode: 403,
+            error: 'Forbidden',
+            message: 'Cross-Site Request Forgery (CSRF) protection: untrusted origin.',
+          });
+        }
+      } catch {
+        return reply.code(403).send({
+          statusCode: 403,
+          error: 'Forbidden',
+          message: 'Invalid origin header format.',
+        });
+      }
+    }
+  });
+
+  // Register Multipart for secure media/package uploads (25MB package limit)
   server.register(multipart, {
     limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB
+      fileSize: 25 * 1024 * 1024, // 25MB
       files: 1,
     },
   });
@@ -72,6 +123,10 @@ export function buildServer() {
   server.register(mediaRoutes);
   server.register(templateRoutes);
   server.register(renderRoutes);
+  server.register(importRoutes);
+  server.register(exportRoutes);
+  server.register(backupRoutes);
+  server.register(restoreRoutes);
 
   return server;
 }

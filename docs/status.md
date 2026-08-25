@@ -1,9 +1,9 @@
 # Project Status
 
-## Current Status: Phase 4 Completed (Worker Registry, Employment Records & Sensitive Identity)
+## Current Status: Phase 12 Completed (Release-Quality Test Matrix, Accessibility & Validation Execution)
 
-- **Active Phase:** Phase 4 Complete -> Ready for Phase 5 (Batch Worker Import, CSV/Excel Ingestion & Data Validation Engine)
-- **Last Updated:** 2026-08-24
+- **Active Phase:** Phase 12 Complete -> Ready for General Release & Deployment Packaging
+- **Last Updated:** 2026-08-25
 
 ### Completed Milestones
 
@@ -177,6 +177,7 @@
   - TypeScript typechecking passing 100% across all 19 turbo tasks (`pnpm typecheck`).
   - Code formatting checked and compliant (`pnpm format:check`).
   - Vitest unit & integration tests passing across all packages (`pnpm test` -> 60 API tests, 7 card-kit tests, 19 turbo tasks).
+
 #### Phase 7: Deterministic, Physically Accurate Card Rendering & Print Calibration
 
 - [x] **Headless Chromium Print Renderer (`apps/worker`)**:
@@ -203,6 +204,106 @@
   - Playwright multi-viewport E2E test suite passing **165/165 tests across 5 browser viewports** (`pnpm test:e2e`).
   - Production Next.js build clean and passing (`pnpm build`).
 
+#### Phase 10: Local Product Recoverability, Encrypted Backups & System Health
+
+- [x] **AES-256-GCM Encrypted Backup Bundles (`.hrbackup`)**:
+  - Binary envelope with 64-byte `HRBK` header, format version, PBKDF2/Argon2id salt, and AES-256-GCM nonce.
+  - Complete packaging of database records, media assets, configuration, and SHA-256 manifest digests.
+  - Zero stored passphrases; keys derived in-memory on demand.
+  - Post-creation self-verification testing authentication tag and manifest digests immediately upon creation.
+  - Configurable retention schedule (keep last $N$ backups) and storage safety advisories for external directories.
+- [x] **Privileged 3-Step Restore Wizard & Disaster Recovery**:
+  - Pre-flight dry inspection reporting entity counts, media volume, and schema/app version compatibility without mutating state.
+  - Mandatory System Owner re-authentication.
+  - Automatic pre-restore rollback safety snapshot created prior to database replacement.
+  - Offline CLI disaster recovery tool (`apps/api/src/scripts/restore-cli.ts`) for physical server recovery when the web UI is unreachable.
+- [x] **Internal LAN TLS & Mobile CA Trust**:
+  - Loopback-only gating on fresh installations until activated.
+  - Gated LAN mode toggling with `system.manage` authorization.
+  - Caddy internal TLS CA integration and certificate download (`GET /api/system/tls/root-ca`).
+  - Step-by-step device-trust guides for iOS and Android enabling trusted secure contexts for smartphone camera capture over factory Wi-Fi.
+- [x] **System Health & Redacted Diagnostic Telemetry**:
+  - Health Dashboard (`/admin/system`) with 7-component matrix (Web, API, DB, Worker, Storage, Renderer, Backups).
+  - Storage volume monitor with low-disk alerts (<10% or <2GB).
+  - Last backup age tracking with warnings (>7 days).
+  - One-click sanitized support bundle export for vendor assistance without leaking credentials or employee PII.
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing across all turbo tasks (`pnpm typecheck`).
+  - Vitest unit & integration tests passing across all packages (`pnpm test`).
+  - Playwright multi-viewport E2E test suite passing (`pnpm test:e2e`).
+
+#### Phase 11: Security & Privacy Review, Threat Modeling & Defensive Remediation
+
+- [x] **Comprehensive Threat Model**:
+  - Full threat assessment covering all 12 operational attack vectors: local unauthenticated PC user, malicious LAN adversary, compromised low-privilege operator, cross-tenant SaaS attacker, malicious file payloads (CSV/ZIP/images/SVG), session theft, curious print operators, lost `.hrbackup` files, renderer sandbox escape, supply chain/container risks, reverse proxy trust, and denial-of-service vectors.
+- [x] **Security Vulnerability Remediation Register**:
+  - **`SEC-CRIT-01` (HTML Injection in Physical Card Renderer)**: Implemented strict `escapeHtml()` entity encoding across all user-supplied employee and organization fields in `generateCardHtmlDocument` within `@hr/card-kit`.
+  - **`SEC-CRIT-02` (Insecure Fallback Key in Crypto Service)**: Added mandatory `SYSTEM_ENCRYPTION_KEY` validation in `@hr/config` with min 32-character enforcement and guard throwing in production on insecure default fallback.
+  - **`SEC-HIGH-01` (Cross-Tenant Org Logo Isolation)**: Added `Permission.PEOPLE_VIEW` authorization and strictly scoped `/api/organizations/:id/logo` to `request.user.tenantId`, removing cross-tenant fallback DB query.
+  - **`SEC-HIGH-02` (Container Non-Root Execution)**: Added `USER node` (UID 1000) non-root user execution in `Dockerfile.api`, `Dockerfile.worker`, and `Dockerfile.web`.
+  - **`SEC-HIGH-03` (CSRF & Origin Verification)**: Added Origin/Referer verification preValidation hook on mutating API endpoints (`POST`, `PUT`, `PATCH`, `DELETE`) and configured strict Helmet CSP.
+  - **`SEC-MED-01` (Memory Eviction in Auth Rate Limiter)**: Added automated TTL sweep and 5,000-entry capacity limit to in-memory login failure tracker map.
+  - **`SEC-MED-02` (Export Download Audit Trail)**: Added `AuditAction.EXPORT_DOWNLOADED` event tracking on export ZIP stream downloads.
+- [x] **Privacy & Data-Flow Inventory**:
+  - Complete data classification matrix documented in `docs/security.md` covering Government Identity, Biographical Data, Biometrics/Photos, Authentication Secrets, and Card Snapshot Provenance.
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing 100% across all 20 turbo tasks (`pnpm typecheck`).
+  - Unit and integration tests passing with dedicated security regression suites (`pnpm test`).
+
+#### Phase 12: Release-Quality Test Matrix, Accessibility & Validation Execution
+
+- [x] **10-Journey Functional E2E Matrix (`apps/web/e2e/release-e2e-matrix.spec.ts`)**:
+  - Full end-to-end multi-viewport Playwright execution covering all 10 critical user journeys:
+    1. Fresh local activation ceremony and company profile setup (`/activate`, `/admin/company`).
+    2. System Owner provisions custom roles and scoped user accounts (`/admin/roles`, `/admin/users`).
+    3. HR Operator registers worker with Latin & Bengali script and photo (`/people/new`).
+    4. HR Manager configures bilingual physical card template and assignment (`/cards/templates`, `/cards/assignments`).
+    5. Print Operator inspects physical calibration and exact 60 × 90 mm geometry (`/cards/calibration`).
+    6. Card replacement workflow with required reprint reason and revocation audit.
+    7. Data export gating and sensitive field exclusion policy (`/import-export/export`).
+    8. CSV & ZIP ingestion pipeline with pre-commit dry-run simulation (`/import-export/import`).
+    9. AES-256-GCM encrypted backup generation and safe restore pre-flight (`/admin/backups`, `/admin/restore`).
+    10. LAN secure context mode and root CA trust management (`/admin/system`).
+- [x] **WCAG 2.2 AA Accessibility & Assistive Navigation Suite (`apps/web/e2e/accessibility-wcag.spec.ts`)**:
+  - Automated `axe-core` accessibility scans passing with 0 violations across all major routes (`/`, `/login`, `/dashboard`, `/people`, `/people/new`, `/cards/calibration`).
+  - Keyboard navigation, visible focus indicators, `tabIndex={0}` on scrollable table regions, and modal `Escape` key listeners verified.
+  - 200% desktop zoom reflow test passing without critical horizontal clipping.
+- [x] **Fault Injection, Concurrency & Chaos Suite (`apps/api/tests/reliability-chaos.test.ts`)**:
+  - Optimistic locking collision detection (`ConcurrencyConflictError`).
+  - AES-256-GCM ciphertext tampering and authentication tag tampering detection.
+  - CSV formula injection sanitization (`=`, `+`, `-`, `@`, `\t`, `\r`).
+  - Deterministic HMAC blind indexing stability and sensitive identifier masking.
+- [x] **Multi-Viewport & Responsive Matrix**:
+  - 90/90 tests passing across Desktop Chromium, Mobile Chrome (360×640 px), Tablet Chrome (768×1024 px), Desktop Standard (1280×800 px), and Desktop Wide (1440×900 px).
+- [x] **Performance & Workload Benchmark (`tests/k6/load-test-matrix.js`)**:
+  - k6 workload definitions for 50 VUs sustained concurrency with strict p95 $\le 350\text{ms}$ thresholds.
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing 100% across all 20 turbo tasks (`pnpm typecheck`).
+  - Unit and chaos test suites passing 100% (`pnpm test`).
+  - Playwright multi-viewport release matrix passing **90/90 tests** (`pnpm test:e2e`).
+  - Production Next.js build clean and passing (`pnpm build`).
+
+#### Phase 13: On-Premises MVP Production Packaging & Clean-Machine Pilot
+
+- [x] **Production Compose Mesh (`docker-compose.prod.yml`)**:
+  - Pinned service images (`node:22-alpine`, `postgres:16.4-alpine`, `caddy:2.8.4-alpine`) with bounded CPU/RAM limits.
+  - JSON-file log rotation (10MB max, 5 files) across all containers.
+  - Isolated internal Docker bridge network (`hr_mesh_prod_network`); zero host port publishing for PostgreSQL (5432) or API (3001).
+  - Dedicated persistent volumes with strict permission ownership: `hr_postgres_prod_data`, `hr_media_prod_data`, `hr_backup_prod_data`, `hr_caddy_prod_data`.
+- [x] **Transparent Pilot Management Scripts (`pilot.sh` & `pilot.ps1`)**:
+  - Unified commands for Linux and Windows: `install`, `start`, `stop`, `status`, `backup`, `upgrade`, `lan-enable`, `lan-disable`, and `support-bundle`.
+  - Initial installation defaults to loopback-only binding (`127.0.0.1`) until activation ceremony finishes.
+  - One-click LAN enablement with automated internal TLS and mobile Root CA download.
+- [x] **Release Manifest, SBOM & Provenance**:
+  - Cryptographic SHA-256 integrity manifest generated for all bundle files (`release/release-manifest.json`).
+  - CycloneDX-compliant `release/sbom.json` documenting all production package dependencies with zero development fixtures.
+  - Zero cloud dependencies, zero external CDNs, self-hosted Noto Sans and Noto Sans Bengali font assets.
+- [x] **Pilot Runbooks & Acceptance Guidelines**:
+  - Comprehensive Pilot Administrator Guide ([`docs/PILOT-RUNBOOK.md`](file:///d:/Github%20repos/hr-platform/docs/PILOT-RUNBOOK.md)).
+  - Hardware, OS, and Firewall Prerequisites ([`docs/PREREQUISITES.md`](file:///d:/Github%20repos/hr-platform/docs/PREREQUISITES.md)).
+  - Troubleshooting & Disaster Recovery Guide ([`docs/TROUBLESHOOTING.md`](file:///d:/Github%20repos/hr-platform/docs/TROUBLESHOOTING.md)).
+  - Full Release Changelog ([`CHANGELOG.md`](file:///d:/Github%20repos/hr-platform/CHANGELOG.md)).
+
 ### Next Gate
 
-- **Phase 8**: Card Issuance Lifecycle, Production Print Queues, Batch Imposition Export, and Revocation Workflow.
+- **MVP Pilot General Availability**: On-site clean-machine deployment and customer pilot execution.

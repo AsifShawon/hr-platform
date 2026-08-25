@@ -1,0 +1,143 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:2ef2f82e-8f14-4d3d-84d4-22a8683500d0",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-08-25T06:25:43.577Z",
+    "component": {
+      "type": "application",
+      "name": "hr-platform",
+      "version": "1.0.0-pilot.1",
+      "description": "Local-first on-premises HR ID card platform MVP"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "@fastify/cookie",
+      "version": "11.1.2",
+      "purl": "pkg:npm/@fastify/cookie@11.1.2",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@fastify/cors",
+      "version": "10.0.2",
+      "purl": "pkg:npm/@fastify/cors@10.0.2",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@fastify/helmet",
+      "version": "13.0.1",
+      "purl": "pkg:npm/@fastify/helmet@13.0.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@fastify/multipart",
+      "version": "10.1.1",
+      "purl": "pkg:npm/@fastify/multipart@10.1.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@fastify/sensible",
+      "version": "6.0.3",
+      "purl": "pkg:npm/@fastify/sensible@6.0.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@node-rs/argon2",
+      "version": "2.1.0",
+      "purl": "pkg:npm/@node-rs/argon2@2.1.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "adm-zip",
+      "version": "0.6.0",
+      "purl": "pkg:npm/adm-zip@0.6.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "archiver",
+      "version": "8.0.0",
+      "purl": "pkg:npm/archiver@8.0.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "fastify",
+      "version": "5.2.1",
+      "purl": "pkg:npm/fastify@5.2.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "fastify-plugin",
+      "version": "6.0.0",
+      "purl": "pkg:npm/fastify-plugin@6.0.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "pino",
+      "version": "9.6.0",
+      "purl": "pkg:npm/pino@9.6.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "sharp",
+      "version": "0.35.3",
+      "purl": "pkg:npm/sharp@0.35.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "lucide-react",
+      "version": "1.34.0",
+      "purl": "pkg:npm/lucide-react@1.34.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "next",
+      "version": "15.1.7",
+      "purl": "pkg:npm/next@15.1.7",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "react",
+      "version": "19.0.0",
+      "purl": "pkg:npm/react@19.0.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "react-dom",
+      "version": "19.0.0",
+      "purl": "pkg:npm/react-dom@19.0.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "pdf-lib",
+      "version": "1.17.1",
+      "purl": "pkg:npm/pdf-lib@1.17.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "playwright",
+      "version": "1.50.1",
+      "purl": "pkg:npm/playwright@1.50.1",
+      "scope": "required"
+    }
+  ]
+}

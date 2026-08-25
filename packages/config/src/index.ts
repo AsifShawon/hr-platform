@@ -15,6 +15,10 @@ export const envSchema = z.object({
     .min(1)
     .default('postgresql://postgres:postgres@localhost:5432/hr_platform_dev?schema=public'),
   APP_SECRET: z.string().min(16).default('development_secret_do_not_use_in_production_min32chars'),
+  SYSTEM_ENCRYPTION_KEY: z
+    .string()
+    .min(32, 'SYSTEM_ENCRYPTION_KEY must be at least 32 characters long')
+    .optional(),
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   STORAGE_LOCAL_PATH: z.string().default('./storage/uploads'),
   DEFAULT_LOCALE: z.string().default('en'),

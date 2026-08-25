@@ -453,7 +453,12 @@ export default function LandingPage() {
             </div>
 
             {/* Interactive Tab Panels */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-8 shadow-inner">
+            <div
+              id={`panel-${activePreviewTab}`}
+              role="tabpanel"
+              aria-labelledby={`tab-${activePreviewTab}`}
+              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-8 shadow-inner"
+            >
               {activePreviewTab === 'registry' && (
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-4">

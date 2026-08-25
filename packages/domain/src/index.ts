@@ -212,7 +212,17 @@ export enum AuditAction {
   PHONE_HANDOFF_INITIATED = 'phone_handoff.initiated',
   PHONE_HANDOFF_COMPLETED = 'phone_handoff.completed',
   DATA_EXPORTED = 'data.exported',
+  DATA_IMPORTED = 'data.imported',
+  IMPORT_DRY_RUN_EXECUTED = 'import.dry_run_executed',
+  EXPORT_DOWNLOADED = 'export.downloaded',
   BACKUP_CREATED = 'backup.created',
+  BACKUP_VERIFIED = 'backup.verified',
+  BACKUP_DELETED = 'backup.deleted',
+  BACKUP_SCHEDULE_UPDATED = 'backup.schedule_updated',
+  RESTORE_INSPECTED = 'restore.inspected',
+  RESTORE_EXECUTED = 'restore.executed',
+  RESTORE_FAILED = 'restore.failed',
+  SUPPORT_BUNDLE_CREATED = 'system.support_bundle_created',
   CARD_ISSUED = 'card.issued',
   CARD_REVOKED = 'card.revoked',
   TEMPLATE_CREATED = 'template.created',
@@ -560,4 +570,265 @@ export interface TemplateResolutionResult {
   layout: CardLayoutSpecification;
   targetType: TemplateAssignmentTarget;
   resolutionReason: string;
+}
+
+// ==============================================================================
+// Phase 9: Data Portability, Safe Import & Export Engine Models
+// ==============================================================================
+
+export enum ImportDuplicateStrategy {
+  REJECT_DUPLICATES = 'REJECT_DUPLICATES',
+  SKIP_EXISTING = 'SKIP_EXISTING',
+  UPDATE_EXISTING = 'UPDATE_EXISTING',
+}
+
+export enum ImportCommitPolicy {
+  ALL_OR_NOTHING = 'ALL_OR_NOTHING',
+  PARTIAL_SUCCESS = 'PARTIAL_SUCCESS',
+}
+
+export enum ImportJobStatus {
+  PENDING = 'PENDING',
+  PARSING = 'PARSING',
+  PREVIEW_READY = 'PREVIEW_READY',
+  DRY_RUN_COMPLETED = 'DRY_RUN_COMPLETED',
+  COMMITTING = 'COMMITTING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum ExportJobStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  EXPIRED = 'EXPIRED',
+}
+
+export interface ImportValidationIssue {
+  rowNumber: number;
+  column?: string;
+  field?: string;
+  value?: string;
+  severity: 'ERROR' | 'WARNING';
+  code: string;
+  message: string;
+}
+
+export interface ImportValidationReport {
+  totalRows: number;
+  validRows: number;
+  invalidRows: number;
+  duplicateRows: number;
+  issues: ImportValidationIssue[];
+  duplicateWarnings: Array<{
+    rowNumber: number;
+    employeeNumber: string;
+    displayName: string;
+    existingPersonId: string;
+    matchCriteria: string;
+  }>;
+}
+
+export interface ImportColumnMapping {
+  displayName?: string;
+  displayNameLatin?: string;
+  displayNameNative?: string;
+  givenName?: string;
+  familyName?: string;
+  middleName?: string;
+  phoneticName?: string;
+  employeeNumber?: string;
+  jobTitle?: string;
+  jobCategory?: string;
+  joinDate?: string;
+  endDate?: string;
+  status?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  bloodGroup?: string;
+  primaryPhone?: string;
+  primaryEmail?: string;
+  organizationId?: string;
+  organizationCode?: string;
+  locationId?: string;
+  locationCode?: string;
+  locationName?: string;
+  orgUnitId?: string;
+  orgUnitCode?: string;
+  orgUnitName?: string;
+  identityDocumentType?: string;
+  identityDocumentNumber?: string;
+  photoPath?: string;
+  customFields?: Record<string, string>;
+}
+
+export interface ExportManifest {
+  schemaVersion: string;
+  exportVersion: string;
+  generatedAt: string;
+  appVersion: string;
+  tenantId: string;
+  organization?: {
+    id: string;
+    name: string;
+    code: string;
+  };
+  counts: {
+    totalWorkers: number;
+    totalImages: number;
+    totalIdentityDocuments: number;
+  };
+  locale: string;
+  timezone: string;
+  includedFields: string[];
+  sensitiveFieldsIncluded: boolean;
+  checksums: Record<string, string>;
+}
+
+// ==============================================================================
+// Phase 10: Local Product Recoverability, Encrypted Backups & System Health
+// ==============================================================================
+
+export enum BackupStatus {
+  PENDING = 'PENDING',
+  RUNNING = 'RUNNING',
+  VERIFYING = 'VERIFYING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
+export enum BackupTrigger {
+  MANUAL = 'MANUAL',
+  SCHEDULED = 'SCHEDULED',
+  PRE_RESTORE_SAFETY = 'PRE_RESTORE_SAFETY',
+}
+
+export interface BackupJobRecord {
+  id: string;
+  tenantId: string;
+  status: BackupStatus;
+  trigger: BackupTrigger;
+  fileName: string;
+  filePath: string;
+  fileSizeBytes?: number | null;
+  checksumSha256?: string | null;
+  appVersion: string;
+  schemaVersion: string;
+  totalRecords: number;
+  totalMediaFiles: number;
+  isVerified: boolean;
+  verifiedAt?: Date | string | null;
+  errorMessage?: string | null;
+  durationMs?: number | null;
+  createdByUserId?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface BackupScheduleRecord {
+  id: string;
+  tenantId: string;
+  isEnabled: boolean;
+  cronExpression: string;
+  retentionCount: number;
+  targetDirectory: string;
+  lastRunAt?: Date | string | null;
+  nextRunAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface BackupManifest {
+  bundleVersion: number;
+  appVersion: string;
+  schemaVersion: string;
+  createdAt: string;
+  tenant: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+  counts: {
+    organizations: number;
+    locations: number;
+    orgUnits: number;
+    people: number;
+    employments: number;
+    identityDocuments: number;
+    mediaAssets: number;
+    cardTemplates: number;
+    cardIssues: number;
+    auditEvents: number;
+    users: number;
+    roles: number;
+  };
+  mediaSizeBytes: number;
+  checksums: Record<string, string>;
+}
+
+export type RestoreCompatibilityStatus =
+  'COMPATIBLE' | 'WARNING_OLD_VERSION' | 'INCOMPATIBLE_NEWER_VERSION';
+
+export interface RestoreInspectionResult {
+  isValid: boolean;
+  compatibilityStatus: RestoreCompatibilityStatus;
+  appVersion: string;
+  schemaVersion: string;
+  currentAppVersion: string;
+  currentSchemaVersion: string;
+  createdAt: string;
+  tenant: {
+    id: string;
+    slug: string;
+    name: string;
+  };
+  counts: BackupManifest['counts'];
+  mediaSizeBytes: number;
+  warnings: string[];
+  errors: string[];
+}
+
+export type SystemComponentHealth = 'ok' | 'degraded' | 'error' | 'maintenance';
+
+export interface DiskSpaceInfo {
+  totalBytes: number;
+  freeBytes: number;
+  usedBytes: number;
+  usedPercentage: number;
+  isLowDisk: boolean;
+}
+
+export interface SystemDiagnostics {
+  status: SystemComponentHealth;
+  timestamp: string;
+  uptimeSeconds: number;
+  appVersion: string;
+  schemaVersion: string;
+  nodeVersion: string;
+  environment: string;
+  isActivated: boolean;
+  lanEnabled: boolean;
+  maintenanceMode: boolean;
+  components: {
+    web: { status: SystemComponentHealth };
+    api: { status: SystemComponentHealth };
+    database: { status: SystemComponentHealth; latencyMs?: number };
+    worker: { status: SystemComponentHealth; lastHeartbeat?: string };
+    storage: {
+      status: SystemComponentHealth;
+      writable: boolean;
+      isExternal: boolean;
+      path: string;
+    };
+    renderer: { status: SystemComponentHealth; poolReady: boolean };
+    backups: {
+      status: SystemComponentHealth;
+      lastBackupAt?: string | null;
+      lastBackupStatus?: BackupStatus | null;
+      daysSinceLastBackup?: number | null;
+      isWarning: boolean;
+    };
+  };
+  disk: DiskSpaceInfo;
 }

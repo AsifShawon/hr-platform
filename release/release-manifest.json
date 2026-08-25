@@ -1,0 +1,107 @@
+{
+  "name": "hr-platform-onprem-mvp",
+  "version": "v1.0.0-pilot.1",
+  "schemaVersion": "20260825_phase13_init",
+  "releaseDate": "2026-08-25",
+  "targetArchitecture": "linux/amd64, windows/amd64 (Docker Desktop/Engine)",
+  "minDockerVersion": "24.0.0+ / Compose v2.20+",
+  "files": [
+    {
+      "path": "docker-compose.prod.yml",
+      "bytes": 4757,
+      "sha256": "c87b51b54760130ed54b0dfa18ed221469f73575953c1b827611ec012a4c3d5e"
+    },
+    {
+      "path": "pilot.sh",
+      "bytes": 9046,
+      "sha256": "e2625ed26ac09022b02e5ae203971e98d4ffdf7a1300e7a1e736640f188b0d76"
+    },
+    {
+      "path": "pilot.ps1",
+      "bytes": 8703,
+      "sha256": "0d14bbe9c2a172df965a6471bf7fb36872836cac5ab6b02af4d7476f398044ea"
+    },
+    {
+      "path": ".env.example",
+      "bytes": 894,
+      "sha256": "21cd758e4c545ce7d508b7c4d7a9664388c49a651df1841bbb92dc9491c56263"
+    },
+    {
+      "path": "docker/caddy/Caddyfile.loopback",
+      "bytes": 538,
+      "sha256": "5649cdec072f5d9f9da79a82a7fc52fa3127fbb997b31292f9a30f86837ed825"
+    },
+    {
+      "path": "docker/caddy/Caddyfile.lan",
+      "bytes": 636,
+      "sha256": "27c8e065e92e9935a5279cf0c9920c170821c82df77c29cca118cfaae40f0be4"
+    },
+    {
+      "path": "docker/Dockerfile.api",
+      "bytes": 993,
+      "sha256": "178c285d7533097abbe48d6c4ae57da8d2977a7615347d93cf2380d1c626c310"
+    },
+    {
+      "path": "docker/Dockerfile.worker",
+      "bytes": 983,
+      "sha256": "bbda48fa787a6d426c526e493df1d996b77bd8ecbe0d10d5f656277f376f73ef"
+    },
+    {
+      "path": "docker/Dockerfile.web",
+      "bytes": 811,
+      "sha256": "79de62f1cb4c53cbb3dcf4a877bde631864523b5f2c40e27d894631e988e331d"
+    },
+    {
+      "path": "docker/Dockerfile.migration",
+      "bytes": 476,
+      "sha256": "937907708def555673da4affe339607d792d4f7ea374b40a609ccd3a55914298"
+    },
+    {
+      "path": "docs/PILOT-RUNBOOK.md",
+      "bytes": 4578,
+      "sha256": "dc1a51517be5ccbdd6bafc589cb090882d6e7d7a6b5cf43cfca0446cbf73da3d"
+    },
+    {
+      "path": "docs/PREREQUISITES.md",
+      "bytes": 2054,
+      "sha256": "c1c8c7ff2884aadf48c62a8f68abdd7cba8535179dc67084f1a9c850c27dcee1"
+    },
+    {
+      "path": "docs/TROUBLESHOOTING.md",
+      "bytes": 2835,
+      "sha256": "4c178dc1049605da8819cf1e4a07ec5275d383d01c2d35b6f6a2ab14c7054a6f"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "bytes": 5091,
+      "sha256": "10c095c86c7535896b1c9c1f4d3eded38988e3bbbb535fdbc2bfb4f10a7c2fac"
+    }
+  ],
+  "containerImages": [
+    {
+      "service": "caddy",
+      "image": "caddy:2.8.4-alpine",
+      "tag": "2.8.4-alpine"
+    },
+    {
+      "service": "postgres",
+      "image": "postgres:16.4-alpine",
+      "tag": "16.4-alpine"
+    },
+    {
+      "service": "api",
+      "image": "hr-api:v1.0.0-pilot.1",
+      "tag": "v1.0.0-pilot.1"
+    },
+    {
+      "service": "web",
+      "image": "hr-web:v1.0.0-pilot.1",
+      "tag": "v1.0.0-pilot.1"
+    },
+    {
+      "service": "worker",
+      "image": "hr-worker:v1.0.0-pilot.1",
+      "tag": "v1.0.0-pilot.1"
+    }
+  ]
+}

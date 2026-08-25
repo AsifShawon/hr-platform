@@ -20,6 +20,12 @@ import {
   BarcodeType,
   BarcodePayloadType,
   LocaleFallbackPolicy,
+  ImportDuplicateStrategy,
+  ImportCommitPolicy,
+  ImportJobStatus,
+  ExportJobStatus,
+  BackupStatus,
+  BackupTrigger,
 } from '@hr/domain';
 
 export const healthResponseSchema = z.object({
@@ -960,3 +966,286 @@ export const templateResolutionQuerySchema = z.object({
 });
 
 export type TemplateResolutionQuery = z.infer<typeof templateResolutionQuerySchema>;
+
+// ==============================================================================
+// Phase 9: Data Portability, Import & Export Schemas
+// ==============================================================================
+
+export const importDuplicateStrategySchema = z.nativeEnum(ImportDuplicateStrategy);
+export const importCommitPolicySchema = z.nativeEnum(ImportCommitPolicy);
+export const importJobStatusSchema = z.nativeEnum(ImportJobStatus);
+export const exportJobStatusSchema = z.nativeEnum(ExportJobStatus);
+
+export const importColumnMappingSchema = z.object({
+  displayName: z.string().optional(),
+  displayNameLatin: z.string().optional(),
+  displayNameNative: z.string().optional(),
+  givenName: z.string().optional(),
+  familyName: z.string().optional(),
+  middleName: z.string().optional(),
+  phoneticName: z.string().optional(),
+  employeeNumber: z.string().optional(),
+  jobTitle: z.string().optional(),
+  jobCategory: z.string().optional(),
+  joinDate: z.string().optional(),
+  endDate: z.string().optional(),
+  status: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  gender: z.string().optional(),
+  bloodGroup: z.string().optional(),
+  primaryPhone: z.string().optional(),
+  primaryEmail: z.string().optional(),
+  organizationId: z.string().optional(),
+  organizationCode: z.string().optional(),
+  locationId: z.string().optional(),
+  locationCode: z.string().optional(),
+  locationName: z.string().optional(),
+  orgUnitId: z.string().optional(),
+  orgUnitCode: z.string().optional(),
+  orgUnitName: z.string().optional(),
+  identityDocumentType: z.string().optional(),
+  identityDocumentNumber: z.string().optional(),
+  photoPath: z.string().optional(),
+  customFields: z.record(z.string()).optional(),
+});
+
+export type ImportColumnMappingDTO = z.infer<typeof importColumnMappingSchema>;
+
+export const configureImportMappingRequestSchema = z.object({
+  organizationId: z.string().uuid(),
+  columnMapping: importColumnMappingSchema,
+  duplicateStrategy: importDuplicateStrategySchema.default(
+    ImportDuplicateStrategy.REJECT_DUPLICATES,
+  ),
+  delimiter: z.string().min(1).max(5).optional(),
+  encoding: z.string().optional(),
+});
+
+export type ConfigureImportMappingRequest = z.infer<typeof configureImportMappingRequestSchema>;
+
+export const importCommitRequestSchema = z.object({
+  commitPolicy: importCommitPolicySchema.default(ImportCommitPolicy.ALL_OR_NOTHING),
+});
+
+export type ImportCommitRequest = z.infer<typeof importCommitRequestSchema>;
+
+export const exportWorkersRequestSchema = z.object({
+  organizationId: z.string().uuid().optional(),
+  locationId: z.string().uuid().optional(),
+  orgUnitId: z.string().uuid().optional(),
+  status: employmentStatusSchema.optional(),
+  jobCategory: jobCategorySchema.optional(),
+  includedFields: z
+    .array(z.string())
+    .min(1, 'At least one field must be selected')
+    .default([
+      'employeeNumber',
+      'displayName',
+      'displayNameLatin',
+      'displayNameNative',
+      'jobTitle',
+      'jobCategory',
+      'joinDate',
+      'status',
+      'primaryPhone',
+      'primaryEmail',
+      'photoFile',
+    ]),
+  includeSensitive: z.boolean().default(false),
+});
+
+export type ExportWorkersRequest = z.infer<typeof exportWorkersRequestSchema>;
+
+export const exportManifestSchema = z.object({
+  schemaVersion: z.string(),
+  exportVersion: z.string(),
+  generatedAt: z.string().datetime(),
+  appVersion: z.string(),
+  tenantId: z.string().uuid(),
+  organization: z
+    .object({
+      id: z.string().uuid(),
+      name: z.string(),
+      code: z.string(),
+    })
+    .optional(),
+  counts: z.object({
+    totalWorkers: z.number().int(),
+    totalImages: z.number().int(),
+    totalIdentityDocuments: z.number().int(),
+  }),
+  locale: z.string(),
+  timezone: z.string(),
+  includedFields: z.array(z.string()),
+  sensitiveFieldsIncluded: z.boolean(),
+  checksums: z.record(z.string()),
+});
+
+export type ExportManifestDTO = z.infer<typeof exportManifestSchema>;
+
+// ==============================================================================
+// Phase 10: Local Product Recoverability, Encrypted Backups & System Health
+// ==============================================================================
+
+export const backupStatusSchema = z.nativeEnum(BackupStatus);
+export const backupTriggerSchema = z.nativeEnum(BackupTrigger);
+
+export const createBackupRequestSchema = z.object({
+  passphrase: z
+    .string()
+    .min(10, 'Backup encryption passphrase must be at least 10 characters')
+    .max(128),
+  targetDirectory: z.string().optional(),
+});
+
+export type CreateBackupRequest = z.infer<typeof createBackupRequestSchema>;
+
+export const backupJobDTOSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  status: backupStatusSchema,
+  trigger: backupTriggerSchema,
+  fileName: z.string(),
+  filePath: z.string(),
+  fileSizeBytes: z.number().int().nullable().optional(),
+  checksumSha256: z.string().nullable().optional(),
+  appVersion: z.string(),
+  schemaVersion: z.string(),
+  totalRecords: z.number().int(),
+  totalMediaFiles: z.number().int(),
+  isVerified: z.boolean(),
+  verifiedAt: z.string().datetime().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  durationMs: z.number().int().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type BackupJobDTO = z.infer<typeof backupJobDTOSchema>;
+
+export const backupScheduleDTOSchema = z.object({
+  id: z.string().uuid(),
+  tenantId: z.string().uuid(),
+  isEnabled: z.boolean(),
+  cronExpression: z.string(),
+  retentionCount: z.number().int().min(1).max(100),
+  targetDirectory: z.string(),
+  lastRunAt: z.string().datetime().nullable().optional(),
+  nextRunAt: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type BackupScheduleDTO = z.infer<typeof backupScheduleDTOSchema>;
+
+export const updateBackupScheduleRequestSchema = z.object({
+  isEnabled: z.boolean(),
+  cronExpression: z.string().min(5),
+  retentionCount: z.number().int().min(1).max(100),
+  targetDirectory: z.string().min(1),
+});
+
+export type UpdateBackupScheduleRequest = z.infer<typeof updateBackupScheduleRequestSchema>;
+
+export const inspectRestoreRequestSchema = z.object({
+  passphrase: z.string().min(1, 'Passphrase is required'),
+});
+
+export type InspectRestoreRequest = z.infer<typeof inspectRestoreRequestSchema>;
+
+export const executeRestoreRequestSchema = z.object({
+  passphrase: z.string().min(1, 'Passphrase is required'),
+  ownerPassword: z.string().min(1, 'System Owner password confirmation is required'),
+  confirmRollbackAwareness: z.boolean().refine((val) => val === true, {
+    message: 'You must confirm awareness of the restore operation.',
+  }),
+});
+
+export type ExecuteRestoreRequest = z.infer<typeof executeRestoreRequestSchema>;
+
+export const restoreInspectionResultSchema = z.object({
+  isValid: z.boolean(),
+  compatibilityStatus: z.enum(['COMPATIBLE', 'WARNING_OLD_VERSION', 'INCOMPATIBLE_NEWER_VERSION']),
+  appVersion: z.string(),
+  schemaVersion: z.string(),
+  currentAppVersion: z.string(),
+  currentSchemaVersion: z.string(),
+  createdAt: z.string(),
+  tenant: z.object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+  }),
+  counts: z.object({
+    organizations: z.number().int(),
+    locations: z.number().int(),
+    orgUnits: z.number().int(),
+    people: z.number().int(),
+    employments: z.number().int(),
+    identityDocuments: z.number().int(),
+    mediaAssets: z.number().int(),
+    cardTemplates: z.number().int(),
+    cardIssues: z.number().int(),
+    auditEvents: z.number().int(),
+    users: z.number().int(),
+    roles: z.number().int(),
+  }),
+  mediaSizeBytes: z.number().int(),
+  warnings: z.array(z.string()),
+  errors: z.array(z.string()),
+});
+
+export type RestoreInspectionResultDTO = z.infer<typeof restoreInspectionResultSchema>;
+
+export const diskSpaceInfoSchema = z.object({
+  totalBytes: z.number(),
+  freeBytes: z.number(),
+  usedBytes: z.number(),
+  usedPercentage: z.number(),
+  isLowDisk: z.boolean(),
+});
+
+export const systemDiagnosticsSchema = z.object({
+  status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+  timestamp: z.string(),
+  uptimeSeconds: z.number(),
+  appVersion: z.string(),
+  schemaVersion: z.string(),
+  nodeVersion: z.string(),
+  environment: z.string(),
+  isActivated: z.boolean(),
+  lanEnabled: z.boolean(),
+  maintenanceMode: z.boolean(),
+  components: z.object({
+    web: z.object({ status: z.enum(['ok', 'degraded', 'error', 'maintenance']) }),
+    api: z.object({ status: z.enum(['ok', 'degraded', 'error', 'maintenance']) }),
+    database: z.object({
+      status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+      latencyMs: z.number().optional(),
+    }),
+    worker: z.object({
+      status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+      lastHeartbeat: z.string().optional(),
+    }),
+    storage: z.object({
+      status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+      writable: z.boolean(),
+      isExternal: z.boolean(),
+      path: z.string(),
+    }),
+    renderer: z.object({
+      status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+      poolReady: z.boolean(),
+    }),
+    backups: z.object({
+      status: z.enum(['ok', 'degraded', 'error', 'maintenance']),
+      lastBackupAt: z.string().nullable().optional(),
+      lastBackupStatus: backupStatusSchema.nullable().optional(),
+      daysSinceLastBackup: z.number().nullable().optional(),
+      isWarning: z.boolean(),
+    }),
+  }),
+  disk: diskSpaceInfoSchema,
+});
+
+export type SystemDiagnosticsDTO = z.infer<typeof systemDiagnosticsSchema>;

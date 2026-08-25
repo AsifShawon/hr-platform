@@ -63,6 +63,10 @@ model Tenant {
   cardTemplates          CardTemplate[]
   templateVersions       TemplateVersion[]
   templateAssignments    TemplateAssignment[]
+  importJobs             ImportJob[]
+  exportJobs             ExportJob[]
+  backupJobs             BackupJob[]
+  backupSchedules        BackupSchedule[]
 
   @@map("tenants")
 }
@@ -112,6 +116,7 @@ model Organization {
   employments        Employment[]
   roleGrants         RoleGrant[]
   cardTemplates      CardTemplate[]
+  importJobs         ImportJob[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -377,6 +382,9 @@ model User {
   sessions             Session[]
   recoveryCodes        RecoveryCode[]
   provisioningTokens   ProvisioningToken[]
+  importJobs           ImportJob[]
+  exportJobs           ExportJob[]
+  backupJobs           BackupJob[]
 
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -687,5 +695,170 @@ model TemplateAssignment {
   @@index([tenantId, targetType, targetId])
   @@map("template_assignments")
 }
+
+// ==============================================================================
+// Phase 9: Data Portability, Safe Import & Export Engine Models
+// ==============================================================================
+
+enum ImportDuplicateStrategy {
+  REJECT_DUPLICATES
+  SKIP_EXISTING
+  UPDATE_EXISTING
+}
+
+enum ImportCommitPolicy {
+  ALL_OR_NOTHING
+  PARTIAL_SUCCESS
+}
+
+enum ImportJobStatus {
+  PENDING
+  PARSING
+  PREVIEW_READY
+  DRY_RUN_COMPLETED
+  COMMITTING
+  COMPLETED
+  FAILED
+}
+
+enum ExportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+}
+
+model ImportJob {
+  id                String                  @id @default(uuid())
+  tenantId          String                  @map("tenant_id")
+  organizationId    String                  @map("organization_id")
+  status            ImportJobStatus         @default(PENDING)
+  fileName          String                  @map("file_name")
+  fileSizeBytes     Int                     @map("file_size_bytes")
+  storageKeyArchive String?                 @map("storage_key_archive")
+  storageKeyCsv     String?                 @map("storage_key_csv")
+  totalRows         Int                     @default(0) @map("total_rows")
+  processedRows     Int                     @default(0) @map("processed_rows")
+  validRows         Int                     @default(0) @map("valid_rows")
+  invalidRows       Int                     @default(0) @map("invalid_rows")
+  duplicateRows     Int                     @default(0) @map("duplicate_rows")
+  duplicateStrategy ImportDuplicateStrategy @default(REJECT_DUPLICATES) @map("duplicate_strategy")
+  commitPolicy      ImportCommitPolicy      @default(ALL_OR_NOTHING) @map("commit_policy")
+  columnMapping     Json?                   @map("column_mapping")
+  detectedDelimiter String?                 @default(",") @map("detected_delimiter")
+  detectedEncoding  String?                 @default("UTF-8") @map("detected_encoding")
+  previewRows       Json?                   @map("preview_rows")
+  validationReport  Json?                   @map("validation_report")
+  errorReportCsvKey String?                 @map("error_report_csv_key")
+  errorMessage      String?                 @map("error_message")
+  dryRunPassed      Boolean                 @default(false) @map("dry_run_passed")
+  isCommitted       Boolean                 @default(false) @map("is_committed")
+  createdByUserId   String                  @map("created_by_user_id")
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+
+  tenant            Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  organization      Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdByUser     User                    @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, organizationId])
+  @@index([tenantId, status])
+  @@map("import_jobs")
+}
+
+model ExportJob {
+  id                   String          @id @default(uuid())
+  tenantId             String          @map("tenant_id")
+  organizationId       String?         @map("organization_id")
+  status               ExportJobStatus @default(PENDING)
+  totalWorkers         Int             @default(0) @map("total_workers")
+  totalImages          Int             @default(0) @map("total_images")
+  fileSizeBytes        Int?            @map("file_size_bytes")
+  storageKeyZip        String?         @map("storage_key_zip")
+  checksumSha256       String?         @map("checksum_sha256")
+  downloadToken        String?         @unique @map("download_token")
+  downloadTokenExpires DateTime?       @map("download_token_expires")
+  downloadCount        Int             @default(0) @map("download_count")
+  filterCriteria       Json?           @map("filter_criteria")
+  includedFields       Json            @map("included_fields")
+  includeSensitive     Boolean         @default(false) @map("include_sensitive")
+  manifestSnapshot     Json?           @map("manifest_snapshot")
+  errorMessage         String?         @map("error_message")
+  expiresAt            DateTime        @map("expires_at")
+  createdByUserId      String          @map("created_by_user_id")
+  createdAt            DateTime        @default(now()) @map("created_at")
+  updatedAt            DateTime        @updatedAt @map("updated_at")
+
+  tenant               Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser        User            @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+  @@index([downloadToken])
+  @@index([expiresAt])
+  @@map("export_jobs")
+}
+
+enum BackupStatus {
+  PENDING
+  RUNNING
+  VERIFYING
+  COMPLETED
+  FAILED
+}
+
+enum BackupTrigger {
+  MANUAL
+  SCHEDULED
+  PRE_RESTORE_SAFETY
+}
+
+model BackupJob {
+  id              String        @id @default(uuid())
+  tenantId        String        @map("tenant_id")
+  status          BackupStatus  @default(PENDING)
+  trigger         BackupTrigger @default(MANUAL)
+  fileName        String        @map("file_name")
+  filePath        String        @map("file_path")
+  fileSizeBytes   Int?          @map("file_size_bytes")
+  checksumSha256  String?       @map("checksum_sha256")
+  appVersion      String        @map("app_version")
+  schemaVersion   String        @map("schema_version")
+  totalRecords    Int           @default(0) @map("total_records")
+  totalMediaFiles Int           @default(0) @map("total_media_files")
+  isVerified      Boolean       @default(false) @map("is_verified")
+  verifiedAt      DateTime?     @map("verified_at")
+  errorMessage    String?       @map("error_message")
+  durationMs      Int?          @map("duration_ms")
+  createdByUserId String?       @map("created_by_user_id")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  tenant          Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser   User?         @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@index([createdAt])
+  @@map("backup_jobs")
+}
+
+model BackupSchedule {
+  id              String    @id @default(uuid())
+  tenantId        String    @unique @map("tenant_id")
+  isEnabled       Boolean   @default(false) @map("is_enabled")
+  cronExpression  String    @default("0 2 * * *") @map("cron_expression")
+  retentionCount  Int       @default(7) @map("retention_count")
+  targetDirectory String    @default("./backups") @map("target_directory")
+  lastRunAt       DateTime? @map("last_run_at")
+  nextRunAt       DateTime? @map("next_run_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("backup_schedules")
+}
+
+
 
 

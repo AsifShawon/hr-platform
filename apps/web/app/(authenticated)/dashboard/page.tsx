@@ -21,7 +21,7 @@ import {
   MapPin,
   Shield,
 } from 'lucide-react';
-import { Button, Badge, CardPreviewChrome, FormGroup, ShowHidePasswordInput } from '@hr/ui';
+import { Button, Badge, CardPreviewChrome, FormGroup, ShowHidePasswordInput, Dialog } from '@hr/ui';
 
 interface SessionItem {
   id: string;
@@ -465,7 +465,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Sessions Table */}
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+        <div
+          tabIndex={0}
+          role="region"
+          aria-label="Active user sessions table"
+          className="overflow-x-auto border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#0F766E]"
+        >
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 text-slate-700 font-semibold">
               <tr>
@@ -532,81 +537,77 @@ export default function DashboardPage() {
       </div>
 
       {/* Password Change Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">Change Master Password</h3>
-              <p className="text-xs text-slate-500 mt-1">
-                Updating your password will invalidate all other active sessions for your security.
-              </p>
+      <Dialog
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title="Change Master Password"
+        description="Updating your password will invalidate all other active sessions for your security."
+      >
+        <div className="space-y-4 pt-2">
+          {passwordError && (
+            <div
+              role="alert"
+              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800"
+            >
+              {passwordError}
             </div>
+          )}
 
-            {passwordError && (
-              <div
-                role="alert"
-                className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800"
+          {passwordSuccess && (
+            <div
+              role="status"
+              className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-xs text-teal-800"
+            >
+              {passwordSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <FormGroup label="Current Password" htmlFor="curr-pass" isRequired>
+              <ShowHidePasswordInput
+                id="curr-pass"
+                required
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup label="New Password" htmlFor="new-pass" isRequired>
+              <ShowHidePasswordInput
+                id="new-pass"
+                required
+                placeholder="Min 10 characters with letters & numbers"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup label="Confirm New Password" htmlFor="confirm-new-pass" isRequired>
+              <ShowHidePasswordInput
+                id="confirm-new-pass"
+                required
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+              />
+            </FormGroup>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="md"
+                onClick={() => setShowPasswordModal(false)}
+                disabled={isChangingPassword}
               >
-                {passwordError}
-              </div>
-            )}
-
-            {passwordSuccess && (
-              <div
-                role="status"
-                className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-xs text-teal-800"
-              >
-                {passwordSuccess}
-              </div>
-            )}
-
-            <form onSubmit={handlePasswordChange} className="space-y-4">
-              <FormGroup label="Current Password" htmlFor="curr-pass" isRequired>
-                <ShowHidePasswordInput
-                  id="curr-pass"
-                  required
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
-              </FormGroup>
-
-              <FormGroup label="New Password" htmlFor="new-pass" isRequired>
-                <ShowHidePasswordInput
-                  id="new-pass"
-                  required
-                  placeholder="Min 10 characters with letters & numbers"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </FormGroup>
-
-              <FormGroup label="Confirm New Password" htmlFor="confirm-new-pass" isRequired>
-                <ShowHidePasswordInput
-                  id="confirm-new-pass"
-                  required
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                />
-              </FormGroup>
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  onClick={() => setShowPasswordModal(false)}
-                  disabled={isChangingPassword}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" variant="primary" size="md" isLoading={isChangingPassword}>
-                  Update Password
-                </Button>
-              </div>
-            </form>
-          </div>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="md" isLoading={isChangingPassword}>
+                Update Password
+              </Button>
+            </div>
+          </form>
         </div>
-      )}
+      </Dialog>
     </div>
   );
 }

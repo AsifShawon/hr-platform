@@ -486,6 +486,19 @@ export interface CardHtmlDocumentOptions {
   debugMode?: boolean;
 }
 
+/**
+ * Escapes special HTML characters to prevent XSS and DOM injection during card rendering.
+ */
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): string {
   const { layout, worker, side = 'duplex', includeBleed = false, debugMode = false } = options;
   const { dimensions, theme, front, back, localeConfig } = layout;
@@ -506,6 +519,11 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
   const frontNameSizePt = calculateAdaptiveFontSizePt(frontName, 11.5, 7.5, 20);
   const backNameSizePt = calculateAdaptiveFontSizePt(banglaName, 11.5, 7.5, 18);
 
+  const safeFrontName = escapeHtml(frontName);
+  const safeBanglaName = escapeHtml(banglaName);
+  const safeOrgName = escapeHtml(worker.orgName || 'COMPANY NAME');
+  const safeOrgNameBangla = escapeHtml(worker.orgNameBangla || worker.orgName || 'প্রতিষ্ঠানের নাম');
+
   const renderFrontCardHtml = () => `
     <div class="card-page front-page" style="width: ${widthMm}mm; height: ${heightMm}mm; background-color: ${theme.backgroundColor}; color: ${theme.textColor};">
       ${includeBleed && debugMode ? '<div class="bleed-guide"></div>' : ''}
@@ -516,13 +534,13 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
             ${
               front.header.showLogo
                 ? worker.logoBase64
-                  ? `<img src="${worker.logoBase64}" class="org-logo" alt="Logo" />`
-                  : `<div class="org-logo-placeholder" style="background-color: ${theme.accentColor}; color: ${theme.primaryColor};">${worker.orgName ? worker.orgName.charAt(0).toUpperCase() : 'A'}</div>`
+                  ? `<img src="${escapeHtml(worker.logoBase64)}" class="org-logo" alt="Logo" />`
+                  : `<div class="org-logo-placeholder" style="background-color: ${theme.accentColor}; color: ${theme.primaryColor};">${worker.orgName ? escapeHtml(worker.orgName.charAt(0).toUpperCase()) : 'A'}</div>`
                 : ''
             }
-            ${front.header.showOrgName ? `<span class="org-name">${worker.orgName || 'COMPANY NAME'}</span>` : ''}
+            ${front.header.showOrgName ? `<span class="org-name">${safeOrgName}</span>` : ''}
           </div>
-          ${front.header.customTitle ? `<span class="header-tag" style="background-color: ${theme.secondaryColor};">${front.header.customTitle}</span>` : ''}
+          ${front.header.customTitle ? `<span class="header-tag" style="background-color: ${theme.secondaryColor};">${escapeHtml(front.header.customTitle)}</span>` : ''}
         </div>
 
         <!-- Front Body -->
@@ -533,7 +551,7 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
             <div class="photo-container" style="width: ${front.photo.widthMm}mm; height: ${front.photo.heightMm}mm; border-radius: ${front.photo.borderRadiusMm}mm; border: ${front.photo.borderWidthMm}mm solid ${front.photo.borderColor || theme.secondaryColor};">
               ${
                 worker.photoBase64 || worker.photoUrl
-                  ? `<img src="${worker.photoBase64 || worker.photoUrl}" class="worker-photo" alt="${frontName}" />`
+                  ? `<img src="${escapeHtml(worker.photoBase64 || worker.photoUrl)}" class="worker-photo" alt="${safeFrontName}" />`
                   : `<div class="photo-placeholder"><svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg></div>`
               }
             </div>
@@ -541,17 +559,17 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
               : ''
           }
 
-          <h3 class="worker-name" style="font-size: ${frontNameSizePt}pt;">${frontName}</h3>
-          ${front.details.enabledFields.includes('jobTitle') && worker.jobTitle ? `<p class="worker-title" style="color: ${theme.secondaryColor};">${worker.jobTitle}</p>` : ''}
-          ${front.details.enabledFields.includes('department') && worker.department ? `<p class="worker-dept">${worker.department}</p>` : ''}
+          <h3 class="worker-name" style="font-size: ${frontNameSizePt}pt;">${safeFrontName}</h3>
+          ${front.details.enabledFields.includes('jobTitle') && worker.jobTitle ? `<p class="worker-title" style="color: ${theme.secondaryColor};">${escapeHtml(worker.jobTitle)}</p>` : ''}
+          ${front.details.enabledFields.includes('department') && worker.department ? `<p class="worker-dept">${escapeHtml(worker.department)}</p>` : ''}
 
           <div class="details-grid">
             ${
               front.details.enabledFields.includes('employeeNumber')
                 ? `
               <div class="detail-cell">
-                <span class="detail-label">${front.details.customLabels.employeeNumber || 'ID NO'}</span>
-                <span class="detail-value font-mono">${worker.employeeNumber}</span>
+                <span class="detail-label">${escapeHtml(front.details.customLabels.employeeNumber || 'ID NO')}</span>
+                <span class="detail-value font-mono">${escapeHtml(worker.employeeNumber)}</span>
               </div>
             `
                 : ''
@@ -560,8 +578,8 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
               front.details.enabledFields.includes('bloodGroup') && worker.bloodGroup
                 ? `
               <div class="detail-cell">
-                <span class="detail-label">${front.details.customLabels.bloodGroup || 'BLOOD'}</span>
-                <span class="detail-value blood-val">${worker.bloodGroup}</span>
+                <span class="detail-label">${escapeHtml(front.details.customLabels.bloodGroup || 'BLOOD')}</span>
+                <span class="detail-value blood-val">${escapeHtml(worker.bloodGroup)}</span>
               </div>
             `
                 : ''
@@ -576,14 +594,14 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
           <div class="card-footer">
             <div class="issued-box">
               <span class="issued-label">ISSUED</span>
-              <span class="issued-date font-mono">${worker.joinDate || '2026-01-01'}</span>
+              <span class="issued-date font-mono">${escapeHtml(worker.joinDate || '2026-01-01')}</span>
             </div>
             ${
               front.footer.showSignatureLine
                 ? `
               <div class="signature-box">
                 <div class="sig-line"></div>
-                <span class="sig-label">${front.footer.signatureLabel || 'Authorized Sign'}</span>
+                <span class="sig-label">${escapeHtml(front.footer.signatureLabel || 'Authorized Sign')}</span>
               </div>
             `
                 : ''
@@ -602,14 +620,14 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
       <div class="card-inner">
         <!-- Back Header (Bangla) -->
         <div class="card-header back-header" style="background-color: ${theme.primaryColor}; min-height: ${back.header.heightMm}mm;">
-          <span class="back-org-title font-bangla">${worker.orgNameBangla || worker.orgName || 'প্রতিষ্ঠানের নাম'}</span>
+          <span class="back-org-title font-bangla">${safeOrgNameBangla}</span>
         </div>
 
         <!-- Back Body (Bangla) -->
         <div class="card-body back-body font-bangla">
           <div class="bangla-name-box">
-            <span class="bangla-label">${back.details.customLabels.displayName || 'নাম'}:</span>
-            <span class="bangla-name-val" style="font-size: ${backNameSizePt}pt;">${banglaName}</span>
+            <span class="bangla-label">${escapeHtml(back.details.customLabels.displayName || 'নাম')}:</span>
+            <span class="bangla-name-val" style="font-size: ${backNameSizePt}pt;">${safeBanglaName}</span>
           </div>
 
           <div class="back-details-list">
@@ -617,8 +635,8 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
               back.details.enabledFields.includes('emergencyContact') && worker.emergencyContact
                 ? `
               <div class="back-row">
-                <span class="back-field-lbl">${back.details.customLabels.emergencyContact || 'জরুরি যোগাযোগ'}:</span>
-                <span class="back-field-val font-mono">${worker.emergencyContact}</span>
+                <span class="back-field-lbl">${escapeHtml(back.details.customLabels.emergencyContact || 'জরুরি যোগাযোগ')}:</span>
+                <span class="back-field-val font-mono">${escapeHtml(worker.emergencyContact)}</span>
               </div>
             `
                 : ''
@@ -627,8 +645,8 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
               back.details.enabledFields.includes('bloodGroup') && worker.bloodGroup
                 ? `
               <div class="back-row">
-                <span class="back-field-lbl">${back.details.customLabels.bloodGroup || 'রক্তের গ্রুপ'}:</span>
-                <span class="back-field-val blood-val">${worker.bloodGroup}</span>
+                <span class="back-field-lbl">${escapeHtml(back.details.customLabels.bloodGroup || 'রক্তের গ্রুপ')}:</span>
+                <span class="back-field-val blood-val">${escapeHtml(worker.bloodGroup)}</span>
               </div>
             `
                 : ''
@@ -646,14 +664,14 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
               </div>
               <div class="barcode-meta">
                 <span class="barcode-title">ডিজিটাল যাচাইকরণ</span>
-                <span class="barcode-serial font-mono">${worker.serialNumber || `${worker.employeeNumber}-SEC`}</span>
+                <span class="barcode-serial font-mono">${escapeHtml(worker.serialNumber || `${worker.employeeNumber}-SEC`)}</span>
               </div>
             </div>
           `
               : ''
           }
 
-          ${back.footer.instructionsText ? `<p class="terms-text">${back.footer.instructionsText}</p>` : ''}
+          ${back.footer.instructionsText ? `<p class="terms-text">${escapeHtml(back.footer.instructionsText)}</p>` : ''}
         </div>
 
         <!-- Back Footer -->
@@ -661,7 +679,7 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
           back.footer.showSignatureLine
             ? `
           <div class="card-footer back-footer font-bangla">
-            <span class="sig-label">${back.footer.signatureLabel || 'কার্ডধারীর স্বাক্ষর'}</span>
+            <span class="sig-label">${escapeHtml(back.footer.signatureLabel || 'কার্ডধারীর স্বাক্ষর')}</span>
             <div class="sig-line"></div>
           </div>
         `

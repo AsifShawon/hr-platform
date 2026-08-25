@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { env } from '@hr/config';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
@@ -6,10 +7,21 @@ const AUTH_TAG_LENGTH = 16;
 
 /**
  * Get or derive the 256-bit encryption key from system environment.
- * In development or local default mode, falls back to a deterministic local key.
+ * Ensures that in production mode, an explicit or secure key is mandated.
  */
-function getEncryptionKey(): Buffer {
-  const envKey = process.env.SYSTEM_ENCRYPTION_KEY || 'hr-platform-local-secure-key-2026-32b!';
+export function getEncryptionKey(): Buffer {
+  const envKey = env.SYSTEM_ENCRYPTION_KEY || env.APP_SECRET;
+
+  if (
+    env.NODE_ENV === 'production' &&
+    !env.SYSTEM_ENCRYPTION_KEY &&
+    env.APP_SECRET.includes('development_secret')
+  ) {
+    throw new Error(
+      'Insecure default encryption key detected in production. You must set a valid SYSTEM_ENCRYPTION_KEY or production APP_SECRET.',
+    );
+  }
+
   return crypto.createHash('sha256').update(envKey).digest();
 }
 

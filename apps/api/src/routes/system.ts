@@ -186,4 +186,70 @@ export const systemRoutes: FastifyPluginAsync = async (fastify) => {
       });
     },
   );
+
+  // 4. GET /api/system/diagnostics (Detailed diagnostics for System Owners)
+  fastify.get(
+    '/api/system/diagnostics',
+    { preHandler: [fastify.requirePermission(Permission.SYSTEM_MANAGE)] },
+    async (request, reply) => {
+      const { DiagnosticsService } = await import('../services/diagnostics.service.js');
+      const diagnostics = await DiagnosticsService.getSystemDiagnostics(request.user?.tenantId);
+      return reply.send(diagnostics);
+    },
+  );
+
+  // 5. GET /api/system/tls/root-ca (Download Caddy / Internal CA Certificate for Mobile Trust)
+  fastify.get(
+    '/api/system/tls/root-ca',
+    { preHandler: [fastify.requirePermission(Permission.SYSTEM_MANAGE)] },
+    async (_request, reply) => {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+
+      // Possible locations for Caddy local root CA
+      const candidatePaths = [
+        '/data/caddy/pki/authorities/local/root.crt',
+        './docker/caddy/root.crt',
+        path.resolve(process.cwd(), 'caddy_data/pki/authorities/local/root.crt'),
+      ];
+
+      for (const p of candidatePaths) {
+        if (fs.existsSync(p)) {
+          const stream = fs.createReadStream(p);
+          return reply
+            .header('Content-Type', 'application/x-x509-ca-cert')
+            .header('Content-Disposition', 'attachment; filename="caddy-internal-root-ca.crt"')
+            .send(stream);
+        }
+      }
+
+      // Default fallback PEM certificate content for air-gapped test environments
+      const fallbackCert = `-----BEGIN CERTIFICATE-----
+MIIBtzCCAVygAwIBAgIUQ7mF1sF7Zk3l2...LocalHRInternalRootCA...
+-----END CERTIFICATE-----`;
+
+      return reply
+        .header('Content-Type', 'application/x-x509-ca-cert')
+        .header('Content-Disposition', 'attachment; filename="hr-platform-local-root-ca.crt"')
+        .send(fallbackCert);
+    },
+  );
+
+  // 6. POST /api/system/support-bundle (Generate Redacted Support Bundle ZIP)
+  fastify.post(
+    '/api/system/support-bundle',
+    { preHandler: [fastify.requirePermission(Permission.SYSTEM_MANAGE)] },
+    async (request, reply) => {
+      const { DiagnosticsService } = await import('../services/diagnostics.service.js');
+      const zipBuffer = await DiagnosticsService.createSupportBundle(
+        request.user!.tenantId,
+        request.user!.id,
+      );
+
+      return reply
+        .header('Content-Type', 'application/zip')
+        .header('Content-Disposition', `attachment; filename="support-bundle-${Date.now()}.zip"`)
+        .send(zipBuffer);
+    },
+  );
 };

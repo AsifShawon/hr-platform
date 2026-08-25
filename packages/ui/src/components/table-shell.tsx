@@ -13,8 +13,11 @@ export const TableShell: React.FC<TableShellProps> = ({
 }) => {
   return (
     <div
+      tabIndex={0}
+      role="region"
+      aria-label="Scrollable table container"
       className={cn(
-        'w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm',
+        'w-full overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm focus:outline-none focus:ring-1 focus:ring-[#0F766E]',
         wrapperClassName,
       )}
     >

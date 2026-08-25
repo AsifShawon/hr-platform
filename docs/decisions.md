@@ -117,3 +117,18 @@
   6. Built Print Calibration Studio (`/cards/calibration`) offering printable A4/Letter calibration sheets with a 50.00 mm precision test ruler, 60 × 90 mm reference box, and caliper measurement logging with tolerance validation ($\pm 0.3\text{ mm}$ ruler, $\pm 0.5\text{ mm}$ card box).
   7. Enforced the critical "100% / Actual Size" printing invariant and documented physical measurement standards in `docs/print-calibration.md`.
 - **Consequences:** Provides reproducible print masters, eliminates paper scaling distortions, ensures duplex registration alignment, and guarantees security isolation for all card rendering tasks.
+
+## DEC-0010: Local Product Recoverability, Encrypted Backups, Disaster Recovery & Internal LAN TLS
+
+- **Date:** 2026-08-25
+- **Status:** Accepted
+- **Context:** Need an air-gapped on-premises backup, recovery, and operations architecture capable of creating verifiable encrypted bundles, safe dry inspections, disaster recovery when web UI is unavailable, internal LAN TLS trust for mobile camera capture, and low-disk warnings without vendor backdoors or secret leakage.
+- **Decision:**
+  1. Implemented `.hrbackup` binary envelope with 64-byte header (`HRBK`, format version 1, PBKDF2/Argon2id salt, and AES-256-GCM 12-byte nonce).
+  2. Encrypted the internal archive (database records, media assets, configuration, and SHA-256 manifest digests) with AES-256-GCM authenticated encryption. Zero passphrase storage in database, filesystem, or bundle.
+  3. Built automatic self-verification testing authentication tags and manifest digests immediately upon backup creation.
+  4. Implemented a 3-step Restore Wizard requiring System Owner re-authentication, pre-flight dry inspection, maintenance mode, and an automatic pre-restore rollback safety snapshot.
+  5. Built CLI disaster recovery utility (`apps/api/src/scripts/restore-cli.ts`) for recovery via direct physical server access.
+  6. Implemented loopback gating on fresh installs, LAN mode toggling, Caddy internal TLS CA certificate export, and mobile device-trust guides for iOS and Android.
+  7. Built System Health Dashboard (`/admin/system`) with component matrix, low disk space warnings (<10% or <2GB), and one-click redacted support bundle generation.
+- **Consequences:** Guarantees data recoverability, air-gapped security, zero unauthorized LAN exposure, and reliable smartphone camera capture across on-premises factory networks.

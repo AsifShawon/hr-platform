@@ -444,10 +444,12 @@ export default function AddWorkerWizardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-org" className="block text-xs font-bold text-slate-700 mb-1">
                   Organization *
                 </label>
                 <select
+                  id="worker-org"
+                  aria-label="Organization"
                   value={formData.organizationId}
                   onChange={(e) => setFormData({ ...formData, organizationId: e.target.value })}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
@@ -461,7 +463,7 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="employeeNumber" className="block text-xs font-bold text-slate-700 mb-1">
                   Employee Number (Unique ID) *
                 </label>
                 <Input
@@ -474,10 +476,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-location" className="block text-xs font-bold text-slate-700 mb-1">
                   Location / Facility
                 </label>
                 <select
+                  id="worker-location"
+                  aria-label="Location / Facility"
                   value={formData.locationId}
                   onChange={(e) => setFormData({ ...formData, locationId: e.target.value })}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
@@ -494,10 +498,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-org-unit" className="block text-xs font-bold text-slate-700 mb-1">
                   Department / Section / Line
                 </label>
                 <select
+                  id="worker-org-unit"
+                  aria-label="Department / Section / Line"
                   value={formData.orgUnitId}
                   onChange={(e) => setFormData({ ...formData, orgUnitId: e.target.value })}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
@@ -514,7 +520,7 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Job Title *</label>
+                <label htmlFor="jobTitle" className="block text-xs font-bold text-slate-700 mb-1">Job Title *</label>
                 <Input
                   id="jobTitle"
                   value={formData.jobTitle}
@@ -525,10 +531,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-job-category" className="block text-xs font-bold text-slate-700 mb-1">
                   Job Category *
                 </label>
                 <select
+                  id="worker-job-category"
+                  aria-label="Job Category"
                   value={formData.jobCategory}
                   onChange={(e) =>
                     setFormData({ ...formData, jobCategory: e.target.value as JobCategory })
@@ -545,10 +553,11 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-join-date" className="block text-xs font-bold text-slate-700 mb-1">
                   Join Date (YYYY-MM-DD) *
                 </label>
                 <Input
+                  id="worker-join-date"
                   type="date"
                   value={formData.joinDate}
                   onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
@@ -557,10 +566,12 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-status" className="block text-xs font-bold text-slate-700 mb-1">
                   Initial Status *
                 </label>
                 <select
+                  id="worker-status"
+                  aria-label="Initial Status"
                   value={formData.status}
                   onChange={(e) =>
                     setFormData({ ...formData, status: e.target.value as EmploymentStatus })
@@ -658,8 +669,10 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                <label htmlFor="worker-gender" className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
                 <select
+                  id="worker-gender"
+                  aria-label="Gender"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: e.target.value as Gender })}
                   className="w-full h-10 px-3 rounded-xl border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
@@ -672,8 +685,9 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
+                <label htmlFor="worker-blood-group" className="block text-xs font-bold text-slate-700 mb-1">Blood Group</label>
                 <Input
+                  id="worker-blood-group"
                   value={formData.bloodGroup}
                   onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
                   placeholder="e.g. O+, A+, AB+"
@@ -681,10 +695,11 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-phone" className="block text-xs font-bold text-slate-700 mb-1">
                   Primary Phone Number
                 </label>
                 <Input
+                  id="worker-phone"
                   type="tel"
                   value={formData.primaryPhone}
                   onChange={(e) => setFormData({ ...formData, primaryPhone: e.target.value })}
@@ -693,10 +708,11 @@ export default function AddWorkerWizardPage() {
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="worker-email" className="block text-xs font-bold text-slate-700 mb-1">
                   Primary Email Address
                 </label>
                 <Input
+                  id="worker-email"
                   type="email"
                   value={formData.primaryEmail}
                   onChange={(e) => setFormData({ ...formData, primaryEmail: e.target.value })}
@@ -731,10 +747,12 @@ export default function AddWorkerWizardPage() {
               {formData.hasIdentityDoc && (
                 <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    <label htmlFor="worker-id-doc-type" className="block text-[11px] font-bold text-slate-700 mb-1">
                       Document Type *
                     </label>
                     <select
+                      id="worker-id-doc-type"
+                      aria-label="Document Type"
                       value={formData.identityDocType}
                       onChange={(e) =>
                         setFormData({

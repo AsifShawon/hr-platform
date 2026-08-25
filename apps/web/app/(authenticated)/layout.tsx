@@ -19,6 +19,7 @@ import {
   Sparkles,
   CreditCard,
   Printer,
+  ArrowUpDown,
 } from 'lucide-react';
 import { Badge, Button } from '@hr/ui';
 
@@ -103,6 +104,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/people', label: 'People Registry', icon: Users },
+    { href: '/import-export', label: 'Import & Export', icon: ArrowUpDown },
     { href: '/cards/templates', label: 'Card Templates', icon: CreditCard },
     { href: '/organization', label: 'Organization Tree', icon: Building2 },
     { href: '/audit', label: 'Audit Trail', icon: History },
@@ -138,6 +140,18 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       label: 'User Management',
       icon: Users,
       desc: 'Scoped role assignments & operator accounts',
+    },
+    {
+      href: '/admin/system',
+      label: 'System & Health',
+      icon: Settings,
+      desc: 'Health status, LAN network & diagnostics',
+    },
+    {
+      href: '/admin/backups',
+      label: 'Backup & Restore',
+      icon: History,
+      desc: 'Encrypted bundles, schedules & disaster recovery',
     },
   ];
 

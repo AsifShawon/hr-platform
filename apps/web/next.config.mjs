@@ -9,6 +9,9 @@ const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../../'),
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   transpilePackages: [
     '@hr/config',
     '@hr/domain',

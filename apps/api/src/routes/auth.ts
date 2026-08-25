@@ -23,14 +23,32 @@ import { recordAuditEvent } from '../services/audit.service.js';
 interface FailureTracker {
   count: number;
   lockedUntil: number | null;
+  lastAttemptAt: number;
 }
 const loginFailures = new Map<string, FailureTracker>();
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_TRACKER_ENTRIES = 5000;
+
+function cleanupExpiredTrackers() {
+  const now = Date.now();
+  if (loginFailures.size > MAX_TRACKER_ENTRIES) {
+    loginFailures.clear();
+    return;
+  }
+  for (const [key, tracker] of loginFailures.entries()) {
+    if (tracker.lockedUntil && tracker.lockedUntil < now) {
+      loginFailures.delete(key);
+    } else if (!tracker.lockedUntil && now - tracker.lastAttemptAt > LOCKOUT_DURATION_MS) {
+      loginFailures.delete(key);
+    }
+  }
+}
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // 1. POST /api/auth/login
   fastify.post('/api/auth/login', async (request, reply) => {
+    cleanupExpiredTrackers();
     const parseResult = loginRequestSchema.safeParse(request.body);
     if (!parseResult.success) {
       return reply.code(400).send({
@@ -69,8 +87,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     // Check user existence and active status
     if (!user || !user.isActive) {
       // Record failure in rate limiter
-      const current = loginFailures.get(rateLimitKey) || { count: 0, lockedUntil: null };
+      const current = loginFailures.get(rateLimitKey) || {
+        count: 0,
+        lockedUntil: null,
+        lastAttemptAt: now,
+      };
       current.count += 1;
+      current.lastAttemptAt = now;
       if (current.count >= MAX_ATTEMPTS) {
         current.lockedUntil = now + LOCKOUT_DURATION_MS;
       }
@@ -110,8 +133,13 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     // Verify Argon2id password hash
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
     if (!isPasswordValid) {
-      const current = loginFailures.get(rateLimitKey) || { count: 0, lockedUntil: null };
+      const current = loginFailures.get(rateLimitKey) || {
+        count: 0,
+        lockedUntil: null,
+        lastAttemptAt: now,
+      };
       current.count += 1;
+      current.lastAttemptAt = now;
       if (current.count >= MAX_ATTEMPTS) {
         current.lockedUntil = now + LOCKOUT_DURATION_MS;
         await prisma.user.update({

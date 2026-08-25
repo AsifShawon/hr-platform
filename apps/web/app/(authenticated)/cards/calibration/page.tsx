@@ -45,6 +45,7 @@ export default function PrintCalibrationPage() {
         <div className="flex items-center gap-4">
           <Link
             href="/cards/templates"
+            aria-label="Back to Card Templates"
             className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -198,7 +199,7 @@ export default function PrintCalibrationPage() {
               {/* 50 mm Ruler Measurement */}
               <div className="p-3.5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="font-semibold text-slate-800">
+                  <label htmlFor="calib-ruler" className="font-semibold text-slate-800">
                     1. Measured 50 mm Test Line (mm) *
                   </label>
                   <Badge variant={isRulerAccurate ? 'success' : 'warning'}>
@@ -206,6 +207,8 @@ export default function PrintCalibrationPage() {
                   </Badge>
                 </div>
                 <Input
+                  id="calib-ruler"
+                  aria-label="Measured 50 mm Test Line (mm)"
                   type="number"
                   step="0.1"
                   required
@@ -230,8 +233,10 @@ export default function PrintCalibrationPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] text-slate-600 block">Measured Width (mm)</label>
+                    <label htmlFor="calib-card-width" className="text-[11px] text-slate-600 block">Measured Width (mm)</label>
                     <Input
+                      id="calib-card-width"
+                      aria-label="Measured Width (mm)"
                       type="number"
                       step="0.1"
                       required
@@ -241,8 +246,10 @@ export default function PrintCalibrationPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] text-slate-600 block">Measured Height (mm)</label>
+                    <label htmlFor="calib-card-height" className="text-[11px] text-slate-600 block">Measured Height (mm)</label>
                     <Input
+                      id="calib-card-height"
+                      aria-label="Measured Height (mm)"
                       type="number"
                       step="0.1"
                       required
@@ -261,10 +268,12 @@ export default function PrintCalibrationPage() {
                 </span>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[11px] text-slate-600 block">
+                    <label htmlFor="calib-offset-x" className="text-[11px] text-slate-600 block">
                       Horizontal X Shift (mm)
                     </label>
                     <Input
+                      id="calib-offset-x"
+                      aria-label="Horizontal X Shift (mm)"
                       type="number"
                       step="0.1"
                       value={duplexOffsetX}
@@ -274,10 +283,12 @@ export default function PrintCalibrationPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[11px] text-slate-600 block">
+                    <label htmlFor="calib-offset-y" className="text-[11px] text-slate-600 block">
                       Vertical Y Shift (mm)
                     </label>
                     <Input
+                      id="calib-offset-y"
+                      aria-label="Vertical Y Shift (mm)"
                       type="number"
                       step="0.1"
                       value={duplexOffsetY}
