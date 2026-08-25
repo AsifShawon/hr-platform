@@ -200,6 +200,8 @@ export class BackupService {
         roles,
         roleGrants,
         auditEvents,
+        cardIssues,
+        printJobs,
         systemInstallation,
       ] = await Promise.all([
         prisma.organization.findMany({ where: { tenantId } }),
@@ -219,6 +221,8 @@ export class BackupService {
         prisma.role.findMany({ where: { tenantId } }),
         prisma.roleGrant.findMany({ where: { user: { tenantId } } }),
         prisma.auditEvent.findMany({ where: { tenantId } }),
+        prisma.cardIssue.findMany({ where: { tenantId } }),
+        prisma.printJob.findMany({ where: { tenantId }, include: { items: true } }),
         prisma.systemInstallation.findFirst(),
       ]);
 
@@ -250,6 +254,8 @@ export class BackupService {
           roles,
           roleGrants,
           auditEvents,
+          cardIssues,
+          printJobs,
         },
       };
 
@@ -346,7 +352,7 @@ export class BackupService {
           identityDocuments: identityDocuments.length,
           mediaAssets: mediaAssets.length,
           cardTemplates: cardTemplates.length,
-          cardIssues: 0,
+          cardIssues: cardIssues.length,
           auditEvents: auditEvents.length,
           users: users.length,
           roles: roles.length,

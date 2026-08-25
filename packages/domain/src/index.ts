@@ -223,8 +223,18 @@ export enum AuditAction {
   RESTORE_EXECUTED = 'restore.executed',
   RESTORE_FAILED = 'restore.failed',
   SUPPORT_BUNDLE_CREATED = 'system.support_bundle_created',
+  CARD_DRAFTED = 'card.drafted',
+  CARD_RENDERED = 'card.rendered',
+  CARD_PRINTED = 'card.printed',
   CARD_ISSUED = 'card.issued',
+  CARD_REPRINTED = 'card.reprinted',
   CARD_REVOKED = 'card.revoked',
+  CARD_CANCELLED = 'card.cancelled',
+  PRINT_JOB_CREATED = 'print_job.created',
+  PRINT_JOB_COMPLETED = 'print_job.completed',
+  PRINT_JOB_CONFIRMED = 'print_job.confirmed',
+  PRINT_JOB_FAILED = 'print_job.failed',
+  PRINT_JOB_CANCELLED = 'print_job.cancelled',
   TEMPLATE_CREATED = 'template.created',
   TEMPLATE_UPDATED = 'template.updated',
   TEMPLATE_VERSION_PUBLISHED = 'template.version_published',
@@ -831,4 +841,256 @@ export interface SystemDiagnostics {
     };
   };
   disk: DiskSpaceInfo;
+}
+
+// ==============================================================================
+// Phase 2 (Remediation): Card Issuance & Print Job Domain Models
+// ==============================================================================
+
+export enum CardIssueStatus {
+  DRAFT = 'DRAFT',
+  RENDER_READY = 'RENDER_READY',
+  PRINTED = 'PRINTED',
+  ISSUED = 'ISSUED',
+  REPLACED = 'REPLACED',
+  REVOKED = 'REVOKED',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum CardIssueReason {
+  INITIAL = 'INITIAL',
+  DAMAGED = 'DAMAGED',
+  LOST = 'LOST',
+  STOLEN = 'STOLEN',
+  NAME_CHANGE = 'NAME_CHANGE',
+  TITLE_CHANGE = 'TITLE_CHANGE',
+  PROMOTION = 'PROMOTION',
+  TRANSFER = 'TRANSFER',
+  EXPIRED = 'EXPIRED',
+  OTHER = 'OTHER',
+}
+
+export enum CardRevocationReason {
+  SEPARATION = 'SEPARATION',
+  SUSPENSION = 'SUSPENSION',
+  LOST_STOLEN = 'LOST_STOLEN',
+  SECURITY_REVOCATION = 'SECURITY_REVOCATION',
+  ADMINISTRATIVE_CORRECTION = 'ADMINISTRATIVE_CORRECTION',
+  OTHER = 'OTHER',
+}
+
+export enum PrintJobStatus {
+  QUEUED = 'QUEUED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum PrintJobItemStatus {
+  PENDING = 'PENDING',
+  RENDERING = 'RENDERING',
+  RENDERED = 'RENDERED',
+  FAILED = 'FAILED',
+  SKIPPED = 'SKIPPED',
+}
+
+export enum PrintOutputFormat {
+  A4_SHEET = 'A4_SHEET',
+  LETTER_SHEET = 'LETTER_SHEET',
+  INDIVIDUAL_PDF = 'INDIVIDUAL_PDF',
+  HIGH_RES_PNG = 'HIGH_RES_PNG',
+}
+
+export enum PrintJobSide {
+  FRONT = 'FRONT',
+  BACK = 'BACK',
+  DUPLEX = 'DUPLEX',
+}
+
+export enum OperatorPrintStatus {
+  UNCONFIRMED = 'UNCONFIRMED',
+  CONFIRMED_PRINTED = 'CONFIRMED_PRINTED',
+  REJECTED_DEFECT = 'REJECTED_DEFECT',
+}
+
+export interface PrintedSnapshot {
+  worker: {
+    personId: string;
+    employmentId: string;
+    employeeNumber: string;
+    displayName: string;
+    displayNameLatin?: string | null;
+    displayNameNative?: string | null;
+    jobTitle: string;
+    jobCategory: JobCategory;
+    department?: string | null;
+    location?: string | null;
+    joinDate: string;
+    bloodGroup?: string | null;
+    emergencyContact?: string | null;
+    photoMediaId?: string | null;
+    photoChecksumSha256?: string | null;
+  };
+  organization: {
+    id: string;
+    name: string;
+    displayName?: string | null;
+    code: string;
+    logoPath?: string | null;
+    logoChecksumSha256?: string | null;
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+  };
+  card: {
+    serialNumber: string;
+    issueNumber: number;
+    issuedAt: string;
+    validUntil?: string | null;
+    formatPreset: string;
+    widthMm: number;
+    heightMm: number;
+    orientation: string;
+  };
+  customFields?: Record<string, unknown>;
+}
+
+export interface CardRenderManifestSnapshot {
+  cardSerial: string;
+  templateVersionId: string;
+  templateChecksumSha256: string;
+  dimensionsMm: {
+    widthMm: number;
+    heightMm: number;
+    bleedMm: number;
+    safeAreaMm: number;
+    orientation: string;
+  };
+  renderedAt: string;
+  pdfPagesCount: number;
+  pdfMediaBox: {
+    widthPt: number;
+    heightPt: number;
+  };
+  frontChecksumSha256?: string | null;
+  backChecksumSha256?: string | null;
+  pdfChecksumSha256: string;
+}
+
+export interface CardIssueEntity {
+  id: string;
+  tenantId: string;
+  personId: string;
+  employmentId: string;
+  templateVersionId: string;
+  cardSerial: string;
+  issueNumber: number;
+  issueReason: CardIssueReason;
+  reasonNotes?: string | null;
+  status: CardIssueStatus;
+  isCurrent: boolean;
+  printedSnapshot: PrintedSnapshot;
+  layoutSnapshot: CardLayoutSpecification;
+  templateChecksum: string;
+  renderManifest?: CardRenderManifestSnapshot | null;
+  pdfStorageKey?: string | null;
+  pdfChecksumSha256?: string | null;
+  previousIssueId?: string | null;
+  issuedByUserId?: string | null;
+  issuedAt?: Date | string | null;
+  validUntil?: Date | string | null;
+  revokedByUserId?: string | null;
+  revokedAt?: Date | string | null;
+  revocationReason?: CardRevocationReason | null;
+  revocationNotes?: string | null;
+  idempotencyKey?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
+export interface PrintJobEntity {
+  id: string;
+  tenantId: string;
+  status: PrintJobStatus;
+  outputFormat: PrintOutputFormat;
+  side: PrintJobSide;
+  totalItems: number;
+  processedItems: number;
+  failedItems: number;
+  outputStorageKey?: string | null;
+  outputFileSizeBytes?: number | null;
+  outputChecksumSha256?: string | null;
+  mimeType?: string | null;
+  attempts: number;
+  maxAttempts: number;
+  lockedAt?: Date | string | null;
+  lockedBy?: string | null;
+  failedReason?: string | null;
+  operatorStatus: OperatorPrintStatus;
+  confirmedByUserId?: string | null;
+  confirmedAt?: Date | string | null;
+  confirmationNotes?: string | null;
+  idempotencyKey?: string | null;
+  createdByUserId?: string | null;
+  startedAt?: Date | string | null;
+  completedAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  items?: PrintJobItemEntity[];
+}
+
+export interface PrintJobItemEntity {
+  id: string;
+  tenantId: string;
+  printJobId: string;
+  cardIssueId: string;
+  itemIndex: number;
+  status: PrintJobItemStatus;
+  sheetNumber?: number | null;
+  gridRow?: number | null;
+  gridColumn?: number | null;
+  copies: number;
+  errorMessage?: string | null;
+  renderedAt?: Date | string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  cardIssue?: CardIssueEntity;
+}
+
+export interface CardReadinessIssue {
+  code: string;
+  field?: string;
+  severity: 'BLOCKER' | 'WARNING';
+  message: string;
+  suggestion?: string;
+}
+
+export interface CardReadinessResult {
+  isReady: boolean;
+  canOverrideWarnings: boolean;
+  blockers: CardReadinessIssue[];
+  warnings: CardReadinessIssue[];
+  resolvedTemplate: {
+    templateId: string;
+    templateName: string;
+    versionId: string;
+    versionNumber: number;
+    layout: CardLayoutSpecification;
+    targetType: TemplateAssignmentTarget;
+    resolutionReason: string;
+  } | null;
+  workerSummary: {
+    personId: string;
+    employmentId: string;
+    displayName: string;
+    displayNameLatin?: string | null;
+    displayNameNative?: string | null;
+    employeeNumber: string;
+    jobTitle: string;
+    status: EmploymentStatus;
+    photoAvailable: boolean;
+    nativeNameAvailable: boolean;
+  };
 }

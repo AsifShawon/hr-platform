@@ -1,13 +1,13 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { CardRenderer } from '../src/renderer/card-renderer.js';
-import { inspectPdfDocument } from '../src/renderer/pdf-inspector.js';
-import { BrowserPool } from '../src/renderer/browser-pool.js';
 import {
+  CardRenderer,
+  inspectPdfDocument,
+  BrowserPool,
   createClassicVerticalPreset,
   createPhotoFocusPreset,
   createFactoryIndustrialPreset,
   ISO_ID1_HORIZONTAL_DIMENSIONS,
-} from '@hr/card-kit';
+} from '@hr/card-kit/renderer';
 
 describe('Phase 7: Deterministic Card Renderer & PDF Inspector Tests', () => {
   const renderer = new CardRenderer();

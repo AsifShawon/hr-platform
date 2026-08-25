@@ -1,818 +1,541 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
   ShieldCheck,
-  Server,
   CheckCircle2,
-  Lock,
-  Printer,
   Camera,
+  Printer,
   Users,
-  Building2,
-  FileCheck,
-  Menu,
-  X,
-  ChevronRight,
+  Lock,
   Database,
-  Key,
+  Sliders,
+  Server,
+  Building2,
+  FileCheck2,
+  ChevronRight,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
-import {
-  Button,
-  Badge,
-  CardPreviewChrome,
-  Accordion,
-  Tabs,
-  TableShell,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@hr/ui';
-import { FICTIONAL_WORKERS } from '@hr/fixtures';
+import { Badge, Button } from '@hr/ui';
+import { LandingHeader } from './components/landing/LandingHeader';
+import { HeroCardAnimation } from './components/landing/HeroCardAnimation';
+import { ProductPreviewTabs } from './components/landing/ProductPreviewTabs';
+import { LandingFaqAccordion } from './components/landing/LandingFaqAccordion';
 
 export default function LandingPage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activePreviewTab, setActivePreviewTab] = useState('registry');
-
-  const faqItems = [
-    {
-      id: 'offline',
-      question: 'Can the system run 100% offline without an internet connection?',
-      answer:
-        'Yes. In On-Premises mode, the platform operates entirely within your local network (LAN) or on a single PC. All assets, fonts (Noto Sans & Noto Sans Bengali), database queries, and rendering engines are self-hosted with zero external CDN, telemetry, or cloud calls.',
-    },
-    {
-      id: 'hardware',
-      question: 'What printer hardware and physical dimensions are supported?',
-      answer:
-        'The primary standard is the 60 mm × 90 mm vertical format (English front, Bangla back), generated as exact-scale 300/600 DPI vector PDFs. Standard ISO/IEC 7810 ID-1 (CR80) formats are also built in. You can print directly to dedicated PVC card printers or export multi-card A4/Letter sheets for flatbed printing.',
-    },
-    {
-      id: 'phone-camera',
-      question: 'How does mobile phone photo capture work on local servers?',
-      answer:
-        'When adding a worker, the desktop screen displays a short-lived QR code. An operator scans the QR code with their mobile phone on the company LAN (via secure local HTTPS), captures the photo, and uploads it directly to the local server. The desktop UI updates instantly via Server-Sent Events (SSE).',
-    },
-    {
-      id: 'security',
-      question: 'Where is employee personal data and sensitive government ID stored?',
-      answer:
-        'All data resides in your dedicated PostgreSQL database and local private file volume. Government documents (e.g. NID) are strictly optional, masked by default in all tables, and never printed on standard ID cards or encoded into QR codes without explicit administrative policy.',
-    },
-    {
-      id: 'backups',
-      question: 'How are encrypted backups and data exports managed?',
-      answer:
-        'Administrators can create encrypted ZIP backups containing the database state, normalized photos, and template manifests at any time. Data exports produce portable UTF-8 CSV files alongside organized photo directories with formula-injection sanitization.',
-    },
-    {
-      id: 'signup-policy',
-      question: 'Why is there no public self-signup button?',
-      answer:
-        'To prevent unauthorized access and protect enterprise tenant isolation, all accounts are provisioned deliberately: on-premises systems use a protected loopback-only administrator bootstrap, while hosted SaaS tenants are provisioned by verified platform operators.',
-    },
-  ];
-
   return (
-    <div className="flex min-h-screen flex-col bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900 overflow-x-clip">
       {/* 1. Header Navigation */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 h-16 sm:h-20">
-          {/* Logo & Product Title */}
-          <Link
-            href="/"
-            className="flex items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#134E4A] text-white shadow-sm">
-              <ShieldCheck className="h-6 w-6 text-[#14B8A6]" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-slate-900">
-                HR ID Platform
-              </span>
-              <span className="text-[10px] font-medium tracking-wider text-[#0F766E] uppercase">
-                Local-First On-Premises
-              </span>
-            </div>
-          </Link>
+      <LandingHeader />
 
-          {/* Desktop Navigation Links */}
-          <nav
-            aria-label="Main Navigation"
-            className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-600"
-          >
-            <a href="#product" className="hover:text-[#0F766E] transition-colors">
-              Product
-            </a>
-            <a href="#workflow" className="hover:text-[#0F766E] transition-colors">
-              How It Works
-            </a>
-            <a href="#deployment" className="hover:text-[#0F766E] transition-colors">
-              Local Modes
-            </a>
-            <a href="#security" className="hover:text-[#0F766E] transition-colors">
-              Security
-            </a>
-            <a href="#templates" className="hover:text-[#0F766E] transition-colors">
-              Templates
-            </a>
-            <a href="#faq" className="hover:text-[#0F766E] transition-colors">
-              FAQ
-            </a>
-          </nav>
-
-          {/* Action CTA (Sign In) */}
-          <div className="hidden sm:flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="primary" size="sm" rightIcon={<ChevronRight className="w-4 h-4" />}>
-                Sign In to System
-              </Button>
-            </Link>
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="flex md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
-            aria-expanded={isMobileMenuOpen}
-            aria-label="Toggle navigation menu"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-        </div>
-
-        {/* Mobile Navigation Drawer */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-b border-slate-200 bg-white px-4 py-6 space-y-4 animate-in slide-in-from-top-2 duration-150">
-            <nav className="flex flex-col space-y-3 text-sm font-semibold text-slate-700">
-              <a
-                href="#product"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                Product
-              </a>
-              <a
-                href="#workflow"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                How It Works
-              </a>
-              <a
-                href="#deployment"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                Local Installation
-              </a>
-              <a
-                href="#security"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                Security & Privacy
-              </a>
-              <a
-                href="#templates"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                Templates
-              </a>
-              <a
-                href="#faq"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="py-1.5 hover:text-[#0F766E]"
-              >
-                FAQ
-              </a>
-            </nav>
-            <div className="pt-4 border-t border-slate-100 flex flex-col gap-2.5">
-              <Link href="/login" className="w-full" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="primary" className="w-full justify-center">
-                  Sign In to System
-                </Button>
-              </Link>
-            </div>
-          </div>
-        )}
-      </header>
-
-      {/* Main Content Area */}
       <main id="main-content" className="flex-1">
-        {/* 2. Hero Section */}
-        <section
-          id="product"
-          className="relative overflow-hidden bg-gradient-to-b from-[#F0FDFA] via-white to-white py-16 sm:py-24 lg:py-28"
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* 2. Dark Editorial Hero Section */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-[#134E4A] via-[#0F766E] to-[#134E4A] text-white py-16 sm:py-24 lg:py-28">
+          {/* Subtle Glow & Wave Divider */}
+          <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-[#14B8A6]/20 blur-3xl pointer-events-none" />
+          <div className="absolute top-1/2 -right-40 w-96 h-96 rounded-full bg-teal-300/10 blur-3xl pointer-events-none" />
+
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-              {/* Left Column: Copy & CTAs */}
+              {/* Left Column: Headline & Local-First CTAs */}
               <div className="lg:col-span-7 space-y-6 text-left">
-                <div className="inline-flex items-center gap-2 rounded-full bg-teal-100/80 px-3.5 py-1 text-xs font-semibold text-[#134E4A] border border-teal-200">
+                <div className="inline-flex items-center gap-2 rounded-full bg-teal-800/80 px-3.5 py-1 text-xs font-semibold text-teal-200 border border-teal-600/80 backdrop-blur-sm">
                   <span className="h-2 w-2 rounded-full bg-[#14B8A6] animate-pulse" />
-                  Local-First • 60 × 90 mm Bilingual Standard
+                  <span>Local-First • On-Premises Card Engine</span>
                 </div>
 
-                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-[#0F172A] leading-[1.12]">
-                  Professional employee ID cards—
-                  <span className="text-[#0F766E] block mt-1">
-                    on your local workstation or server.
-                  </span>
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+                  Create accurate employee ID cards in minutes—
+                  <span className="text-[#14B8A6] block mt-1">on your own computer.</span>
                 </h1>
 
-                <p className="text-base sm:text-lg text-slate-600 max-w-2xl leading-relaxed">
-                  An international, local-first employee registry and high-precision ID card
-                  issuance system. Capture webcam or mobile photos over your private LAN, preview
-                  bilingual English-front/Bangla-back cards, and produce print-ready vector PDFs
-                  with an immutable audit trail.
+                <p className="text-base sm:text-lg text-teal-100/90 max-w-2xl leading-relaxed">
+                  A dedicated, privacy-focused employee registry and high-precision ID card issuance
+                  system. Capture portraits over your factory Wi-Fi, preview bilingual English-front
+                  and Bangla-back cards, and produce 100% vector PDF masters locally.
                 </p>
 
-                {/* Hero CTAs */}
+                {/* Hero Action Buttons */}
                 <div className="flex flex-wrap items-center gap-4 pt-2">
                   <Link href="/login">
                     <Button
-                      variant="primary"
+                      variant="secondary"
                       size="lg"
-                      rightIcon={<ChevronRight className="w-4 h-4" />}
+                      className="bg-[#14B8A6] hover:bg-teal-300 text-[#134E4A] font-bold shadow-lg border-none"
                     >
-                      Sign In to Platform
+                      <span>Sign In to Local Workspace</span>
+                      <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </Link>
+
                   <Link href="/cards/calibration">
-                    <Button variant="outline" size="lg">
-                      Printer Calibration
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="border-teal-400/60 text-white hover:bg-teal-800/60"
+                    >
+                      <Sliders className="w-4 h-4 mr-2 text-teal-300" />
+                      <span>Printer Calibration</span>
                     </Button>
                   </Link>
                 </div>
 
-                {/* Key Assurance Highlights */}
-                <div className="pt-6 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-medium text-slate-600">
+                {/* Three Core Guarantees */}
+                <div className="pt-6 border-t border-teal-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-teal-200">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-[#14B8A6] shrink-0" />
                     <span>100% Offline Capable</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
-                    <span>Exact-Scale Vector PDF</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#14B8A6] shrink-0" />
+                    <span>Exact 60 × 90 mm Master</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
-                    <span>Zero Vendor Backdoors</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#14B8A6] shrink-0" />
+                    <span>Zero Cloud Dependencies</span>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column: Realistic 60x90mm Card Visuals & Shell */}
+              {/* Right Column: Real Animated 60x90mm Card Showcase */}
               <div className="lg:col-span-5 flex justify-center">
-                <div className="relative p-6 sm:p-8 rounded-3xl bg-slate-900/5 border border-slate-200/90 shadow-xl backdrop-blur-sm">
-                  <div className="absolute top-3 left-4 flex items-center gap-2">
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-                    <span className="text-[10px] font-mono text-slate-400 ml-2">
-                      Card Engine v1
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <CardPreviewChrome side="both" />
-                  </div>
-                </div>
+                <HeroCardAnimation />
               </div>
             </div>
           </div>
         </section>
 
-        {/* 3. Three-Step Workflow Section */}
-        <section id="workflow" className="py-20 bg-slate-50 border-y border-slate-200/80">
+        {/* 3. Three-Step Workflow Strip */}
+        <section id="how-it-works" className="py-20 bg-slate-50 border-b border-slate-200/80">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <Badge variant="secondary" className="mb-3">
-                Issuance Lifecycle
+              <Badge variant="primary" size="sm" className="mb-3">
+                Issuance Workflow
               </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 A disciplined three-step pipeline for busy HR teams
               </h2>
               <p className="mt-3 text-slate-600 text-sm sm:text-base">
-                Eliminate scattered spreadsheets and uncalibrated print runs with an organized,
+                Eliminate manual spreadsheets and uncalibrated print runs with an organized,
                 traceable workflow.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Step 1 */}
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all group">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-teal-100/70 text-[#134E4A] flex items-center justify-center font-bold text-lg mb-6 border border-teal-200">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#134E4A] flex items-center justify-center font-extrabold text-base mb-6 border border-teal-200">
                     01
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Register People</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Enter worker employment records with full Unicode support for native Bangla
-                    names, organizational units, and optional masked government documents. Import
-                    hundreds via dry-run validated CSV.
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-[#0F766E] transition-colors">
+                    Add or Select Worker
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Enter worker records with full Unicode support for native Bangla names,
+                    organizational units, and masked government identity documents.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-[#0F766E]">
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#0F766E]">
                   <Users className="w-4 h-4" />
                   <span>Structured & Deduplicated</span>
                 </div>
               </div>
 
               {/* Step 2 */}
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all group">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-teal-100/70 text-[#134E4A] flex items-center justify-center font-bold text-lg mb-6 border border-teal-200">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#134E4A] flex items-center justify-center font-extrabold text-base mb-6 border border-teal-200">
                     02
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Capture & Crop Photos</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Snap photos instantly using attached webcams, securely stream from an operator's
-                    mobile phone across the local network via QR token, or upload files with
-                    automated EXIF removal.
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-[#0F766E] transition-colors">
+                    Capture Photo & Preview
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Snap portraits instantly using webcams or stream directly from a factory
+                    smartphone via zero-PII QR code. Live dual-sided preflight diagnostics run in
+                    real time.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-[#0F766E]">
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#0F766E]">
                   <Camera className="w-4 h-4" />
                   <span>Real-Time SSE Sync</span>
                 </div>
               </div>
 
               {/* Step 3 */}
-              <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-all group">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-teal-100/70 text-[#134E4A] flex items-center justify-center font-bold text-lg mb-6 border border-teal-200">
+                  <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#134E4A] flex items-center justify-center font-extrabold text-base mb-6 border border-teal-200">
                     03
                   </div>
-                  <h3 className="text-lg font-bold text-slate-900 mb-2">Print & Track Cards</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">
-                    Render pixel-accurate 60×90 mm vector PDFs at 100% physical scale. Maintain
-                    immutable historical snapshots of every printed credential with reason-audited
-                    reprints.
+                  <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-[#0F766E] transition-colors">
+                    Print & Record Issue
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Render exact 60 × 90 mm vector PDFs at 100% physical scale. Physical operator
+                    confirmation records defect items and tracks immutable credential history.
                   </p>
                 </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-semibold text-[#0F766E]">
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center gap-2 text-xs font-bold text-[#0F766E]">
                   <Printer className="w-4 h-4" />
-                  <span>Immutable Issue Log</span>
+                  <span>Immutable Issue Lineage</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 4. Interactive Product Preview */}
-        <section className="py-20 bg-white">
+        {/* 4. Product Preview Section */}
+        <section id="preview" className="py-20 bg-white">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-10">
-              <Badge variant="primary" className="mb-3">
-                Product Experience
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <Badge variant="primary" size="sm" className="mb-3">
+                Product Interface
               </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
-                Honest, responsive tools designed for operational speed
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+                Honest, responsive tools built for operational speed
               </h2>
               <p className="mt-3 text-slate-600 text-sm sm:text-base">
                 Explore the actual interface components used by HR managers and print operators.
               </p>
             </div>
 
-            {/* Tab Controls */}
-            <div className="flex justify-center mb-8">
-              <Tabs
-                activeTab={activePreviewTab}
-                onChange={setActivePreviewTab}
-                tabs={[
-                  { id: 'registry', label: 'Worker Registry', icon: <Users className="w-4 h-4" /> },
-                  {
-                    id: 'org',
-                    label: 'Organization Tree',
-                    icon: <Building2 className="w-4 h-4" />,
-                  },
-                  {
-                    id: 'cardlab',
-                    label: 'Bilingual Card Lab',
-                    icon: <Printer className="w-4 h-4" />,
-                  },
-                ]}
-              />
+            <ProductPreviewTabs />
+          </div>
+        </section>
+
+        {/* 5. Verified Feature Bento Grid */}
+        <section id="features" className="py-20 bg-slate-50 border-y border-slate-200/80">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <Badge variant="primary" size="sm" className="mb-3">
+                Core Capabilities
+              </Badge>
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+                Verified features engineered for high-volume ID production
+              </h2>
+              <p className="mt-3 text-slate-600 text-sm sm:text-base">
+                Every feature is verified in code and tested for on-premises operational
+                reliability.
+              </p>
             </div>
 
-            {/* Interactive Tab Panels */}
-            <div
-              id={`panel-${activePreviewTab}`}
-              role="tabpanel"
-              aria-labelledby={`tab-${activePreviewTab}`}
-              className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-8 shadow-inner"
-            >
-              {activePreviewTab === 'registry' && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-base font-bold text-slate-900">
-                        Apex Industrial Group — Worker Registry
-                      </h4>
-                      <p className="text-xs text-slate-500">
-                        Showing 4 fictional employee records ready for card production
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="success">All Records Validated</Badge>
-                    </div>
-                  </div>
-
-                  <TableShell>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee ID</TableHead>
-                        <TableHead>Display Name (Latin / Native)</TableHead>
-                        <TableHead>Title & Department</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined Date</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {FICTIONAL_WORKERS.map((worker) => (
-                        <TableRow key={worker.employeeNumber}>
-                          <TableCell className="font-mono font-medium text-slate-900">
-                            {worker.employeeNumber}
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-semibold text-slate-900">
-                              {worker.displayNameLatin}
-                            </div>
-                            <div className="text-xs text-[#0F766E]">{worker.displayNameNative}</div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-xs font-medium text-slate-800">{worker.title}</div>
-                            <div className="text-[11px] text-slate-500">{worker.department}</div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="success" size="sm">
-                              {worker.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-mono text-xs">{worker.joinedDate}</TableCell>
-                          <TableCell className="text-right">
-                            <span className="inline-flex items-center text-xs font-semibold text-[#0F766E] hover:underline cursor-pointer">
-                              Queue Card
-                            </span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </TableShell>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Feature 1 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <Camera className="w-5 h-5" />
                 </div>
-              )}
+                <h4 className="font-bold text-slate-900 text-base">
+                  In-Browser Camera & QR Handoff
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Capture portraits directly via webcam or scan a QR code to hand off capture to a
+                  mobile phone over local Wi-Fi with automated EXIF stripping and 300 DPI scaling.
+                </p>
+              </div>
 
-              {activePreviewTab === 'org' && (
-                <div className="space-y-4">
-                  <h4 className="text-base font-bold text-slate-900">
-                    Organization Hierarchy & Card Template Inheritance
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="text-xs font-bold text-[#0F766E] uppercase tracking-wider mb-1">
-                        Site 01
-                      </div>
-                      <h5 className="font-bold text-slate-900">Dhaka Headquarters</h5>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Template: Corporate Classic Vertical (60×90mm)
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                        <span className="text-slate-500">Active Workers</span>
-                        <span className="font-bold text-slate-800">142</span>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="text-xs font-bold text-[#0F766E] uppercase tracking-wider mb-1">
-                        Site 02
-                      </div>
-                      <h5 className="font-bold text-slate-900">Gazipur Manufacturing Plant</h5>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Template: Industrial High-Visibility Vertical
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                        <span className="text-slate-500">Active Workers</span>
-                        <span className="font-bold text-slate-800">580</span>
-                      </div>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <div className="text-xs font-bold text-[#0F766E] uppercase tracking-wider mb-1">
-                        Site 03
-                      </div>
-                      <h5 className="font-bold text-slate-900">Chittagong Logistics Hub</h5>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Template: Contractor / Logistics Preset
-                      </p>
-                      <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-100">
-                        <span className="text-slate-500">Active Workers</span>
-                        <span className="font-bold text-slate-800">89</span>
-                      </div>
-                    </div>
-                  </div>
+              {/* Feature 2 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <Printer className="w-5 h-5" />
                 </div>
-              )}
+                <h4 className="font-bold text-slate-900 text-base">Bilingual Typography Engine</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  English front and native Bengali back with self-hosted Noto fonts, complex
+                  conjunct shaping, defensive line-clamping, and missing script fallback warnings.
+                </p>
+              </div>
 
-              {activePreviewTab === 'cardlab' && (
-                <div className="flex flex-col items-center justify-center py-6">
-                  <div className="mb-4 text-center">
-                    <span className="text-xs font-semibold text-slate-500">
-                      Live Physical Layout Engine (Calculated in Millimetres)
-                    </span>
-                  </div>
-                  <CardPreviewChrome side="both" />
+              {/* Feature 3 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <Sliders className="w-5 h-5" />
                 </div>
-              )}
+                <h4 className="font-bold text-slate-900 text-base">Exact 60 × 90 mm Geometry</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Vector PDF print master generated at 100% scale (170.08 × 255.12 pt) with
+                  high-resolution PNG generation at 150, 300, and 600 DPI (709 × 1063 px).
+                </p>
+              </div>
+
+              {/* Feature 4 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <FileCheck2 className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-slate-900 text-base">Persistent Batch Print Queue</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Create multi-card batch print jobs, monitor rendering progress, report defect
+                  cards, and atomically activate approved badges through physical operator QA
+                  sign-off.
+                </p>
+              </div>
+
+              {/* Feature 5 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-slate-900 text-base">
+                  Government ID Privacy & Masking
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Government IDs (Smart NID, Passport) are AES-256 encrypted, masked by default, and
+                  excluded from print runs and QR codes without explicit administrative policy.
+                </p>
+              </div>
+
+              {/* Feature 6 */}
+              <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm space-y-3">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#0F766E] border border-teal-200/60 flex items-center justify-center">
+                  <Database className="w-5 h-5" />
+                </div>
+                <h4 className="font-bold text-slate-900 text-base">
+                  Local Encrypted Backups & RBAC
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Self-verifying AES-256-GCM encrypted `.hrbackup` bundles, strict default-deny
+                  authorization on all API routes, and offline CLI disaster recovery.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* 5. Deployment Comparison: Local On-Prem vs Hosted SaaS */}
-        <section id="deployment" className="py-20 bg-slate-50 border-y border-slate-200/80">
+        {/* 6. Print Accuracy & Calibration Section */}
+        <section id="accuracy" className="py-20 bg-white">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-7 space-y-6">
+                <Badge variant="primary" size="sm">
+                  Physical Print Engineering
+                </Badge>
+                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+                  Precision alignment engineered for physical PVC and flatbed printers
+                </h2>
+                <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                  Card printing requires exact dimensional fidelity. The system bypasses arbitrary
+                  browser print dialog scaling with deterministic PDF MediaBoxes, duplex long-edge
+                  imposition, and built-in caliper verification.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#0F766E] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm block">
+                        100% Actual Scale Invariant
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Explicit operator instructions prevent accidental &ldquo;Fit to page&rdquo;
+                        shrinkage that distorts physical card dimensions.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#0F766E] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm block">
+                        Duplex Long-Edge Mirroring
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Back-side column reversal guarantees exact front-to-back card alignment
+                        without drift on multi-card sheet imposition.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-[#0F766E] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm block">
+                        50.00 mm Ruler Calibration Sheet
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Printable calibration test pages allow caliper measurements and offset
+                        adjustments before executing bulk print batches.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <Link href="/cards/calibration">
+                    <Button
+                      variant="outline"
+                      size="md"
+                      className="border-teal-300 text-[#0F766E] hover:bg-teal-50 font-bold"
+                    >
+                      <Sliders className="w-4 h-4 mr-2" />
+                      <span>Open Printer Calibration Studio</span>
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Calibration Graphic Callout */}
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="p-8 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm text-center space-y-4 max-w-sm w-full">
+                  <div className="w-16 h-16 rounded-2xl bg-teal-50 border border-teal-200 text-[#134E4A] flex items-center justify-center mx-auto">
+                    <Sliders className="w-8 h-8 text-[#0F766E]" />
+                  </div>
+                  <h4 className="text-base font-bold text-slate-900">Calibration Spec</h4>
+                  <div className="p-4 bg-white rounded-2xl border border-slate-200/80 text-left font-mono text-xs space-y-2 text-slate-700">
+                    <div className="flex justify-between">
+                      <span>Width:</span>
+                      <span className="font-bold">60.00 mm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Height:</span>
+                      <span className="font-bold">90.00 mm</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>300 DPI Pixel Size:</span>
+                      <span className="font-bold">709 × 1063 px</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tolerance:</span>
+                      <span className="font-bold text-emerald-700">± 0.50 mm</span>
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-slate-400 block">
+                    Derived deterministically from physical millimetres.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. Privacy & Local Ownership Section */}
+        <section id="security" className="py-20 bg-slate-50 border-y border-slate-200/80">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-3xl mx-auto mb-16">
-              <Badge variant="secondary" className="mb-3">
-                Deployment Flexibility
+              <Badge variant="primary" size="sm" className="mb-3">
+                Data Ownership & Topology
               </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
-                Choose the right operational model for your infrastructure
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+                Transparent local deployment with zero third-party leakage
               </h2>
               <p className="mt-3 text-slate-600 text-sm sm:text-base">
-                Same core application, same database schema, and identical print engine.
+                Your employee database and photographs never leave your physical facility.
               </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {/* Local Workstation Card */}
-              <div className="bg-white rounded-2xl border-2 border-slate-200 p-8 shadow-sm flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-teal-50 rounded-xl text-[#0F766E]">
-                        <Server className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">Single-PC Workstation</h3>
-                        <span className="text-xs text-slate-500 font-medium">
-                          Dedicated PC (Loopback 127.0.0.1)
-                        </span>
-                      </div>
+              {/* Single-PC Workstation */}
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6 flex flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-teal-50 rounded-2xl text-[#0F766E] border border-teal-200/60">
+                      <Server className="w-6 h-6" />
                     </div>
-                    <Badge variant="primary">Air-Gapped Ready</Badge>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">Single-PC Workstation</h3>
+                      <span className="text-xs font-mono text-slate-500">Loopback 127.0.0.1</span>
+                    </div>
                   </div>
-
-                  <p className="text-sm text-slate-600 mb-6">
-                    Ideal for small offices or isolated print stations operating completely offline
-                    on a single Windows or Linux computer.
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Operates in complete physical isolation on a single desktop or laptop computer.
+                    Ideal for standalone HR desks and air-gapped printing rooms.
                   </p>
-
-                  <ul className="space-y-3 text-sm text-slate-700">
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Attached USB webcams & card printers supported</span>
+                  <ul className="space-y-2.5 text-xs text-slate-700">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Zero network interface exposure beyond localhost</span>
                     </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Protected loopback bootstrap (no external network exposure)</span>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Direct USB webcam and card printer support</span>
                     </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Zero outbound CDN, telemetry, or cloud calls</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>One-click encrypted `.hrbackup` bundles with self-verification</span>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Encrypted `.hrbackup` export to local external storage</span>
                     </li>
                   </ul>
                 </div>
-
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <Link href="/login" className="w-full">
-                    <Button variant="outline" className="w-full justify-center">
-                      Launch Local System
-                    </Button>
-                  </Link>
-                </div>
+                <Link href="/login" className="w-full">
+                  <Button variant="outline" className="w-full justify-center text-xs font-bold">
+                    Launch Workstation Mode
+                  </Button>
+                </Link>
               </div>
 
-              {/* Private Factory LAN Card */}
-              <div className="bg-white rounded-2xl border-2 border-[#134E4A]/30 p-8 shadow-md flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute top-0 right-0 bg-[#134E4A] text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider">
-                  Multi-Operator LAN
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-teal-100/60 rounded-xl text-[#134E4A]">
-                        <Building2 className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">Private Factory LAN</h3>
-                        <span className="text-xs text-slate-500 font-medium">
-                          Internal Factory Wi-Fi / Local Subnet
-                        </span>
-                      </div>
+              {/* Private Factory LAN */}
+              <div className="bg-white p-8 rounded-3xl border-2 border-[#134E4A]/30 shadow-md space-y-6 flex flex-col justify-between relative overflow-hidden">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-teal-100 text-[#134E4A] rounded-2xl border border-teal-200">
+                      <Building2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-900">Private Factory LAN</h3>
+                      <span className="text-xs font-mono text-slate-500">
+                        Internal Wi-Fi / Local Subnet
+                      </span>
                     </div>
                   </div>
-
-                  <p className="text-sm text-slate-600 mb-6">
-                    Designed for factory floors and HR departments where multiple operators register
-                    workers and use smartphones for photo capture over internal Wi-Fi.
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Allows multiple authorized operators to register workers across desktop PCs
+                    while mobile phones capture portraits over internal factory Wi-Fi.
                   </p>
-
-                  <ul className="space-y-3 text-sm text-slate-700">
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Secure LAN TLS via internal Caddy certificate authority</span>
+                  <ul className="space-y-2.5 text-xs text-slate-700">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Secure LAN TLS via internal Caddy Certificate Authority</span>
                     </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Real-time smartphone photo capture over LAN via QR tokens</span>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Real-time smartphone photo capture via short-lived QR tokens</span>
                     </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Role-based access control with scoped permissions</span>
-                    </li>
-                    <li className="flex items-start gap-2.5">
-                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0 mt-0.5" />
-                      <span>Isolated PostgreSQL database inside private container network</span>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#0F766E] shrink-0" />
+                      <span>Strict role-based access control and tenant isolation</span>
                     </li>
                   </ul>
                 </div>
-
-                <div className="mt-8 pt-6 border-t border-slate-100">
-                  <Link href="/login" className="w-full">
-                    <Button variant="primary" className="w-full justify-center">
-                      Sign In to System
-                    </Button>
-                  </Link>
-                </div>
+                <Link href="/login" className="w-full">
+                  <Button
+                    variant="primary"
+                    className="w-full justify-center bg-[#134E4A] text-white text-xs font-bold"
+                  >
+                    Launch Factory LAN Mode
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 6. Security & Privacy Section */}
-        <section id="security" className="py-20 bg-white">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <Badge variant="primary" className="mb-3">
-                Security & Privacy Baseline
-              </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
-                Rigorous data protection with accurate, honest claims
-              </h2>
-              <p className="mt-3 text-slate-600 text-sm sm:text-base">
-                We make only verifiable architectural security guarantees—no marketing buzzwords.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-[#134E4A] flex items-center justify-center mb-4">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1.5">Default-Deny Access</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Every API mutation and query enforces strict server-side permissions. UI control
-                  hiding is never treated as authorization.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-[#134E4A] flex items-center justify-center mb-4">
-                  <Key className="w-5 h-5" />
-                </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1.5">Argon2id Passwords</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Password hashing using memory-hard Argon2id with unique salts. HTTP-only secure
-                  cookies prevent token exfiltration.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-[#134E4A] flex items-center justify-center mb-4">
-                  <FileCheck className="w-5 h-5" />
-                </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1.5">NID / Gov ID Masking</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Government IDs are optional, masked by default, and excluded from print runs and
-                  exports unless explicitly requested.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50">
-                <div className="w-10 h-10 rounded-lg bg-teal-100 text-[#134E4A] flex items-center justify-center mb-4">
-                  <Database className="w-5 h-5" />
-                </div>
-                <h4 className="font-bold text-slate-900 text-base mb-1.5">Immutable Audit Log</h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Every worker reveal, card issue, reprint, revocation, and export is recorded in an
-                  immutable audit event stream.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 7. Template Gallery Preview */}
-        <section id="templates" className="py-20 bg-slate-50 border-y border-slate-200/80">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <Badge variant="secondary" className="mb-3">
-                Card Layout Presets
-              </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
-                Standardized presets for every workforce tier
-              </h2>
-              <p className="mt-3 text-slate-600 text-sm sm:text-base">
-                Pre-configured for 60 mm × 90 mm vertical and ISO ID-1 physical geometry.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                {
-                  title: 'Classic Vertical (Default)',
-                  desc: 'Standard 60×90mm bilingual front/back with clean organizational branding.',
-                  badge: 'Bilingual Default',
-                },
-                {
-                  title: 'Modern Stripe',
-                  desc: 'High-contrast header accent band optimized for executive & office staff.',
-                  badge: 'Corporate',
-                },
-                {
-                  title: 'Photo Focus',
-                  desc: 'Prominent portrait framing for field inspection and high-security checkpoints.',
-                  badge: 'High Security',
-                },
-                {
-                  title: 'Industrial / Factory',
-                  desc: 'Color-coded shift and department blocks with oversized employee numbers.',
-                  badge: 'Manufacturing',
-                },
-                {
-                  title: 'Contractor & Vendor',
-                  desc: 'Distinctive bordered badge with prominent expiry and sponsoring manager.',
-                  badge: 'Contractor',
-                },
-                {
-                  title: 'Visitor Pass',
-                  desc: 'Single-day issuance format with serialized QR token verification.',
-                  badge: 'Visitor',
-                },
-              ].map((template) => (
-                <div
-                  key={template.title}
-                  className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-[#0F766E]/40 transition-colors"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <Badge variant="primary" size="sm">
-                      {template.badge}
-                    </Badge>
-                    <span className="text-[11px] font-mono text-slate-400">60 × 90 mm</span>
-                  </div>
-                  <h4 className="font-bold text-slate-900 text-base mb-1.5">{template.title}</h4>
-                  <p className="text-xs text-slate-600 leading-relaxed">{template.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 8. FAQ Section */}
+        {/* 8. Compact FAQ Section */}
         <section id="faq" className="py-20 bg-white">
-          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <Badge variant="primary" className="mb-3">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-12">
+              <Badge variant="primary" size="sm" className="mb-3">
                 Questions & Answers
               </Badge>
-              <h2 className="text-2xl sm:text-4xl font-bold tracking-tight text-slate-900">
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
                 Frequently Asked Questions
               </h2>
               <p className="mt-3 text-slate-600 text-sm sm:text-base">
-                Everything you need to know about offline operation, security, and card production.
+                Clear, transparent answers about local operation, security, and card production.
               </p>
             </div>
 
-            <Accordion items={faqItems} />
+            <LandingFaqAccordion />
           </div>
         </section>
 
         {/* 9. Final Call to Action */}
-        <section className="py-16 sm:py-24 bg-[#134E4A] text-white">
+        <section className="py-16 sm:py-24 bg-gradient-to-r from-[#134E4A] via-[#0F766E] to-[#134E4A] text-white">
           <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Ready to modernize your employee ID card workflow?
+              Ready to produce accurate employee ID cards on your local system?
             </h2>
-            <p className="text-teal-100 text-base sm:text-lg max-w-2xl mx-auto">
+            <p className="text-teal-100 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
               Access your local installation to manage workers, capture portraits, and print
               exact-scale physical ID cards.
             </p>
@@ -821,18 +544,20 @@ export default function LandingPage() {
                 <Button
                   variant="secondary"
                   size="lg"
-                  className="bg-[#14B8A6] text-[#134E4A] hover:bg-teal-300 font-bold"
+                  className="bg-[#14B8A6] text-[#134E4A] hover:bg-teal-300 font-bold shadow-lg border-none"
                 >
-                  Sign In to Platform
+                  <span>Sign In to Local Workspace</span>
+                  <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
               </Link>
               <Link href="/cards/calibration">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="border-teal-700 bg-teal-900/50 text-white hover:bg-teal-800"
+                  className="border-teal-400 text-white hover:bg-teal-800/60"
                 >
-                  Printer Calibration
+                  <Sliders className="w-4 h-4 mr-2" />
+                  <span>Printer Calibration</span>
                 </Button>
               </Link>
             </div>
@@ -840,14 +565,14 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* 10. Complete Footer */}
+      {/* 10. Footer */}
       <footer className="border-t border-slate-200 bg-slate-50 py-12 text-sm text-slate-600">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#134E4A] text-white">
-                  <ShieldCheck className="h-4 w-4 text-[#14B8A6]" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#134E4A] text-white">
+                  <ShieldCheck className="h-5 w-5 text-[#14B8A6]" />
                 </div>
                 <span className="font-bold text-slate-900">HR ID Platform</span>
               </div>
@@ -857,7 +582,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
                 <span>v0.1.0-mvp</span>
                 <span>•</span>
-                <span className="text-[#0F766E]">Air-Gapped Ready</span>
+                <span className="text-[#0F766E]">On-Premises</span>
               </div>
             </div>
 
@@ -867,23 +592,23 @@ export default function LandingPage() {
               </h5>
               <ul className="space-y-2 text-xs">
                 <li>
-                  <a href="#product" className="hover:text-[#0F766E]">
-                    Overview
-                  </a>
-                </li>
-                <li>
-                  <a href="#workflow" className="hover:text-[#0F766E]">
+                  <a href="#how-it-works" className="hover:text-[#0F766E]">
                     Workflow
                   </a>
                 </li>
                 <li>
-                  <a href="#templates" className="hover:text-[#0F766E]">
-                    Template Presets
+                  <a href="#preview" className="hover:text-[#0F766E]">
+                    Product Preview
                   </a>
                 </li>
                 <li>
-                  <a href="#deployment" className="hover:text-[#0F766E]">
-                    Local Modes
+                  <a href="#features" className="hover:text-[#0F766E]">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#accuracy" className="hover:text-[#0F766E]">
+                    Print Accuracy
                   </a>
                 </li>
               </ul>
@@ -905,14 +630,9 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
-                  <a href="#faq" className="hover:text-[#0F766E]">
-                    60×90mm Geometry
+                  <a href="#accuracy" className="hover:text-[#0F766E]">
+                    60 × 90 mm Geometry
                   </a>
-                </li>
-                <li>
-                  <Link href="/api/health" className="hover:text-[#0F766E]">
-                    System Health Check
-                  </Link>
                 </li>
               </ul>
             </div>
@@ -929,7 +649,7 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <Link href="/cards/calibration" className="hover:text-[#0F766E]">
-                    Physical Calibration
+                    Printer Calibration
                   </Link>
                 </li>
               </ul>
@@ -939,7 +659,7 @@ export default function LandingPage() {
           <div className="pt-8 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
             <p>© 2026 HR Employee ID Platform. All rights reserved.</p>
             <p className="text-slate-400">
-              No third-party analytics • Self-hosted Noto Sans Bengali • Private Storage
+              No external telemetry • Self-hosted Noto fonts • Private PostgreSQL Storage
             </p>
           </div>
         </div>

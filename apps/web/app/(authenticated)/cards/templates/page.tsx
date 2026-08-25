@@ -88,6 +88,7 @@ export default function CardTemplatesPage() {
 
   // New Template Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateDesc, setNewTemplateDesc] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<TemplatePresetId>(
@@ -119,6 +120,7 @@ export default function CardTemplatesPage() {
     if (!newTemplateName.trim()) return;
 
     setIsSubmitting(true);
+    setModalError(null);
     try {
       const res = await fetch('/api/templates', {
         method: 'POST',
@@ -141,7 +143,7 @@ export default function CardTemplatesPage() {
       setNewTemplateDesc('');
       window.location.href = `/cards/templates/${data.template.id}`;
     } catch (err: any) {
-      alert(err.message || 'Failed to create template.');
+      setModalError(err.message || 'Failed to create template.');
     } finally {
       setIsSubmitting(false);
     }
@@ -288,6 +290,15 @@ export default function CardTemplatesPage() {
             </div>
 
             <form onSubmit={handleCreateTemplate} className="space-y-5">
+              {modalError && (
+                <div
+                  role="alert"
+                  className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 block">
                   Template Name *

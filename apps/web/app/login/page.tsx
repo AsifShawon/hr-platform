@@ -61,9 +61,9 @@ export default function LoginPage() {
           router.push('/dashboard');
         }, 400);
       }
-    } catch (err) {
+    } catch {
       setErrorMessage(
-        'Unable to connect to authentication service. Please ensure the server is running.',
+        'Unable to connect to authentication service. Please ensure the local server is running.',
       );
     } finally {
       setIsLoading(false);
@@ -74,11 +74,11 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-12 bg-white text-slate-900 selection:bg-teal-100 selection:text-teal-900">
       {/* Left Column (Desktop 5-col / Mobile top banner) */}
       <div className="lg:col-span-5 bg-[#134E4A] text-white p-6 sm:p-10 lg:p-12 flex flex-col justify-between relative overflow-hidden">
-        {/* Subtle Background Pattern */}
-        <div className="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-[#0F766E]/30 blur-3xl pointer-events-none" />
+        {/* Subtle Background Glow */}
+        <div className="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-[#14B8A6]/20 blur-3xl pointer-events-none" />
 
         {/* Top Header */}
-        <div className="space-y-6">
+        <div className="space-y-6 relative z-10">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
@@ -88,7 +88,7 @@ export default function LoginPage() {
           </Link>
 
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-800 text-white shadow-sm border border-teal-700">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-teal-800 text-white shadow-sm border border-teal-700">
               <ShieldCheck className="h-6 w-6 text-[#14B8A6]" />
             </div>
             <div>
@@ -99,8 +99,8 @@ export default function LoginPage() {
         </div>
 
         {/* Middle Card Visual Showcase (Desktop) */}
-        <div className="hidden lg:flex flex-col items-center my-8">
-          <div className="p-4 rounded-2xl bg-teal-950/40 border border-teal-800/60 shadow-2xl backdrop-blur-sm">
+        <div className="hidden lg:flex flex-col items-center my-8 relative z-10">
+          <div className="p-4 rounded-3xl bg-teal-950/40 border border-teal-800/60 shadow-2xl backdrop-blur-sm">
             <div className="mb-2 text-center">
               <span className="text-[11px] font-mono text-teal-200/80">
                 Official Credential Standard (60×90mm)
@@ -111,7 +111,7 @@ export default function LoginPage() {
         </div>
 
         {/* Bottom Privacy Statement */}
-        <div className="pt-6 border-t border-teal-800/80 text-xs text-teal-200/90 leading-relaxed space-y-2">
+        <div className="pt-6 border-t border-teal-800/80 text-xs text-teal-200/90 leading-relaxed space-y-2 relative z-10">
           <div className="flex items-center gap-2 text-teal-100 font-semibold">
             <Lock className="w-3.5 h-3.5 text-[#14B8A6]" />
             <span>Strict Privacy & Tenant Isolation</span>
@@ -127,7 +127,7 @@ export default function LoginPage() {
       {/* Right Column: Sign-In Presentation Form */}
       <div className="lg:col-span-7 flex-1 flex flex-col justify-center px-4 sm:px-8 lg:px-16 py-12 max-w-xl mx-auto w-full">
         {/* System Mode Indicator */}
-        <div className="mb-8 p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
+        <div className="mb-8 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <Server className="w-5 h-5 text-[#0F766E]" />
             <div>
@@ -135,12 +135,12 @@ export default function LoginPage() {
                 Local On-Premises System
               </span>
               <span className="text-[11px] text-slate-500">
-                Air-Gapped LAN Node: 127.0.0.1 / Private Network
+                Local Node: 127.0.0.1 / Factory LAN
               </span>
             </div>
           </div>
           <Badge variant="primary" size="sm">
-            Local Node
+            Local Node Active
           </Badge>
         </div>
 
@@ -148,14 +148,11 @@ export default function LoginPage() {
         <div className="space-y-6">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
                 Sign in to your organization
               </h2>
-              <Badge variant="primary" size="sm">
-                Local System
-              </Badge>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               Enter your local operator credentials to access the on-premises employee registry and
               ID card system.
             </p>
@@ -165,7 +162,7 @@ export default function LoginPage() {
           {errorMessage && (
             <div
               role="alert"
-              className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5 animate-in fade-in duration-150"
+              className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-sm flex items-start gap-2.5 animate-in fade-in duration-150"
             >
               <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
               <div>
@@ -178,7 +175,7 @@ export default function LoginPage() {
           {infoMessage && (
             <div
               role="status"
-              className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 text-teal-900 text-sm flex items-start gap-2.5 animate-in fade-in duration-150"
+              className="p-3.5 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 text-sm flex items-start gap-2.5 animate-in fade-in duration-150"
             >
               <CheckCircle2 className="w-5 h-5 text-[#0F766E] shrink-0 mt-0.5" />
               <div>
@@ -215,7 +212,7 @@ export default function LoginPage() {
 
             {/* Local Recovery Helper Link */}
             <div className="flex items-center justify-between text-xs pt-1">
-              <div className="w-full flex items-center justify-between text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 text-[11px]">
+              <div className="w-full flex items-center justify-between text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 text-[11px]">
                 <span className="flex items-center gap-1.5 font-medium">
                   <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
                   On-Premises recovery:
@@ -229,10 +226,10 @@ export default function LoginPage() {
               type="submit"
               variant="primary"
               size="lg"
-              className="w-full justify-center mt-2 shadow-md"
+              className="w-full justify-center mt-2 bg-[#134E4A] hover:bg-[#0F766E] text-white font-bold shadow-md"
               isLoading={isLoading}
             >
-              Sign In to Platform
+              Sign In to Workspace
             </Button>
           </form>
 

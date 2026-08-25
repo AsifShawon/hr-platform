@@ -11,6 +11,7 @@ import {
   CardLayoutTheme,
   CardSideLayoutSpecification,
 } from '@hr/domain';
+import { calculateAdaptiveFontSizePt } from './typography.js';
 
 // ==============================================================================
 // 1. Physical Geometry Constants & Unit Conversion Engine
@@ -352,23 +353,7 @@ export function getPresetLayout(
 // 3. Bilingual Text Layout & Font Scale Helpers
 // ==============================================================================
 
-/**
- * Calculates adaptive font size in points to prevent overflow for long names.
- */
-export function calculateAdaptiveFontSizePt(
-  text: string,
-  baseSizePt: number = 11,
-  minSizePt: number = 7.5,
-  charLimit: number = 22,
-): number {
-  if (!text) return baseSizePt;
-  const length = text.trim().length;
-  if (length <= charLimit) return baseSizePt;
-
-  const excess = length - charLimit;
-  const reduction = (excess / 12) * 2;
-  return Math.max(minSizePt, Math.round((baseSizePt - reduction) * 10) / 10);
-}
+export { calculateAdaptiveFontSizePt } from './typography.js';
 
 // ==============================================================================
 // 4. Sheet Imposition & Layout Calculation (A4 / US Letter)
@@ -986,6 +971,71 @@ export function generateCardHtmlDocument(options: CardHtmlDocumentOptions): stri
   `;
 }
 
+export interface BatchCardHtmlDocumentOptions {
+  items: Array<{
+    layout: CardLayoutSpecification;
+    worker: CardRenderWorkerPayload;
+  }>;
+  side?: 'front' | 'back' | 'duplex';
+  includeBleed?: boolean;
+  debugMode?: boolean;
+}
+
+export function generateBatchCardHtmlDocument(options: BatchCardHtmlDocumentOptions): string {
+  const { items, side = 'duplex', includeBleed = false, debugMode = false } = options;
+  if (items.length === 0) {
+    return '<!DOCTYPE html><html><body></body></html>';
+  }
+
+  // Extract individual card body pages
+  const cardPages: string[] = [];
+  for (const item of items) {
+    const singleHtml = generateCardHtmlDocument({
+      layout: item.layout,
+      worker: item.worker,
+      side,
+      includeBleed,
+      debugMode,
+    });
+    // Extract body contents
+    const bodyMatch = singleHtml.match(/<body>([\s\S]*?)<\/body>/);
+    if (bodyMatch && bodyMatch[1]) {
+      cardPages.push(bodyMatch[1]);
+    }
+  }
+
+  // Use base layout for style declarations
+  const first = items[0]!;
+  const { dimensions } = first.layout;
+  const widthMm = includeBleed ? dimensions.widthMm + dimensions.bleedMm * 2 : dimensions.widthMm;
+  const heightMm = includeBleed
+    ? dimensions.heightMm + dimensions.bleedMm * 2
+    : dimensions.heightMm;
+
+  // Extract head style from first document
+  const firstDoc = generateCardHtmlDocument({
+    layout: first.layout,
+    worker: first.worker,
+    side,
+    includeBleed,
+    debugMode,
+  });
+  const headMatch = firstDoc.match(/<head>([\s\S]*?)<\/head>/);
+  const headContent = headMatch ? headMatch[1] : '';
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      ${headContent}
+    </head>
+    <body>
+      ${cardPages.join('\n')}
+    </body>
+    </html>
+  `;
+}
+
 // ==============================================================================
 // 6. Calibration Sheet HTML Generator
 // ==============================================================================
@@ -1187,4 +1237,105 @@ export function generateCalibrationHtmlDocument(sheetType: SheetType = 'A4'): st
     </body>
     </html>
   `;
+}
+
+// ==============================================================================
+// 6. Chromium Render Engine & PDF Inspection Exports
+// ==============================================================================
+
+// ==============================================================================
+// 7. Printed Snapshot Generator
+// ==============================================================================
+
+export interface CreatePrintedSnapshotInput {
+  person: {
+    id: string;
+    displayName: string;
+    displayNameLatin?: string | null;
+    displayNameNative?: string | null;
+    bloodGroup?: string | null;
+    primaryPhone?: string | null;
+    photoMediaId?: string | null;
+  };
+  employment: {
+    id: string;
+    employeeNumber: string;
+    jobTitle: string;
+    jobCategory: any;
+    orgUnitName?: string | null;
+    locationName?: string | null;
+    joinDate: Date | string;
+  };
+  organization: {
+    id: string;
+    name: string;
+    displayName?: string | null;
+    code: string;
+    logoPath?: string | null;
+    primaryColor: string;
+    secondaryColor: string;
+    accentColor: string;
+  };
+  card: {
+    serialNumber: string;
+    issueNumber: number;
+    issuedAt: string;
+    validUntil?: string | null;
+    formatPreset?: string;
+    widthMm: number;
+    heightMm: number;
+    orientation: string;
+  };
+  photoChecksumSha256?: string | null;
+  logoChecksumSha256?: string | null;
+  customFields?: Record<string, unknown>;
+}
+
+export function createPrintedSnapshot(input: CreatePrintedSnapshotInput) {
+  const joinDateStr =
+    typeof input.employment.joinDate === 'string'
+      ? input.employment.joinDate
+      : input.employment.joinDate.toISOString().split('T')[0]!;
+
+  return {
+    worker: {
+      personId: input.person.id,
+      employmentId: input.employment.id,
+      employeeNumber: input.employment.employeeNumber,
+      displayName: input.person.displayName,
+      displayNameLatin: input.person.displayNameLatin || null,
+      displayNameNative: input.person.displayNameNative || null,
+      jobTitle: input.employment.jobTitle,
+      jobCategory: input.employment.jobCategory,
+      department: input.employment.orgUnitName || null,
+      location: input.employment.locationName || null,
+      joinDate: joinDateStr,
+      bloodGroup: input.person.bloodGroup || null,
+      emergencyContact: input.person.primaryPhone || null,
+      photoMediaId: input.person.photoMediaId || null,
+      photoChecksumSha256: input.photoChecksumSha256 || null,
+    },
+    organization: {
+      id: input.organization.id,
+      name: input.organization.name,
+      displayName: input.organization.displayName || null,
+      code: input.organization.code,
+      logoPath: input.organization.logoPath || null,
+      logoChecksumSha256: input.logoChecksumSha256 || null,
+      primaryColor: input.organization.primaryColor,
+      secondaryColor: input.organization.secondaryColor,
+      accentColor: input.organization.accentColor,
+    },
+    card: {
+      serialNumber: input.card.serialNumber,
+      issueNumber: input.card.issueNumber,
+      issuedAt: input.card.issuedAt,
+      validUntil: input.card.validUntil || null,
+      formatPreset: input.card.formatPreset || 'COMPANY_VERTICAL_60X90',
+      widthMm: input.card.widthMm,
+      heightMm: input.card.heightMm,
+      orientation: input.card.orientation,
+    },
+    customFields: input.customFields || {},
+  };
 }

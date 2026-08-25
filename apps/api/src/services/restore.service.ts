@@ -236,6 +236,9 @@ export class RestoreService {
       await prisma.$transaction(
         async (tx) => {
           // Delete existing tenant data in reverse referential order
+          await tx.printJobItem.deleteMany({ where: { tenantId } });
+          await tx.printJob.deleteMany({ where: { tenantId } });
+          await tx.cardIssue.deleteMany({ where: { tenantId } });
           await tx.auditEvent.deleteMany({ where: { tenantId } });
           await tx.roleGrant.deleteMany({ where: { user: { tenantId } } });
           await tx.templateAssignment.deleteMany({ where: { tenantId } });
@@ -449,6 +452,40 @@ export class RestoreService {
                 status: ver.status,
                 layout: ver.layout,
                 checksumSha256: ver.checksumSha256,
+              },
+            });
+          }
+
+          // Insert Card Issues
+          for (const issue of data.cardIssues || []) {
+            await tx.cardIssue.create({
+              data: {
+                id: issue.id,
+                tenantId,
+                personId: issue.personId,
+                employmentId: issue.employmentId,
+                templateVersionId: issue.templateVersionId,
+                cardSerial: issue.cardSerial,
+                issueNumber: issue.issueNumber,
+                issueReason: issue.issueReason,
+                reasonNotes: issue.reasonNotes,
+                status: issue.status,
+                isCurrent: issue.isCurrent,
+                printedSnapshot: issue.printedSnapshot,
+                layoutSnapshot: issue.layoutSnapshot,
+                templateChecksum: issue.templateChecksum,
+                renderManifest: issue.renderManifest,
+                pdfStorageKey: issue.pdfStorageKey,
+                pdfChecksumSha256: issue.pdfChecksumSha256,
+                previousIssueId: issue.previousIssueId,
+                issuedByUserId: issue.issuedByUserId,
+                issuedAt: issue.issuedAt ? new Date(issue.issuedAt) : null,
+                validUntil: issue.validUntil ? new Date(issue.validUntil) : null,
+                revokedByUserId: issue.revokedByUserId,
+                revokedAt: issue.revokedAt ? new Date(issue.revokedAt) : null,
+                revocationReason: issue.revocationReason,
+                revocationNotes: issue.revocationNotes,
+                idempotencyKey: issue.idempotencyKey,
               },
             });
           }

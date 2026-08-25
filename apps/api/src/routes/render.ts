@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { Permission } from '@hr/domain';
-import { CardRenderer } from '@hr/worker';
+import { CardRenderer } from '@hr/card-kit/renderer';
 import { z } from '@hr/schemas';
 
 const renderPdfRequestSchema = z.object({

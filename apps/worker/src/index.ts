@@ -2,9 +2,15 @@ import { prisma } from '@hr/db';
 import { env } from '@hr/config';
 import { pino } from 'pino';
 
-export * from './renderer/browser-pool.js';
-export * from './renderer/card-renderer.js';
-export * from './renderer/pdf-inspector.js';
+export {
+  BrowserPool,
+  CardRenderer,
+  inspectPdfDocument,
+  type CardRenderManifest,
+  type RenderCardPdfOptions,
+  type RenderCardPngOptions,
+  type PdfInspectionResult,
+} from '@hr/card-kit/renderer';
 
 const logger = pino({
   name: 'hr-worker',

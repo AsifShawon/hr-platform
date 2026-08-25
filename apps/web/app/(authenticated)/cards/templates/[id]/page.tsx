@@ -242,7 +242,7 @@ export default function TemplateStudioPage({ params }: { params: Promise<{ id: s
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
-      alert(err.message || 'Error exporting print PDF.');
+      setFeedback({ type: 'error', message: err.message || 'Error exporting print PDF.' });
     } finally {
       setIsExportingPdf(false);
     }
@@ -274,7 +274,7 @@ export default function TemplateStudioPage({ params }: { params: Promise<{ id: s
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
-      alert(err.message || 'Error exporting PNG.');
+      setFeedback({ type: 'error', message: err.message || 'Error exporting PNG.' });
     } finally {
       setIsExportingPng(false);
     }

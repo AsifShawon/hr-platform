@@ -8,10 +8,6 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   transpilePackages: [
     '@hr/config',
     '@hr/domain',
@@ -22,7 +18,8 @@ const nextConfig = {
     '@hr/fixtures',
   ],
   async rewrites() {
-    const apiUrl = process.env.API_URL || 'http://localhost:3001';
+    const apiUrl =
+      process.env.API_INTERNAL_URL || process.env.API_URL || 'http://localhost:3001';
     return [
       {
         source: '/api/:path((?!health$).*)',

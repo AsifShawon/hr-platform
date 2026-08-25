@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:2ef2f82e-8f14-4d3d-84d4-22a8683500d0",
+  "serialNumber": "urn:uuid:d5853e8c-54a0-4466-8fd5-e05d31ea8c60",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-08-25T06:25:43.577Z",
+    "timestamp": "2026-08-25T13:59:36.953Z",
     "component": {
       "type": "application",
       "name": "hr-platform",
@@ -15,6 +15,13 @@
   "components": [
     {
       "type": "library",
+      "name": "@axe-core/playwright",
+      "version": "4.13.0",
+      "purl": "pkg:npm/@axe-core/playwright@4.13.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
       "name": "@fastify/cookie",
       "version": "11.1.2",
       "purl": "pkg:npm/@fastify/cookie@11.1.2",
@@ -23,15 +30,15 @@
     {
       "type": "library",
       "name": "@fastify/cors",
-      "version": "10.0.2",
-      "purl": "pkg:npm/@fastify/cors@10.0.2",
+      "version": "10.1.0",
+      "purl": "pkg:npm/@fastify/cors@10.1.0",
       "scope": "required"
     },
     {
       "type": "library",
       "name": "@fastify/helmet",
-      "version": "13.0.1",
-      "purl": "pkg:npm/@fastify/helmet@13.0.1",
+      "version": "13.1.1",
+      "purl": "pkg:npm/@fastify/helmet@13.1.1",
       "scope": "required"
     },
     {
@@ -44,8 +51,8 @@
     {
       "type": "library",
       "name": "@fastify/sensible",
-      "version": "6.0.3",
-      "purl": "pkg:npm/@fastify/sensible@6.0.3",
+      "version": "6.0.5",
+      "purl": "pkg:npm/@fastify/sensible@6.0.5",
       "scope": "required"
     },
     {
@@ -53,6 +60,55 @@
       "name": "@node-rs/argon2",
       "version": "2.1.0",
       "purl": "pkg:npm/@node-rs/argon2@2.1.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@playwright/test",
+      "version": "1.62.1",
+      "purl": "pkg:npm/@playwright/test@1.62.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@prisma/client",
+      "version": "6.19.3",
+      "purl": "pkg:npm/@prisma/client@6.19.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@types/adm-zip",
+      "version": "0.5.8",
+      "purl": "pkg:npm/@types/adm-zip@0.5.8",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@types/archiver",
+      "version": "8.0.0",
+      "purl": "pkg:npm/@types/archiver@8.0.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@types/node",
+      "version": "22.20.1",
+      "purl": "pkg:npm/@types/node@22.20.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@types/react",
+      "version": "19.2.18",
+      "purl": "pkg:npm/@types/react@19.2.18",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "@types/react-dom",
+      "version": "19.2.5",
+      "purl": "pkg:npm/@types/react-dom@19.2.5",
       "scope": "required"
     },
     {
@@ -71,9 +127,44 @@
     },
     {
       "type": "library",
+      "name": "autoprefixer",
+      "version": "10.5.4",
+      "purl": "pkg:npm/autoprefixer@10.5.4",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "clsx",
+      "version": "2.1.1",
+      "purl": "pkg:npm/clsx@2.1.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "dotenv",
+      "version": "16.6.1",
+      "purl": "pkg:npm/dotenv@16.6.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "eslint",
+      "version": "9.39.5",
+      "purl": "pkg:npm/eslint@9.39.5",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "eslint-config-next",
+      "version": "15.1.7",
+      "purl": "pkg:npm/eslint-config-next@15.1.7",
+      "scope": "required"
+    },
+    {
+      "type": "library",
       "name": "fastify",
-      "version": "5.2.1",
-      "purl": "pkg:npm/fastify@5.2.1",
+      "version": "5.12.1",
+      "purl": "pkg:npm/fastify@5.12.1",
       "scope": "required"
     },
     {
@@ -81,20 +172,6 @@
       "name": "fastify-plugin",
       "version": "6.0.0",
       "purl": "pkg:npm/fastify-plugin@6.0.0",
-      "scope": "required"
-    },
-    {
-      "type": "library",
-      "name": "pino",
-      "version": "9.6.0",
-      "purl": "pkg:npm/pino@9.6.0",
-      "scope": "required"
-    },
-    {
-      "type": "library",
-      "name": "sharp",
-      "version": "0.35.3",
-      "purl": "pkg:npm/sharp@0.35.3",
       "scope": "required"
     },
     {
@@ -107,22 +184,8 @@
     {
       "type": "library",
       "name": "next",
-      "version": "15.1.7",
-      "purl": "pkg:npm/next@15.1.7",
-      "scope": "required"
-    },
-    {
-      "type": "library",
-      "name": "react",
-      "version": "19.0.0",
-      "purl": "pkg:npm/react@19.0.0",
-      "scope": "required"
-    },
-    {
-      "type": "library",
-      "name": "react-dom",
-      "version": "19.0.0",
-      "purl": "pkg:npm/react-dom@19.0.0",
+      "version": "15.5.23",
+      "purl": "pkg:npm/next@15.5.23",
       "scope": "required"
     },
     {
@@ -134,9 +197,107 @@
     },
     {
       "type": "library",
+      "name": "pino",
+      "version": "9.14.0",
+      "purl": "pkg:npm/pino@9.14.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
       "name": "playwright",
-      "version": "1.50.1",
-      "purl": "pkg:npm/playwright@1.50.1",
+      "version": "1.62.1",
+      "purl": "pkg:npm/playwright@1.62.1",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "postcss",
+      "version": "8.5.26",
+      "purl": "pkg:npm/postcss@8.5.26",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "prettier",
+      "version": "3.9.6",
+      "purl": "pkg:npm/prettier@3.9.6",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "prisma",
+      "version": "6.19.3",
+      "purl": "pkg:npm/prisma@6.19.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "react",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react@19.2.8",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "react-dom",
+      "version": "19.2.8",
+      "purl": "pkg:npm/react-dom@19.2.8",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "sharp",
+      "version": "0.35.3",
+      "purl": "pkg:npm/sharp@0.35.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "tailwind-merge",
+      "version": "3.6.0",
+      "purl": "pkg:npm/tailwind-merge@3.6.0",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "tailwindcss",
+      "version": "3.4.19",
+      "purl": "pkg:npm/tailwindcss@3.4.19",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "tsx",
+      "version": "4.23.12",
+      "purl": "pkg:npm/tsx@4.23.12",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "turbo",
+      "version": "2.10.11",
+      "purl": "pkg:npm/turbo@2.10.11",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "typescript",
+      "version": "5.9.3",
+      "purl": "pkg:npm/typescript@5.9.3",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "vitest",
+      "version": "3.2.7",
+      "purl": "pkg:npm/vitest@3.2.7",
+      "scope": "required"
+    },
+    {
+      "type": "library",
+      "name": "zod",
+      "version": "3.25.76",
+      "purl": "pkg:npm/zod@3.25.76",
       "scope": "required"
     }
   ]

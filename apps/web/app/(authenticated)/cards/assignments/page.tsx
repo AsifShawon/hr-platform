@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Plus,
   AlertTriangle,
+  AlertCircle,
   CheckCircle2,
   Shield,
   Briefcase,
@@ -15,6 +16,7 @@ import {
   User,
   Trash2,
 } from 'lucide-react';
+
 import { Button, Input, Badge } from '@hr/ui';
 import { TemplateAssignmentTarget, JobCategory } from '@hr/domain';
 
@@ -47,6 +49,7 @@ export default function TemplateAssignmentsPage() {
 
   // New Rule Modal state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [selectedTargetType, setSelectedTargetType] = useState<TemplateAssignmentTarget>(
     TemplateAssignmentTarget.JOB_CATEGORY,
@@ -89,9 +92,8 @@ export default function TemplateAssignmentsPage() {
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTemplateId) return;
-
     setIsSubmitting(true);
+    setModalError(null);
     try {
       const res = await fetch('/api/templates/assignments', {
         method: 'POST',
@@ -106,13 +108,14 @@ export default function TemplateAssignmentsPage() {
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to create assignment.');
+        throw new Error(errorData.error || errorData.message || 'Failed to create assignment.');
       }
 
       setIsCreateModalOpen(false);
+      setModalError(null);
       fetchAssignments();
     } catch (err: any) {
-      alert(err.message || 'Failed to create assignment.');
+      setModalError(err.message || 'Failed to create assignment.');
     } finally {
       setIsSubmitting(false);
     }
@@ -273,6 +276,15 @@ export default function TemplateAssignmentsPage() {
             </div>
 
             <form onSubmit={handleCreateAssignment} className="space-y-4 text-xs">
+              {modalError && (
+                <div
+                  role="alert"
+                  className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2"
+                >
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="font-semibold text-slate-700 block">Target Type *</label>
                 <select

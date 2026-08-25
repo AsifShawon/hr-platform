@@ -59,6 +59,7 @@ export default function SystemHealthPage() {
   const handleToggleLan = async () => {
     if (!diagnostics) return;
     setIsLanToggling(true);
+    setError(null);
     try {
       const res = await fetch('/api/system/lan-toggle', {
         method: 'POST',
@@ -69,10 +70,10 @@ export default function SystemHealthPage() {
         await fetchDiagnostics();
       } else {
         const errData = await res.json().catch(() => ({}));
-        alert(errData.message || 'Failed to toggle LAN mode.');
+        setError(errData.message || 'Failed to toggle LAN mode.');
       }
     } catch {
-      alert('Network error while toggling LAN mode.');
+      setError('Network error while toggling LAN mode.');
     } finally {
       setIsLanToggling(false);
     }
@@ -80,6 +81,7 @@ export default function SystemHealthPage() {
 
   const handleDownloadSupportBundle = async () => {
     setIsDownloadingBundle(true);
+    setError(null);
     try {
       const res = await fetch('/api/system/support-bundle', { method: 'POST' });
       if (res.ok) {
@@ -93,10 +95,10 @@ export default function SystemHealthPage() {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       } else {
-        alert('Failed to generate diagnostic support bundle.');
+        setError('Failed to generate diagnostic support bundle.');
       }
     } catch {
-      alert('Network error downloading support bundle.');
+      setError('Network error downloading support bundle.');
     } finally {
       setIsDownloadingBundle(false);
     }

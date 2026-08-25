@@ -332,34 +332,63 @@ Manages AES-256-GCM encrypted `.hrbackup` bundle history and manual retention sc
 
 ---
 
-## 4. Pending Schema Models (Phase 2 Roadmap)
+---
 
-The following tables will be created in **Phase 2 (Card Issuance & Revocation Engine)**:
+## 4. Physical Card Issuance & Production Models
 
-### `card_issues` (Pending Phase 2)
+### 2.19 `card_issues`
 
-Immutable records of printed physical credentials.
+Immutable historical records of printed and active physical credentials.
 
-- `id` (UUID, Primary Key): Unique card issuance record.
-- `tenant_id` (UUID, FK -> `tenants.id`): Tenant scoping.
-- `person_id` (UUID, FK -> `people.id`): Target worker.
-- `employment_id` (UUID, FK -> `employments.id`): Target employment.
-- `template_version_id` (UUID, FK -> `template_versions.id`): Layout snapshot reference.
-- `card_serial` (String, Unique): Printed alphanumeric unique serial (e.g. `CARD-2026-00001`).
+- `id` (Text/CUID, Primary Key): Unique card issuance record.
+- `tenant_id` (Text, FK -> `tenants.id`): Tenant scoping.
+- `person_id` (Text, FK -> `people.id`): Target worker.
+- `employment_id` (Text, FK -> `employments.id`): Target employment.
+- `template_version_id` (Text, FK -> `template_versions.id`): Layout snapshot reference.
+- `card_serial` (String, Unique per tenant): Unique alphanumeric serial (`CARD-YYYY-XXXXXX`).
 - `issue_number` (Integer): Incremental issue sequence for worker (1 = Initial, 2+ = Reprint).
-- `issue_reason` (Enum): `INITIAL`, `DAMAGED`, `LOST`, `STOLEN`, `NAME_CHANGE`, `TITLE_CHANGE`, `EXPIRED`, `OTHER`.
-- `reason_notes` (String, Optional): Mandatory explanation text for replacements.
-- `status` (Enum): `PENDING_PRINT`, `PRINTED`, `ACTIVE`, `REPLACED`, `REVOKED`.
-- `printed_snapshot` (JSON): Immutable copy of all printed values (names, titles, photo hash) at time of issue.
-- `issued_by_user_id` (UUID, FK -> `users.id`): Authorizing operator.
-- `issued_at` (Timestamp): Timestamp when card was printed/issued.
+- `issue_reason` (Enum): `INITIAL`, `DAMAGED`, `LOST`, `STOLEN`, `NAME_CHANGE`, `TITLE_CHANGE`, `PROMOTION`, `TRANSFER`, `EXPIRED`, `OTHER`.
+- `reason_notes` (String, Optional): Mandatory explanation text for replacement reprint.
+- `status` (Enum): `DRAFT`, `RENDER_READY`, `PRINTED`, `ISSUED`, `REPLACED`, `REVOKED`, `EXPIRED`, `CANCELLED`.
+- `is_current` (Boolean): Flag indicating if this is the active badge for the worker.
+- `printed_snapshot` (JSON): Immutable copy of all printed values (names, titles, org details, photo SHA-256) at issue time.
+- `layout_snapshot` (JSON): Content-addressed copy of card layout at issue time.
+- `template_checksum` (String): SHA-256 hash of the template specification.
+- `previous_issue_id` (Text, FK -> `card_issues.id`, Optional): Self-referencing lineage link for replacements.
+- `issued_by_user_id` (Text, FK -> `users.id`, Optional): Authorizing operator.
+- `issued_at` (Timestamp, Optional): Timestamp when card became active.
+- `valid_until` (Date, Optional): Card validity expiration date.
+- `revoked_by_user_id` (Text, FK -> `users.id`, Optional): Operator who revoked the credential.
 - `revoked_at` (Timestamp, Optional): Revocation timestamp.
-- `revoked_by_user_id` (UUID, FK -> `users.id`, Optional): Operator who revoked credential.
-- `revocation_reason` (String, Optional): Explanation for card revocation.
+- `revocation_reason` (Enum, Optional): `SEPARATION`, `SUSPENSION`, `LOST_STOLEN`, `SECURITY_REVOCATION`, `ADMINISTRATIVE_CORRECTION`, `OTHER`.
+- `revocation_notes` (String, Optional): Mandatory explanation text for revocation.
+- `idempotency_key` (String, Unique per tenant, Optional): Client-supplied mutation deduplication key.
 
-### `print_jobs` & `print_job_items` (Pending Phase 3)
+### 2.20 `print_jobs` & `print_job_items`
 
-Manages batch PDF rendering and print queue status.
+Manages batch PDF rendering queue, physical imposition grids, and operator confirmation.
 
-- `print_jobs`: Batch container with `status` (`QUEUED`, `RENDERING`, `COMPLETED`, `FAILED`), format (`A4_SHEET`, `LETTER_SHEET`, `INDIVIDUAL_PDF`), total items, output file path.
-- `print_job_items`: Individual card items in batch with grid coordinates `(sheet_number, row, col, side)`.
+- `print_jobs`:
+  - `id` (Text, Primary Key): Unique print job batch identifier.
+  - `tenant_id` (Text, FK -> `tenants.id`): Tenant scoping.
+  - `status` (Enum): `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `CANCELLED`.
+  - `output_format` (Enum): `A4_SHEET`, `LETTER_SHEET`, `INDIVIDUAL_PDF`, `HIGH_RES_PNG`.
+  - `side` (Enum): `FRONT`, `BACK`, `DUPLEX`.
+  - `total_items` / `processed_items` / `failed_items` (Integer): Progress counters.
+  - `output_storage_key` (String, Optional): Storage path of generated master PDF.
+  - `output_file_size_bytes` / `output_checksum_sha256`: Master artifact verification.
+  - `operator_status` (Enum): `UNCONFIRMED`, `CONFIRMED_PRINTED`, `REJECTED_DEFECT`.
+  - `confirmed_by_user_id` (Text, FK -> `users.id`, Optional): Operator confirming physical print.
+  - `confirmed_at` (Timestamp, Optional): Operator sign-off timestamp.
+  - `confirmation_notes` (String, Optional): Operator defect or production notes.
+  - `idempotency_key` (String, Unique per tenant, Optional): Idempotency key.
+
+- `print_job_items`:
+  - `id` (Text, Primary Key): Unique item identifier.
+  - `tenant_id` (Text, FK -> `tenants.id`): Tenant scoping.
+  - `print_job_id` (Text, FK -> `print_jobs.id`): Parent job container.
+  - `card_issue_id` (Text, FK -> `card_issues.id`): Linked card issue record.
+  - `item_index` (Integer): Deterministic rendering sequence.
+  - `status` (Enum): `PENDING`, `RENDERING`, `RENDERED`, `FAILED`, `SKIPPED`.
+  - `sheet_number` / `grid_row` / `grid_column` (Integer, Optional): Sheet imposition coordinates.
+  - `copies` (Integer): Number of badge copies requested.

@@ -5,6 +5,13 @@ import {
   EmploymentStatus,
   JobCategory,
   IdentityDocumentType,
+  CardIssueStatus,
+  CardIssueReason,
+  CardRevocationReason,
+  PrintJobStatus,
+  PrintOutputFormat,
+  PrintJobSide,
+  OperatorPrintStatus,
 } from '@hr/domain';
 
 export interface FictionalOrganizationFixture {
@@ -686,3 +693,94 @@ export const FICTIONAL_WORKERS: readonly FictionalWorkerFixture[] = FICTIONAL_PE
   bloodGroup: p.bloodGroup,
   emergencyContact: p.primaryPhone,
 }));
+
+export interface FictionalCardIssueFixture {
+  employeeNumber: string;
+  cardSerial: string;
+  issueNumber: number;
+  issueReason: CardIssueReason;
+  reasonNotes?: string;
+  status: CardIssueStatus;
+  isCurrent: boolean;
+  issuedAt: string;
+  revocationReason?: CardRevocationReason;
+  revocationNotes?: string;
+}
+
+export const FICTIONAL_CARD_ISSUES: readonly FictionalCardIssueFixture[] = [
+  // 1. Initial Issue Active Card
+  {
+    employeeNumber: 'EMP-1001',
+    cardSerial: 'CARD-2026-000001',
+    issueNumber: 1,
+    issueReason: CardIssueReason.INITIAL,
+    status: CardIssueStatus.ISSUED,
+    isCurrent: true,
+    issuedAt: '2026-01-15T09:00:00.000Z',
+  },
+  // 2. Replaced historical card (Damaged replacement scenario)
+  {
+    employeeNumber: 'EMP-1002',
+    cardSerial: 'CARD-2026-000002',
+    issueNumber: 1,
+    issueReason: CardIssueReason.INITIAL,
+    status: CardIssueStatus.REPLACED,
+    isCurrent: false,
+    issuedAt: '2026-01-15T09:15:00.000Z',
+  },
+  // 3. Current active reprint card (Lineage linked to Issue #1)
+  {
+    employeeNumber: 'EMP-1002',
+    cardSerial: 'CARD-2026-000003',
+    issueNumber: 2,
+    issueReason: CardIssueReason.DAMAGED,
+    reasonNotes: 'Card lanyard clip broke and front surface was severely scratched on shop floor.',
+    status: CardIssueStatus.ISSUED,
+    isCurrent: true,
+    issuedAt: '2026-03-20T11:30:00.000Z',
+  },
+  // 4. Revoked credential (Separated worker scenario)
+  {
+    employeeNumber: 'EMP-1018',
+    cardSerial: 'CARD-2026-000018',
+    issueNumber: 1,
+    issueReason: CardIssueReason.INITIAL,
+    status: CardIssueStatus.REVOKED,
+    isCurrent: false,
+    issuedAt: '2026-01-15T10:00:00.000Z',
+    revocationReason: CardRevocationReason.SEPARATION,
+    revocationNotes:
+      'Employee completed formal resignation and returned physical badge to HR security desk.',
+  },
+];
+
+export interface FictionalPrintJobFixture {
+  outputFormat: PrintOutputFormat;
+  side: PrintJobSide;
+  status: PrintJobStatus;
+  operatorStatus: OperatorPrintStatus;
+  totalItems: number;
+  processedItems: number;
+  failedItems: number;
+}
+
+export const FICTIONAL_PRINT_JOBS: readonly FictionalPrintJobFixture[] = [
+  {
+    outputFormat: PrintOutputFormat.A4_SHEET,
+    side: PrintJobSide.DUPLEX,
+    status: PrintJobStatus.COMPLETED,
+    operatorStatus: OperatorPrintStatus.CONFIRMED_PRINTED,
+    totalItems: 8,
+    processedItems: 8,
+    failedItems: 0,
+  },
+  {
+    outputFormat: PrintOutputFormat.INDIVIDUAL_PDF,
+    side: PrintJobSide.DUPLEX,
+    status: PrintJobStatus.QUEUED,
+    operatorStatus: OperatorPrintStatus.UNCONFIRMED,
+    totalItems: 1,
+    processedItems: 0,
+    failedItems: 0,
+  },
+];

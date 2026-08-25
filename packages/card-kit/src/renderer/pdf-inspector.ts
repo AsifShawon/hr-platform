@@ -1,5 +1,5 @@
 import { PDFDocument } from 'pdf-lib';
-import { pdfPointsToMm } from '@hr/card-kit';
+import { pdfPointsToMm } from '../index.js';
 
 export interface PdfInspectionResult {
   pageCount: number;

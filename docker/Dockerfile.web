@@ -10,7 +10,7 @@ COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml turbo.json tsconfig.base.j
 COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
-RUN pnpm install --frozen-lockfile=false
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter @hr/web build
 
 FROM base AS runner

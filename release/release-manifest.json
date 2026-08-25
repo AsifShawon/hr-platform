@@ -1,80 +1,85 @@
 {
   "name": "hr-platform-onprem-mvp",
   "version": "v1.0.0-pilot.1",
-  "schemaVersion": "20260825_phase13_init",
+  "schemaVersion": "20260825_phase1_init",
   "releaseDate": "2026-08-25",
   "targetArchitecture": "linux/amd64, windows/amd64 (Docker Desktop/Engine)",
   "minDockerVersion": "24.0.0+ / Compose v2.20+",
   "files": [
     {
       "path": "docker-compose.prod.yml",
-      "bytes": 4757,
-      "sha256": "c87b51b54760130ed54b0dfa18ed221469f73575953c1b827611ec012a4c3d5e"
+      "bytes": 4947,
+      "sha256": "486d6320f294266996b4cd3c235591257233dc372c75d1b19483adc6fd1071d1"
+    },
+    {
+      "path": "docker-compose.yml",
+      "bytes": 3189,
+      "sha256": "f58d0395c2f7fb07959bac8357437e99c8695305c5e58b349de21fe199f89913"
     },
     {
       "path": "pilot.sh",
-      "bytes": 9046,
-      "sha256": "e2625ed26ac09022b02e5ae203971e98d4ffdf7a1300e7a1e736640f188b0d76"
+      "bytes": 9293,
+      "sha256": "3fb317a7ee502e2ac96542d92649a43770c6cba34e309305d61368bc67dec56c"
     },
     {
       "path": "pilot.ps1",
-      "bytes": 8703,
-      "sha256": "0d14bbe9c2a172df965a6471bf7fb36872836cac5ab6b02af4d7476f398044ea"
+      "bytes": 8897,
+      "sha256": "3106aeceea0ba51e06314f2e6ce58b9de042d1ec703f16daed0ba4bb96a49366"
     },
     {
       "path": ".env.example",
-      "bytes": 894,
-      "sha256": "21cd758e4c545ce7d508b7c4d7a9664388c49a651df1841bbb92dc9491c56263"
+      "bytes": 1594,
+      "sha256": "7b6c87c0bbc6f7bb3c30e7d357811fe61584a2c4d57add9aeba3000a722985c5"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7153,
+      "sha256": "050fbc4d1aabde8fee3e117c612e8d9bf35887c6838fd3fe79dbb45aeae26c69"
     },
     {
       "path": "docker/caddy/Caddyfile.loopback",
-      "bytes": 538,
-      "sha256": "5649cdec072f5d9f9da79a82a7fc52fa3127fbb997b31292f9a30f86837ed825"
+      "bytes": 560,
+      "sha256": "bd1f9d7595537267f56facc210cb699025a2be01f1b524be2ca47bb0b6be2d54"
     },
     {
       "path": "docker/caddy/Caddyfile.lan",
-      "bytes": 636,
-      "sha256": "27c8e065e92e9935a5279cf0c9920c170821c82df77c29cca118cfaae40f0be4"
+      "bytes": 666,
+      "sha256": "8473c0775459a30af95cf17f4501a153f7402e1f932cc46d5e1eea27ac202ef4"
     },
     {
       "path": "docker/Dockerfile.api",
-      "bytes": 993,
-      "sha256": "178c285d7533097abbe48d6c4ae57da8d2977a7615347d93cf2380d1c626c310"
+      "bytes": 987,
+      "sha256": "987c9b988b0853d6f23bfa2868bdd921f49e8b8ec9648267ab4fa47ca937e41e"
     },
     {
       "path": "docker/Dockerfile.worker",
-      "bytes": 983,
-      "sha256": "bbda48fa787a6d426c526e493df1d996b77bd8ecbe0d10d5f656277f376f73ef"
+      "bytes": 1449,
+      "sha256": "a944aa27696c41739b33d99a681a78ec8096984878a40019c702ee14fc67c4c9"
     },
     {
       "path": "docker/Dockerfile.web",
-      "bytes": 811,
-      "sha256": "79de62f1cb4c53cbb3dcf4a877bde631864523b5f2c40e27d894631e988e331d"
+      "bytes": 805,
+      "sha256": "d2a7f4a3db388c274eb5c3ac7d8f87400fe960a4b6b7ee4f223c414578cf80ca"
     },
     {
       "path": "docker/Dockerfile.migration",
-      "bytes": 476,
-      "sha256": "937907708def555673da4affe339607d792d4f7ea374b40a609ccd3a55914298"
+      "bytes": 482,
+      "sha256": "fd0447ca86451ad852fc9f04c2c539d0c6615e654290d5131fe08066c530be5d"
     },
     {
       "path": "docs/PILOT-RUNBOOK.md",
-      "bytes": 4578,
-      "sha256": "dc1a51517be5ccbdd6bafc589cb090882d6e7d7a6b5cf43cfca0446cbf73da3d"
+      "bytes": 4832,
+      "sha256": "9b631578da5220fac56ffbc03aaf25e5424a6f28931e3fcfb6a4cbf086207f44"
     },
     {
       "path": "docs/PREREQUISITES.md",
-      "bytes": 2054,
-      "sha256": "c1c8c7ff2884aadf48c62a8f68abdd7cba8535179dc67084f1a9c850c27dcee1"
+      "bytes": 2733,
+      "sha256": "3256485548b00431932c1b94dadb61d7f8d6ab5a2d1c8d6cc1088db9d890f3e7"
     },
     {
       "path": "docs/TROUBLESHOOTING.md",
-      "bytes": 2835,
-      "sha256": "4c178dc1049605da8819cf1e4a07ec5275d383d01c2d35b6f6a2ab14c7054a6f"
-    },
-    {
-      "path": "CHANGELOG.md",
-      "bytes": 5091,
-      "sha256": "10c095c86c7535896b1c9c1f4d3eded38988e3bbbb535fdbc2bfb4f10a7c2fac"
+      "bytes": 2841,
+      "sha256": "aef97fd5d921296348c78c6b863f27ebbe59e57b56c126873f6c60564f52711d"
     }
   ],
   "containerImages": [

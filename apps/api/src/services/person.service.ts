@@ -590,6 +590,24 @@ export async function searchPeople(tenantId: string, params: PeopleQueryParams) 
             organization: { select: { id: true, name: true, displayName: true } },
             location: { select: { id: true, name: true, code: true } },
             orgUnit: { select: { id: true, name: true, nameBangla: true, code: true } },
+            cardIssues: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: {
+                id: true,
+                cardSerial: true,
+                status: true,
+                issuedAt: true,
+                issueNumber: true,
+                templateVersion: {
+                  select: {
+                    template: {
+                      select: { name: true, presetId: true },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
         identityDocuments: {
@@ -605,37 +623,56 @@ export async function searchPeople(tenantId: string, params: PeopleQueryParams) 
     }),
   ]);
 
-  const items = people.map((p) => ({
-    id: p.id,
-    displayName: p.displayName,
-    displayNameLatin: p.displayNameLatin,
-    displayNameNative: p.displayNameNative,
-    gender: p.gender,
-    bloodGroup: p.bloodGroup,
-    primaryPhone: p.primaryPhone,
-    primaryEmail: p.primaryEmail,
-    photoMediaId: p.photoMediaId,
-    version: p.version,
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
-    activeEmployment: p.employments[0]
-      ? {
-          id: p.employments[0].id,
-          employeeNumber: p.employments[0].employeeNumber,
-          jobTitle: p.employments[0].jobTitle,
-          jobCategory: p.employments[0].jobCategory,
-          joinDate: p.employments[0].joinDate.toISOString().split('T')[0],
-          endDate: p.employments[0].endDate?.toISOString().split('T')[0] || null,
-          status: p.employments[0].status,
-          organizationName:
-            p.employments[0].organization.displayName || p.employments[0].organization.name,
-          locationName: p.employments[0].location?.name || null,
-          orgUnitName: p.employments[0].orgUnit?.name || null,
-          orgUnitNameBangla: p.employments[0].orgUnit?.nameBangla || null,
-        }
-      : null,
-    identityDocument: p.identityDocuments[0] || null,
-  }));
+  const items = people.map((p) => {
+    const emp = p.employments[0];
+    const isSeparated =
+      emp?.status === EmploymentStatus.SEPARATED || emp?.status === EmploymentStatus.INACTIVE;
+    const hasPhoto = Boolean(p.photoMediaId);
+    const cardReadiness = !isSeparated && hasPhoto ? 'READY' : 'NEEDS_ATTENTION';
+    const lastIssue = emp?.cardIssues?.[0] || null;
+
+    return {
+      id: p.id,
+      displayName: p.displayName,
+      displayNameLatin: p.displayNameLatin,
+      displayNameNative: p.displayNameNative,
+      gender: p.gender,
+      bloodGroup: p.bloodGroup,
+      primaryPhone: p.primaryPhone,
+      primaryEmail: p.primaryEmail,
+      photoMediaId: p.photoMediaId,
+      cardReadiness,
+      assignedTemplate: lastIssue?.templateVersion?.template?.name || 'Classic Vertical',
+      lastIssuedCard: lastIssue
+        ? {
+            id: lastIssue.id,
+            cardSerial: lastIssue.cardSerial,
+            status: lastIssue.status,
+            issuedAt: lastIssue.issuedAt ? lastIssue.issuedAt.toISOString() : null,
+            issueNumber: lastIssue.issueNumber,
+          }
+        : null,
+      version: p.version,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      activeEmployment: emp
+        ? {
+            id: emp.id,
+            employeeNumber: emp.employeeNumber,
+            jobTitle: emp.jobTitle,
+            jobCategory: emp.jobCategory,
+            joinDate: emp.joinDate.toISOString().split('T')[0],
+            endDate: emp.endDate?.toISOString().split('T')[0] || null,
+            status: emp.status,
+            organizationName: emp.organization.displayName || emp.organization.name,
+            locationName: emp.location?.name || null,
+            orgUnitName: emp.orgUnit?.name || null,
+            orgUnitNameBangla: emp.orgUnit?.nameBangla || null,
+          }
+        : null,
+      identityDocument: p.identityDocuments[0] || null,
+    };
+  });
 
   return {
     items,

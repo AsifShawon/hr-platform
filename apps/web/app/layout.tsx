@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'HR ID Platform — Local-First Registry & Bilingual Card Issuance',
+  title: 'HR ID Platform — Local-First Employee Registry & Bilingual Card Issuance',
   description:
-    'Professional employee registry and high-precision bilingual ID card issuance platform for private local servers and enterprise clouds.',
+    'High-precision employee registry and physical ID card issuance system. 100% on-premises operation, private LAN mobile photo capture, exact 60×90mm bilingual rendering, and immutable audit trails.',
   keywords: [
     'employee ID card',
     'bilingual ID card',
@@ -12,7 +12,14 @@ export const metadata: Metadata = {
     'badge printing',
     'Bengali ID card',
     'on-premises HR',
+    'factory ID card',
+    '60x90mm card',
   ],
+  authors: [{ name: 'HR ID Platform Engineering' }],
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export const viewport: Viewport = {

@@ -149,3 +149,19 @@
      - Phase 4: Production Card Queue, Reprint & Revocation UI.
      - Phase 5: Honest Full-Stack E2E Matrix & Release Gate Verification.
 - **Consequences:** Eliminates documentation ambiguity, aligns UI and marketing copy with on-premises reality, establishes an honest quality baseline, and provides a clear technical roadmap to MVP release readiness.
+
+## DEC-0012: Reproducible Local Runtime, Clean Renderer Boundary & Lockfile-Backed SBOM
+
+- **Date:** 2026-08-25
+- **Status:** Accepted
+- **Context:** `apps/api` had an ad-hoc dependency on `apps/worker` to import `CardRenderer`, breaking Docker builds when worker sources were omitted. Dockerfiles used `--frozen-lockfile=false`, root Compose had fallback passwords, ESLint was bypassed with `tsc --noEmit`, Next.js rewrites fell back to localhost inside containers, and the SBOM contained handwritten version numbers differing from `pnpm-lock.yaml`.
+- **Decision:**
+  1. Refactored `CardRenderer`, `BrowserPool`, and `PdfInspector` into `@hr/card-kit`. Removed `@hr/worker` dependency from `apps/api/package.json`.
+  2. Enforced `RUN pnpm install --frozen-lockfile` across all multi-stage Dockerfiles.
+  3. Installed Alpine Chromium, Noto fonts, and set `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` / `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser` in `Dockerfile.worker`.
+  4. Unified Next.js standalone rewrites with `API_INTERNAL_URL || API_URL || 'http://localhost:3001'` and removed build-time lint suppression.
+  5. Hardened root `docker-compose.yml` to require mandatory environment secrets and default to `127.0.0.1` loopback binding.
+  6. Aligned ESLint dependencies with Next.js 15 (`eslint-config-next: 15.1.7`, `eslint: ^9.18.0`) and activated `next lint`.
+  7. Built a lockfile-driven CycloneDX 1.5 SBOM generator parsing `pnpm-lock.yaml` with automated test verification (`tests/sbom-consistency.test.ts`).
+  8. Created root `README.md` and automated Compose smoke tests (`tests/compose-smoke.test.ts`).
+- **Consequences:** Provides clean workspace package boundaries, deterministic container builds, verified lockfile provenance, genuine linting, and a complete onboarding guide.

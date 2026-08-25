@@ -1,8 +1,6 @@
-'use client';
-
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   User,
   Briefcase,
@@ -25,10 +23,12 @@ import {
   Sparkles,
   Camera,
   X,
+  Printer,
 } from 'lucide-react';
 import { Button, Badge } from '@hr/ui';
 import { EmploymentStatus, JobCategory } from '@hr/domain';
 import { PhotoCaptureStudio } from '../../../components/photo-capture/PhotoCaptureStudio';
+import { CardOperationsPanel } from '../../../components/cards/CardOperationsPanel';
 
 interface PersonDetail {
   id: string;
@@ -84,6 +84,10 @@ interface PersonDetail {
 export default function WorkerProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: personId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'cards' ? 'CARDS' : 'OVERVIEW';
+
+  const [activeTab, setActiveTab] = useState<'OVERVIEW' | 'CARDS'>(initialTab);
   const [person, setPerson] = useState<PersonDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -124,9 +128,11 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
         const res = await fetch(`/api/people/${personId}/photo`, { method: 'DELETE' });
         if (res.ok) {
           setPerson((prev) => (prev ? { ...prev, photoMediaId: null } : null));
+        } else {
+          setErrorMessage('Failed to remove photo.');
         }
       } catch {
-        alert('Failed to remove photo.');
+        setErrorMessage('Failed to remove photo.');
       }
       return;
     }
@@ -145,11 +151,11 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
         setPhotoTimestamp(Date.now());
         setIsPhotoModalOpen(false);
       } else {
-        const err = await res.json();
-        alert(err.message || 'Failed to update photo.');
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.message || 'Failed to update photo.');
       }
     } catch {
-      alert('Network error while updating photo.');
+      setErrorMessage('Network error while updating photo.');
     }
   };
 
@@ -170,6 +176,7 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
 
   const handleRevealDocument = async (docId: string) => {
     setIsRevealing(true);
+    setErrorMessage(null);
     try {
       const res = await fetch(`/api/people/${personId}/identity-documents/${docId}/reveal`, {
         method: 'POST',
@@ -181,10 +188,10 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
         setRevealedNumber(data.documentNumber);
         setRevealCountdown(data.expiresInSeconds || 30);
       } else {
-        alert('Permission denied or unable to reveal sensitive government document.');
+        setErrorMessage('Permission denied or unable to reveal sensitive government document.');
       }
     } catch {
-      alert('Network error while requesting document unmasking.');
+      setErrorMessage('Network error while requesting document unmasking.');
     } finally {
       setIsRevealing(false);
     }
@@ -246,9 +253,15 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
               Edit Profile
             </Button>
           </Link>
-          <Button type="button" variant="primary" size="sm">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => setActiveTab('CARDS')}
+            className="bg-[#134E4A] hover:bg-[#0F766E] text-white font-bold"
+          >
             <CreditCard className="w-3.5 h-3.5 mr-1" />
-            Issue ID Card
+            Issue / Manage Card
           </Button>
         </div>
       </div>
@@ -320,199 +333,241 @@ export default function WorkerProfilePage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {/* Two-Column Details Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left Column: Personal & Contact Information */}
-        <div className="space-y-6 md:col-span-1">
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-              <User className="w-4 h-4 text-[#0F766E]" />
-              Personal Details
-            </h3>
+      {/* Tabs Selector */}
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('OVERVIEW')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'OVERVIEW'
+              ? 'bg-[#134E4A] text-white shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <User className="w-3.5 h-3.5" />
+          <span>Worker Overview</span>
+        </button>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Gender</span>
-                <span className="text-slate-800 font-medium">{person.gender}</span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  Date of Birth
-                </span>
-                <span className="text-slate-800 font-medium">
-                  {person.dateOfBirth ? person.dateOfBirth.split('T')[0] : '—'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  Blood Group
-                </span>
-                <span className="text-slate-800 font-medium">{person.bloodGroup || '—'}</span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  Primary Phone
-                </span>
-                <span className="text-slate-800 font-medium">{person.primaryPhone || '—'}</span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">
-                  Primary Email
-                </span>
-                <span className="text-slate-800 font-medium">{person.primaryEmail || '—'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card Readiness Widget */}
-          <div className="bg-gradient-to-br from-teal-900 to-[#134E4A] rounded-2xl p-5 text-white shadow-md space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-teal-300" />
-              <h4 className="text-xs font-bold uppercase tracking-wider text-teal-200">
-                Card Readiness
-              </h4>
-            </div>
-            <p className="text-xs text-teal-100">
-              Worker record meets all schema standards for high-resolution 300 DPI bilingual card
-              printing.
-            </p>
-            <div className="space-y-1.5 text-xs pt-1">
-              <div className="flex items-center gap-2 text-teal-200">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-300" />
-                <span>Bilingual script names complete</span>
-              </div>
-              <div className="flex items-center gap-2 text-teal-200">
-                <CheckCircle2 className="w-3.5 h-3.5 text-teal-300" />
-                <span>Immutable Employee ID assigned</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Column: Employment History & Sensitive Documents */}
-        <div className="space-y-6 md:col-span-2">
-          {/* Employment Assignments */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-              <Briefcase className="w-4 h-4 text-[#0F766E]" />
-              Employment History & Assignments
-            </h3>
-
-            <div className="space-y-3">
-              {person.employments.map((emp) => (
-                <div
-                  key={emp.id}
-                  className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-sm">{emp.jobTitle}</span>
-                      <Badge variant="neutral" size="sm">
-                        {emp.jobCategory}
-                      </Badge>
-                      <Badge variant="success" size="sm">
-                        {emp.status}
-                      </Badge>
-                    </div>
-                    <div className="text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span>Org: {emp.organization.displayName || emp.organization.name}</span>
-                      {emp.location && <span>Site: {emp.location.name}</span>}
-                      {emp.orgUnit && <span>Unit: {emp.orgUnit.name}</span>}
-                    </div>
-                  </div>
-
-                  <div className="text-right text-slate-500 font-medium shrink-0">
-                    <div>Joined: {emp.joinDate ? emp.joinDate.split('T')[0] : '—'}</div>
-                    {emp.endDate && (
-                      <div className="text-rose-600">Ended: {emp.endDate.split('T')[0]}</div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Sensitive Identity Documents */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
-                Sensitive Identity Documents (AES-256-GCM)
-              </h3>
-              <span className="text-[10px] text-slate-400 font-semibold">Masked by default</span>
-            </div>
-
-            {person.identityDocuments.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-2">
-                No government identity documents registered.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {person.identityDocuments.map((doc) => {
-                  const isRevealed = revealingDocId === doc.id;
-
-                  return (
-                    <div
-                      key={doc.id}
-                      className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4"
-                    >
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800">{doc.documentType}</span>
-                          <Badge variant="neutral" size="sm">
-                            {doc.country}
-                          </Badge>
-                          {doc.isVerified && (
-                            <Badge variant="success" size="sm">
-                              Verified
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="font-mono font-bold text-sm">
-                          {isRevealed ? (
-                            <span className="text-[#0F766E] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
-                              {revealedNumber}
-                            </span>
-                          ) : (
-                            <span className="text-slate-700">{doc.documentNumberMasked}</span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        {isRevealed ? (
-                          <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                            <Clock className="w-3.5 h-3.5 animate-spin" />
-                            <span>Auto-masks in {revealCountdown}s</span>
-                          </div>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={isRevealing}
-                            onClick={() => handleRevealDocument(doc.id)}
-                          >
-                            <Eye className="w-3.5 h-3.5 mr-1" />
-                            Reveal (Audited)
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('CARDS')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeTab === 'CARDS'
+              ? 'bg-[#134E4A] text-white shadow-sm'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Card Operations & Credentials</span>
+        </button>
       </div>
 
+      {/* Tab Content */}
+      {activeTab === 'CARDS' ? (
+        <CardOperationsPanel
+          personId={person.id}
+          employmentId={activeEmp?.id}
+          workerName={person.displayName}
+          employeeNumber={activeEmp?.employeeNumber || ''}
+        />
+      ) : (
+        /* Two-Column Details Layout */
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Left Column: Personal & Contact Information */}
+          <div className="space-y-6 md:col-span-1">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+                <User className="w-4 h-4 text-[#0F766E]" />
+                Personal Details
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Gender
+                  </span>
+                  <span className="text-slate-800 font-medium">{person.gender}</span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Date of Birth
+                  </span>
+                  <span className="text-slate-800 font-medium">
+                    {person.dateOfBirth ? person.dateOfBirth.split('T')[0] : '—'}
+                  </span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Blood Group
+                  </span>
+                  <span className="text-slate-800 font-medium">{person.bloodGroup || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Primary Phone
+                  </span>
+                  <span className="text-slate-800 font-medium">{person.primaryPhone || '—'}</span>
+                </div>
+
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">
+                    Primary Email
+                  </span>
+                  <span className="text-slate-800 font-medium">{person.primaryEmail || '—'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card Readiness Widget */}
+            <div className="bg-gradient-to-br from-teal-900 to-[#134E4A] rounded-2xl p-5 text-white shadow-md space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-teal-300" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-teal-200">
+                  Card Readiness
+                </h4>
+              </div>
+              <p className="text-xs text-teal-100">
+                Worker record meets all schema standards for high-resolution 300 DPI bilingual card
+                printing.
+              </p>
+              <div className="space-y-1.5 text-xs pt-1">
+                <div className="flex items-center gap-2 text-teal-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-300" />
+                  <span>Bilingual script names complete</span>
+                </div>
+                <div className="flex items-center gap-2 text-teal-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-teal-300" />
+                  <span>Immutable Employee ID assigned</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Employment History & Sensitive Documents */}
+          <div className="space-y-6 md:col-span-2">
+            {/* Employment Assignments */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
+                <Briefcase className="w-4 h-4 text-[#0F766E]" />
+                Employment History & Assignments
+              </h3>
+
+              <div className="space-y-3">
+                {person.employments.map((emp) => (
+                  <div
+                    key={emp.id}
+                    className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900 text-sm">{emp.jobTitle}</span>
+                        <Badge variant="neutral" size="sm">
+                          {emp.jobCategory}
+                        </Badge>
+                        <Badge variant="success" size="sm">
+                          {emp.status}
+                        </Badge>
+                      </div>
+                      <div className="text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Org: {emp.organization.displayName || emp.organization.name}</span>
+                        {emp.location && <span>Site: {emp.location.name}</span>}
+                        {emp.orgUnit && <span>Unit: {emp.orgUnit.name}</span>}
+                      </div>
+                    </div>
+
+                    <div className="text-right text-slate-500 font-medium shrink-0">
+                      <div>Joined: {emp.joinDate ? emp.joinDate.split('T')[0] : '—'}</div>
+                      {emp.endDate && (
+                        <div className="text-rose-600">Ended: {emp.endDate.split('T')[0]}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sensitive Identity Documents */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#0F766E]" />
+                  Sensitive Identity Documents (AES-256-GCM)
+                </h3>
+                <span className="text-[10px] text-slate-400 font-semibold">Masked by default</span>
+              </div>
+
+              {person.identityDocuments.length === 0 ? (
+                <p className="text-xs text-slate-400 italic py-2">
+                  No government identity documents registered.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {person.identityDocuments.map((doc) => {
+                    const isRevealed = revealingDocId === doc.id;
+
+                    return (
+                      <div
+                        key={doc.id}
+                        className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between gap-4"
+                      >
+                        <div className="space-y-1 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800">{doc.documentType}</span>
+                            <Badge variant="neutral" size="sm">
+                              {doc.country}
+                            </Badge>
+                            {doc.isVerified && (
+                              <Badge variant="success" size="sm">
+                                Verified
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="font-mono font-bold text-sm">
+                            {isRevealed ? (
+                              <span className="text-[#0F766E] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                                {revealedNumber}
+                              </span>
+                            ) : (
+                              <span className="text-slate-700">{doc.documentNumberMasked}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          {isRevealed ? (
+                            <div className="flex items-center gap-2 text-xs font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                              <Clock className="w-3.5 h-3.5 animate-spin" />
+                              <span>Auto-masks in {revealCountdown}s</span>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={isRevealing}
+                              onClick={() => handleRevealDocument(doc.id)}
+                            >
+                              <Eye className="w-3.5 h-3.5 mr-1" />
+                              Reveal (Audited)
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Photo Studio Modal */}
+
       {isPhotoModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 space-y-4">

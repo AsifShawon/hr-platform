@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from 'react';
 import { RefreshCw, ShieldCheck, QrCode } from 'lucide-react';
 import { cn } from '../index.js';

@@ -26,6 +26,14 @@ import {
   ExportJobStatus,
   BackupStatus,
   BackupTrigger,
+  CardIssueStatus,
+  CardIssueReason,
+  CardRevocationReason,
+  PrintJobStatus,
+  PrintJobItemStatus,
+  PrintOutputFormat,
+  PrintJobSide,
+  OperatorPrintStatus,
 } from '@hr/domain';
 
 export const healthResponseSchema = z.object({
@@ -1249,3 +1257,263 @@ export const systemDiagnosticsSchema = z.object({
 });
 
 export type SystemDiagnosticsDTO = z.infer<typeof systemDiagnosticsSchema>;
+
+// ==============================================================================
+// Phase 2 (Remediation): Card Issuance & Print Job Schemas
+// ==============================================================================
+
+export const cardIssueStatusSchema = z.nativeEnum(CardIssueStatus);
+export const cardIssueReasonSchema = z.nativeEnum(CardIssueReason);
+export const cardRevocationReasonSchema = z.nativeEnum(CardRevocationReason);
+export const printJobStatusSchema = z.nativeEnum(PrintJobStatus);
+export const printJobItemStatusSchema = z.nativeEnum(PrintJobItemStatus);
+export const printOutputFormatSchema = z.nativeEnum(PrintOutputFormat);
+export const printJobSideSchema = z.nativeEnum(PrintJobSide);
+export const operatorPrintStatusSchema = z.nativeEnum(OperatorPrintStatus);
+
+// Card Readiness Schemas
+export const cardReadinessIssueSchema = z.object({
+  code: z.string(),
+  field: z.string().optional(),
+  severity: z.enum(['BLOCKER', 'WARNING']),
+  message: z.string(),
+  suggestion: z.string().optional(),
+});
+
+export type CardReadinessIssueDTO = z.infer<typeof cardReadinessIssueSchema>;
+
+export const cardReadinessResultSchema = z.object({
+  isReady: z.boolean(),
+  canOverrideWarnings: z.boolean(),
+  blockers: z.array(cardReadinessIssueSchema),
+  warnings: z.array(cardReadinessIssueSchema),
+  resolvedTemplate: z
+    .object({
+      templateId: z.string(),
+      templateName: z.string(),
+      versionId: z.string(),
+      versionNumber: z.number().int(),
+      layout: z.any(),
+      targetType: z.nativeEnum(TemplateAssignmentTarget),
+      resolutionReason: z.string(),
+    })
+    .nullable(),
+  workerSummary: z.object({
+    personId: z.string().uuid(),
+    employmentId: z.string().uuid(),
+    displayName: z.string(),
+    displayNameLatin: z.string().nullable().optional(),
+    displayNameNative: z.string().nullable().optional(),
+    employeeNumber: z.string(),
+    jobTitle: z.string(),
+    status: employmentStatusSchema,
+    photoAvailable: z.boolean(),
+    nativeNameAvailable: z.boolean(),
+  }),
+});
+
+export type CardReadinessResultDTO = z.infer<typeof cardReadinessResultSchema>;
+
+// Card Issuance Request & DTO Schemas
+export const directIssueCardRequestSchema = z.object({
+  employmentId: z.string().min(1, 'employmentId is required'),
+  templateId: z.string().min(1).optional(),
+  issueReason: cardIssueReasonSchema.default(CardIssueReason.INITIAL),
+  reasonNotes: z.string().max(255).optional(),
+  idempotencyKey: z.string().max(100).optional(),
+  validUntil: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'validUntil must be YYYY-MM-DD')
+    .optional(),
+});
+
+export type DirectIssueCardRequest = z.infer<typeof directIssueCardRequestSchema>;
+
+export const reprintCardRequestSchema = z.object({
+  reason: cardIssueReasonSchema.refine((r) => r !== CardIssueReason.INITIAL, {
+    message: 'Reprint reason must specify the reason for replacement (e.g. DAMAGED, LOST, etc.).',
+  }),
+  reasonNotes: z
+    .string()
+    .min(3, 'A detailed explanation is required for card replacement.')
+    .max(500),
+  templateId: z.string().min(1).optional(),
+  idempotencyKey: z.string().max(100).optional(),
+});
+
+export type ReprintCardRequest = z.infer<typeof reprintCardRequestSchema>;
+
+export const revokeCardRequestSchema = z.object({
+  reason: cardRevocationReasonSchema,
+  reasonNotes: z.string().min(3, 'Revocation explanation is required.').max(500),
+});
+
+export type RevokeCardRequest = z.infer<typeof revokeCardRequestSchema>;
+
+export const cardIssueDtoSchema = z.object({
+  id: z.string().min(1),
+  tenantId: z.string().min(1),
+  personId: z.string().min(1),
+  employmentId: z.string().min(1),
+  templateVersionId: z.string().min(1),
+  cardSerial: z.string(),
+  issueNumber: z.number().int(),
+  issueReason: cardIssueReasonSchema,
+  reasonNotes: z.string().nullable().optional(),
+  status: cardIssueStatusSchema,
+  isCurrent: z.boolean(),
+  printedSnapshot: z.any(),
+  layoutSnapshot: z.any(),
+  templateChecksum: z.string(),
+  renderManifest: z.any().nullable().optional(),
+  pdfStorageKey: z.string().nullable().optional(),
+  pdfChecksumSha256: z.string().nullable().optional(),
+  previousIssueId: z.string().min(1).nullable().optional(),
+  issuedByUserId: z.string().min(1).nullable().optional(),
+  issuedAt: z.string().datetime().nullable().optional(),
+  validUntil: z.string().nullable().optional(),
+  revokedByUserId: z.string().min(1).nullable().optional(),
+  revokedAt: z.string().datetime().nullable().optional(),
+  revocationReason: cardRevocationReasonSchema.nullable().optional(),
+  revocationNotes: z.string().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  person: z
+    .object({
+      displayName: z.string(),
+      displayNameLatin: z.string().nullable().optional(),
+      displayNameNative: z.string().nullable().optional(),
+    })
+    .optional(),
+  employment: z
+    .object({
+      employeeNumber: z.string(),
+      jobTitle: z.string(),
+    })
+    .optional(),
+});
+
+export type CardIssueDTO = z.infer<typeof cardIssueDtoSchema>;
+
+export const cardIssueQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  search: z.string().optional(),
+  personId: z.string().min(1).optional(),
+  employmentId: z.string().min(1).optional(),
+  organizationId: z.string().min(1).optional(),
+  status: cardIssueStatusSchema.optional(),
+  isCurrent: z.enum(['true', 'false']).optional(),
+  sortBy: z.enum(['issuedAt', 'cardSerial', 'issueNumber', 'createdAt']).default('createdAt'),
+  sortDirection: z.enum(['asc', 'desc']).default('desc'),
+});
+
+export type CardIssueQuery = z.infer<typeof cardIssueQuerySchema>;
+
+// Print Job Schemas
+export const createPrintJobRequestSchema = z.object({
+  employmentIds: z.array(z.string().min(1)).min(1).max(200),
+  outputFormat: printOutputFormatSchema.default(PrintOutputFormat.A4_SHEET),
+  side: printJobSideSchema.default(PrintJobSide.DUPLEX),
+  copiesPerCard: z.number().int().min(1).max(5).default(1),
+  idempotencyKey: z.string().max(100).optional(),
+});
+
+export type CreatePrintJobRequest = z.infer<typeof createPrintJobRequestSchema>;
+
+export const confirmPrintJobRequestSchema = z.object({
+  status: z.enum(['CONFIRMED_PRINTED', 'REJECTED_DEFECT']),
+  notes: z.string().max(500).optional(),
+  defectiveItemIds: z.array(z.string().min(1)).optional(),
+  autoActivateIssues: z.boolean().default(true),
+});
+
+export type ConfirmPrintJobRequest = z.infer<typeof confirmPrintJobRequestSchema>;
+
+export const printJobItemDtoSchema = z.object({
+  id: z.string().min(1),
+  tenantId: z.string().min(1),
+  printJobId: z.string().min(1),
+  cardIssueId: z.string().min(1),
+  itemIndex: z.number().int(),
+  status: printJobItemStatusSchema,
+  sheetNumber: z.number().int().nullable().optional(),
+  gridRow: z.number().int().nullable().optional(),
+  gridColumn: z.number().int().nullable().optional(),
+  copies: z.number().int(),
+  errorMessage: z.string().nullable().optional(),
+  renderedAt: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  cardIssue: cardIssueDtoSchema.optional(),
+});
+
+export type PrintJobItemDTO = z.infer<typeof printJobItemDtoSchema>;
+
+export const printJobDtoSchema = z.object({
+  id: z.string().min(1),
+  tenantId: z.string().min(1),
+  status: printJobStatusSchema,
+  outputFormat: printOutputFormatSchema,
+  side: printJobSideSchema,
+  totalItems: z.number().int(),
+  processedItems: z.number().int(),
+  failedItems: z.number().int(),
+  outputStorageKey: z.string().nullable().optional(),
+  outputFileSizeBytes: z.number().int().nullable().optional(),
+  outputChecksumSha256: z.string().nullable().optional(),
+  mimeType: z.string().nullable().optional(),
+  attempts: z.number().int(),
+  maxAttempts: z.number().int(),
+  failedReason: z.string().nullable().optional(),
+  operatorStatus: operatorPrintStatusSchema,
+  confirmedByUserId: z.string().min(1).nullable().optional(),
+  confirmedAt: z.string().datetime().nullable().optional(),
+  confirmationNotes: z.string().nullable().optional(),
+  idempotencyKey: z.string().nullable().optional(),
+  createdByUserId: z.string().min(1).nullable().optional(),
+  startedAt: z.string().datetime().nullable().optional(),
+  completedAt: z.string().datetime().nullable().optional(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  items: z.array(printJobItemDtoSchema).optional(),
+});
+
+export type PrintJobDTO = z.infer<typeof printJobDtoSchema>;
+
+export const printJobQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(25),
+  status: printJobStatusSchema.optional(),
+  operatorStatus: operatorPrintStatusSchema.optional(),
+});
+
+export type PrintJobQuery = z.infer<typeof printJobQuerySchema>;
+
+// Batch Readiness Schemas
+export const batchReadinessRequestSchema = z.object({
+  employmentIds: z.array(z.string().min(1)).min(1).max(200),
+});
+
+export type BatchReadinessRequest = z.infer<typeof batchReadinessRequestSchema>;
+
+export const batchReadinessResponseSchema = z.object({
+  totalChecked: z.number().int(),
+  readyCount: z.number().int(),
+  blockedCount: z.number().int(),
+  ready: z.array(cardReadinessResultSchema),
+  blocked: z.array(cardReadinessResultSchema),
+});
+
+export type BatchReadinessResponse = z.infer<typeof batchReadinessResponseSchema>;
+
+// Card Operations Stats Schema
+export const cardOperationsStatsSchema = z.object({
+  readyToPrintCount: z.number().int(),
+  needsAttentionCount: z.number().int(),
+  queuedJobsCount: z.number().int(),
+  totalActiveBadgesCount: z.number().int(),
+  totalRevokedCount: z.number().int(),
+});
+
+export type CardOperationsStatsDTO = z.infer<typeof cardOperationsStatsSchema>;

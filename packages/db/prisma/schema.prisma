@@ -67,6 +67,9 @@ model Tenant {
   exportJobs             ExportJob[]
   backupJobs             BackupJob[]
   backupSchedules        BackupSchedule[]
+  cardIssues             CardIssue[]
+  printJobs              PrintJob[]
+  printJobItems          PrintJobItem[]
 
   @@map("tenants")
 }
@@ -252,6 +255,7 @@ model Person {
   customFieldValues CustomFieldValue[]
   mediaAssets       MediaAsset[]       @relation("PersonMediaAssets")
   photoMedia        MediaAsset?        @relation("PersonPhoto", fields: [photoMediaId], references: [id], onDelete: SetNull)
+  cardIssues        CardIssue[]
 
   @@index([tenantId, displayName])
   @@index([tenantId, displayNameNative])
@@ -284,6 +288,7 @@ model Employment {
   location          Location?          @relation(fields: [locationId], references: [id], onDelete: SetNull)
   orgUnit           OrgUnit?           @relation(fields: [orgUnitId], references: [id], onDelete: SetNull)
   customFieldValues CustomFieldValue[]
+  cardIssues        CardIssue[]
 
   @@unique([tenantId, organizationId, employeeNumber])
   @@index([tenantId, organizationId, status])
@@ -385,6 +390,10 @@ model User {
   importJobs           ImportJob[]
   exportJobs           ExportJob[]
   backupJobs           BackupJob[]
+  cardIssuesIssued     CardIssue[]         @relation("CardIssuedByUser")
+  cardIssuesRevoked    CardIssue[]         @relation("CardRevokedByUser")
+  printJobsCreated     PrintJob[]          @relation("PrintJobCreatedByUser")
+  printJobsConfirmed   PrintJob[]          @relation("PrintJobConfirmedByUser")
 
   @@unique([tenantId, username])
   @@index([tenantId])
@@ -671,6 +680,7 @@ model TemplateVersion {
 
   template            CardTemplate          @relation(fields: [templateId], references: [id], onDelete: Cascade)
   tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cardIssues          CardIssue[]
 
   @@unique([templateId, versionNumber])
   @@index([tenantId])
@@ -858,6 +868,196 @@ model BackupSchedule {
 
   @@map("backup_schedules")
 }
+
+// ==============================================================================
+// Phase 2 (Remediation): Card Issuance & Print Job Models
+// ==============================================================================
+
+enum CardIssueStatus {
+  DRAFT
+  RENDER_READY
+  PRINTED
+  ISSUED
+  REPLACED
+  REVOKED
+  EXPIRED
+  CANCELLED
+}
+
+enum CardIssueReason {
+  INITIAL
+  DAMAGED
+  LOST
+  STOLEN
+  NAME_CHANGE
+  TITLE_CHANGE
+  PROMOTION
+  TRANSFER
+  EXPIRED
+  OTHER
+}
+
+enum CardRevocationReason {
+  SEPARATION
+  SUSPENSION
+  LOST_STOLEN
+  SECURITY_REVOCATION
+  ADMINISTRATIVE_CORRECTION
+  OTHER
+}
+
+enum PrintJobStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PrintJobItemStatus {
+  PENDING
+  RENDERING
+  RENDERED
+  FAILED
+  SKIPPED
+}
+
+enum PrintOutputFormat {
+  A4_SHEET
+  LETTER_SHEET
+  INDIVIDUAL_PDF
+  HIGH_RES_PNG
+}
+
+enum PrintJobSide {
+  FRONT
+  BACK
+  DUPLEX
+}
+
+enum OperatorPrintStatus {
+  UNCONFIRMED
+  CONFIRMED_PRINTED
+  REJECTED_DEFECT
+}
+
+model CardIssue {
+  id                String                @id @default(uuid())
+  tenantId          String                @map("tenant_id")
+  personId          String                @map("person_id")
+  employmentId      String                @map("employment_id")
+  templateVersionId String                @map("template_version_id")
+  cardSerial        String                @map("card_serial")
+  issueNumber       Int                   @default(1) @map("issue_number")
+  issueReason       CardIssueReason       @default(INITIAL) @map("issue_reason")
+  reasonNotes       String?               @map("reason_notes")
+  status            CardIssueStatus       @default(DRAFT)
+  isCurrent         Boolean               @default(false) @map("is_current")
+  printedSnapshot   Json                  @map("printed_snapshot")
+  layoutSnapshot    Json                  @map("layout_snapshot")
+  templateChecksum  String                @map("template_checksum")
+  renderManifest    Json?                 @map("render_manifest")
+  pdfStorageKey     String?               @map("pdf_storage_key")
+  pdfChecksumSha256 String?               @map("pdf_checksum_sha256")
+  previousIssueId   String?               @map("previous_issue_id")
+  issuedByUserId    String?               @map("issued_by_user_id")
+  issuedAt          DateTime?             @map("issued_at")
+  validUntil        DateTime?             @map("valid_until") @db.Date
+  revokedByUserId   String?               @map("revoked_by_user_id")
+  revokedAt         DateTime?             @map("revoked_at")
+  revocationReason  CardRevocationReason? @map("revocation_reason")
+  revocationNotes   String?               @map("revocation_notes")
+  idempotencyKey    String?               @map("idempotency_key")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  tenant            Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person            Person                @relation(fields: [personId], references: [id], onDelete: Cascade)
+  employment        Employment            @relation(fields: [employmentId], references: [id], onDelete: Cascade)
+  templateVersion   TemplateVersion       @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+  issuedByUser      User?                 @relation("CardIssuedByUser", fields: [issuedByUserId], references: [id], onDelete: SetNull)
+  revokedByUser     User?                 @relation("CardRevokedByUser", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  previousIssue     CardIssue?            @relation("CardIssueLineage", fields: [previousIssueId], references: [id], onDelete: SetNull)
+  nextIssues        CardIssue[]           @relation("CardIssueLineage")
+  printJobItems     PrintJobItem[]
+
+  @@unique([tenantId, cardSerial])
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, status])
+  @@index([tenantId, personId])
+  @@index([tenantId, employmentId])
+  @@index([tenantId, isCurrent])
+  @@index([tenantId, cardSerial])
+  @@map("card_issues")
+}
+
+model PrintJob {
+  id                   String              @id @default(uuid())
+  tenantId             String              @map("tenant_id")
+  status               PrintJobStatus      @default(QUEUED)
+  outputFormat         PrintOutputFormat   @default(A4_SHEET) @map("output_format")
+  side                 PrintJobSide        @default(DUPLEX)
+  totalItems           Int                 @default(0) @map("total_items")
+  processedItems       Int                 @default(0) @map("processed_items")
+  failedItems          Int                 @default(0) @map("failed_items")
+  outputStorageKey     String?             @map("output_storage_key")
+  outputFileSizeBytes  Int?                @map("output_file_size_bytes")
+  outputChecksumSha256 String?             @map("output_checksum_sha256")
+  mimeType             String?             @map("mime_type")
+  attempts             Int                 @default(0)
+  maxAttempts          Int                 @default(3) @map("max_attempts")
+  lockedAt             DateTime?           @map("locked_at")
+  lockedBy             String?             @map("locked_by")
+  failedReason         String?             @map("failed_reason")
+  operatorStatus       OperatorPrintStatus @default(UNCONFIRMED) @map("operator_status")
+  confirmedByUserId    String?             @map("confirmed_by_user_id")
+  confirmedAt          DateTime?           @map("confirmed_at")
+  confirmationNotes    String?             @map("confirmation_notes")
+  idempotencyKey       String?             @map("idempotency_key")
+  createdByUserId      String?             @map("created_by_user_id")
+  startedAt            DateTime?           @map("started_at")
+  completedAt          DateTime?           @map("completed_at")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+
+  tenant               Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdByUser        User?               @relation("PrintJobCreatedByUser", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  confirmedByUser      User?               @relation("PrintJobConfirmedByUser", fields: [confirmedByUserId], references: [id], onDelete: SetNull)
+  items                PrintJobItem[]
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, status])
+  @@index([tenantId, operatorStatus])
+  @@index([tenantId, createdAt])
+  @@map("print_jobs")
+}
+
+model PrintJobItem {
+  id           String             @id @default(uuid())
+  tenantId     String             @map("tenant_id")
+  printJobId   String             @map("print_job_id")
+  cardIssueId  String             @map("card_issue_id")
+  itemIndex    Int                @default(0) @map("item_index")
+  status       PrintJobItemStatus @default(PENDING)
+  sheetNumber  Int?               @map("sheet_number")
+  gridRow      Int?               @map("grid_row")
+  gridColumn   Int?               @map("grid_column")
+  copies       Int                @default(1)
+  errorMessage String?            @map("error_message")
+  renderedAt   DateTime?          @map("rendered_at")
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  printJob     PrintJob           @relation(fields: [printJobId], references: [id], onDelete: Cascade)
+  cardIssue    CardIssue          @relation(fields: [cardIssueId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, printJobId])
+  @@index([tenantId, cardIssueId])
+  @@index([printJobId, itemIndex])
+  @@map("print_job_items")
+}
+
 
 
 

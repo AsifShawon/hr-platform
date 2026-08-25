@@ -9,6 +9,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./typography": {
+      "types": "./dist/typography.d.ts",
+      "import": "./dist/typography.js"
+    },
+    "./renderer": {
+      "types": "./dist/renderer.d.ts",
+      "import": "./dist/renderer.js"
     }
   },
   "scripts": {
@@ -18,10 +26,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@hr/domain": "workspace:*"
+    "@hr/domain": "workspace:*",
+    "pdf-lib": "^1.17.1",
+    "pino": "^9.6.0",
+    "playwright": "^1.50.1"
   },
   "devDependencies": {
-    "vitest": "^3.0.7",
-    "typescript": "^5.7.3"
+    "@types/node": "^22.13.5",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7"
   }
 }

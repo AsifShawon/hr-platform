@@ -309,7 +309,8 @@ export default function AddWorkerWizardPage() {
         }));
         setStep(1);
       } else if (action === 'card') {
-        router.push(`/cards/issue?personId=${newPersonId}`);
+        const empId = data.person?.activeEmployment?.id || data.person?.employments?.[0]?.id;
+        router.push(empId ? `/cards/new?employmentId=${empId}` : `/cards/new`);
       } else {
         router.push(`/people/${newPersonId}`);
       }

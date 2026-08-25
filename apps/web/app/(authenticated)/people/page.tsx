@@ -12,18 +12,23 @@ import {
   Eye,
   Edit2,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   Building2,
   MapPin,
   FolderTree,
   SlidersHorizontal,
-  ArrowUpDown,
   CreditCard,
+  Printer,
   X,
   Sparkles,
+  Camera,
+  ShieldAlert,
+  ShieldCheck,
+  RotateCw,
 } from 'lucide-react';
 import { Button, Input, Badge } from '@hr/ui';
 import { EmploymentStatus, JobCategory } from '@hr/domain';
+import { BatchPrintModal } from './BatchPrintModal';
 
 interface PersonRow {
   id: string;
@@ -35,6 +40,15 @@ interface PersonRow {
   primaryPhone?: string | null;
   primaryEmail?: string | null;
   photoMediaId?: string | null;
+  cardReadiness?: 'READY' | 'NEEDS_ATTENTION';
+  assignedTemplate?: string;
+  lastIssuedCard?: {
+    id: string;
+    cardSerial: string;
+    status: string;
+    issuedAt?: string | null;
+    issueNumber: number;
+  } | null;
   version: number;
   activeEmployment?: {
     id: string;
@@ -81,14 +95,16 @@ export default function PeopleRegistryPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
   const [hasPhotoFilter, setHasPhotoFilter] = useState<string>('ALL');
+  const [readinessFilter, setReadinessFilter] = useState<string>('ALL');
   const [sortBy, setSortBy] = useState<'employeeNumber' | 'displayName' | 'updatedAt'>(
     'employeeNumber',
   );
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
-  // Multi-row selection
+  // Multi-row selection (Persists across pagination)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [batchPrintModalOpen, setBatchPrintModalOpen] = useState(false);
+  const [bulkStatusModalOpen, setBulkStatusModalOpen] = useState(false);
   const [bulkNewStatus, setBulkNewStatus] = useState<EmploymentStatus>(EmploymentStatus.ACTIVE);
   const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
   const [feedbackMessage, setFeedbackMessage] = useState<{
@@ -98,12 +114,16 @@ export default function PeopleRegistryPage() {
 
   // Column visibility
   const [visibleColumns, setVisibleColumns] = useState({
-    employeeNumber: true,
+    photo: true,
     name: true,
+    employeeNumber: true,
     title: true,
     organization: true,
     status: true,
-    identity: true,
+    readiness: true,
+    template: true,
+    lastIssued: true,
+    identity: false, // Hidden by default as required by specification
     actions: true,
   });
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
@@ -125,7 +145,11 @@ export default function PeopleRegistryPage() {
       const res = await fetch(`/api/people?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setPeople(data.items || []);
+        let items: PersonRow[] = data.items || [];
+        if (readinessFilter !== 'ALL') {
+          items = items.filter((p) => p.cardReadiness === readinessFilter);
+        }
+        setPeople(items);
         setPagination(data.pagination || pagination);
       }
     } catch {
@@ -140,6 +164,7 @@ export default function PeopleRegistryPage() {
     statusFilter,
     categoryFilter,
     hasPhotoFilter,
+    readinessFilter,
     sortBy,
     sortDirection,
   ]);
@@ -148,14 +173,19 @@ export default function PeopleRegistryPage() {
     fetchPeople();
   }, [fetchPeople]);
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === people.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(
-        new Set(people.map((p) => p.activeEmployment?.id).filter(Boolean) as string[]),
-      );
-    }
+  const toggleSelectPage = () => {
+    const pageEmpIds = people.map((p) => p.activeEmployment?.id).filter(Boolean) as string[];
+    const allPageSelected = pageEmpIds.every((id) => selectedIds.has(id));
+
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) {
+        pageEmpIds.forEach((id) => next.delete(id));
+      } else {
+        pageEmpIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
   };
 
   const toggleSelectRow = (empId?: string) => {
@@ -188,7 +218,7 @@ export default function PeopleRegistryPage() {
       if (res.ok) {
         setFeedbackMessage({ type: 'success', text: data.message });
         setSelectedIds(new Set());
-        setBulkModalOpen(false);
+        setBulkStatusModalOpen(false);
         fetchPeople();
       } else {
         setFeedbackMessage({ type: 'error', text: data.message || 'Bulk status update failed.' });
@@ -236,25 +266,36 @@ export default function PeopleRegistryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto px-4 pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-100 text-[#0F766E]">
+          <div className="p-2.5 rounded-2xl bg-teal-50 border border-teal-100 text-[#0F766E]">
             <Users className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">People Registry</h1>
-            <p className="text-sm text-slate-500">
-              Manage worker profiles, employment records, sensitive identity documents, and card
-              readiness.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Production registry for worker records, identity compliance, and batch credential
+              printing.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/cards/new">
+            <Button
+              type="button"
+              variant="primary"
+              size="md"
+              className="bg-[#134E4A] hover:bg-[#0F766E] text-white font-bold"
+            >
+              <CreditCard className="w-4 h-4 mr-1.5" />
+              Create ID Card
+            </Button>
+          </Link>
           <Link href="/people/new">
-            <Button type="button" variant="primary" size="md">
+            <Button type="button" variant="outline" size="md">
               <UserPlus className="w-4 h-4 mr-1.5" />
               Add Worker
             </Button>
@@ -275,7 +316,7 @@ export default function PeopleRegistryPage() {
             {feedbackMessage.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
             )}
             <span>{feedbackMessage.text}</span>
           </div>
@@ -289,10 +330,10 @@ export default function PeopleRegistryPage() {
         </div>
       )}
 
-      {/* Filter & Controls Bar */}
+      {/* Filter & Search Bar */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="relative w-full sm:w-80">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div className="relative w-full lg:w-80">
             <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
             <Input
               value={searchQuery}
@@ -300,12 +341,12 @@ export default function PeopleRegistryPage() {
                 setSearchQuery(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
-              placeholder="Search by name, বাংলা, ID, or title..."
-              className="pl-9"
+              placeholder="Search name, বাংলা, ID, or title..."
+              className="pl-9 text-xs"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto justify-end">
             <select
               aria-label="Filter by employment status"
               value={statusFilter}
@@ -320,42 +361,52 @@ export default function PeopleRegistryPage() {
               <option value={EmploymentStatus.PREBOARDING}>Preboarding</option>
               <option value={EmploymentStatus.ON_LEAVE}>On Leave</option>
               <option value={EmploymentStatus.SEPARATED}>Separated</option>
-              <option value={EmploymentStatus.INACTIVE}>Inactive</option>
             </select>
 
             <select
-              aria-label="Filter by job category"
-              value={categoryFilter}
+              aria-label="Filter by photo presence"
+              value={hasPhotoFilter}
               onChange={(e) => {
-                setCategoryFilter(e.target.value);
+                setHasPhotoFilter(e.target.value);
                 setPagination((prev) => ({ ...prev, page: 1 }));
               }}
               className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
             >
-              <option value="ALL">All Categories</option>
-              <option value={JobCategory.MANAGEMENT}>Management</option>
-              <option value={JobCategory.STAFF}>Staff</option>
-              <option value={JobCategory.OPERATOR}>Operator</option>
-              <option value={JobCategory.WORKER}>Worker</option>
-              <option value={JobCategory.CONTRACTOR}>Contractor</option>
+              <option value="ALL">All Photo States</option>
+              <option value="true">Has Photo</option>
+              <option value="false">Missing Photo</option>
             </select>
 
-            {/* Column Picker Button */}
+            <select
+              aria-label="Filter by card readiness"
+              value={readinessFilter}
+              onChange={(e) => {
+                setReadinessFilter(e.target.value);
+                setPagination((prev) => ({ ...prev, page: 1 }));
+              }}
+              className="h-9 px-3 rounded-lg border border-slate-300 bg-white text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0F766E]"
+            >
+              <option value="ALL">All Readiness</option>
+              <option value="READY">Ready to Print</option>
+              <option value="NEEDS_ATTENTION">Needs Attention</option>
+            </select>
+
+            {/* Column Picker */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setColumnPickerOpen(!columnPickerOpen)}
                 className="h-9 px-3 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50 text-xs font-semibold text-slate-700 flex items-center gap-1.5 transition-colors"
-                title="Customize Table Columns"
+                title="Customize Columns"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
                 <span>Columns</span>
               </button>
 
               {columnPickerOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-30 space-y-2 animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-slate-200 p-3 z-30 space-y-2 animate-in fade-in zoom-in-95">
                   <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Toggle Columns
+                    Toggle Production Columns
                   </span>
                   {Object.entries(visibleColumns).map(([col, isVis]) => (
                     <label
@@ -382,21 +433,35 @@ export default function PeopleRegistryPage() {
           </div>
         </div>
 
-        {/* Selected Row Bulk Actions Toolbar */}
+        {/* Multi-Row Selection Toolbar */}
         {selectedIds.size > 0 && (
-          <div className="p-3 rounded-xl bg-teal-50 border border-teal-200 flex items-center justify-between gap-4 animate-in fade-in">
-            <span className="text-xs font-bold text-[#134E4A]">
-              {selectedIds.size} worker(s) selected
-            </span>
-            <div className="flex items-center gap-2">
+          <div className="p-3.5 rounded-xl bg-teal-50 border border-teal-200 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#134E4A]">
+              <Sparkles className="w-4 h-4 text-[#0F766E]" />
+              <span>{selectedIds.size} worker(s) selected across pages</span>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Button
                 type="button"
                 variant="primary"
                 size="sm"
-                onClick={() => setBulkModalOpen(true)}
+                onClick={() => setBatchPrintModalOpen(true)}
+                className="bg-[#134E4A] hover:bg-[#0F766E] text-white font-bold"
+              >
+                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                <span>Add to Print Queue</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkStatusModalOpen(true)}
               >
                 Change Status
               </Button>
+
               <Button
                 type="button"
                 variant="outline"
@@ -416,42 +481,46 @@ export default function PeopleRegistryPage() {
           <table className="w-full text-left text-xs text-slate-600">
             <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="py-3.5 px-4 w-10">
+                <th className="py-3.5 px-3.5 w-10">
                   <input
                     type="checkbox"
-                    aria-label="Select all workers"
-                    checked={people.length > 0 && selectedIds.size === people.length}
-                    onChange={toggleSelectAll}
+                    aria-label="Select page workers"
+                    checked={
+                      people.length > 0 &&
+                      people.every(
+                        (p) => p.activeEmployment && selectedIds.has(p.activeEmployment.id),
+                      )
+                    }
+                    onChange={toggleSelectPage}
                     className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
                   />
                 </th>
-                {visibleColumns.employeeNumber && <th className="py-3.5 px-4">Employee ID</th>}
-                {visibleColumns.name && <th className="py-3.5 px-4">Worker Name</th>}
-                {visibleColumns.title && <th className="py-3.5 px-4">Job Title & Category</th>}
-                {visibleColumns.organization && <th className="py-3.5 px-4">Site & Hierarchy</th>}
-                {visibleColumns.status && <th className="py-3.5 px-4">Status</th>}
-                {visibleColumns.identity && <th className="py-3.5 px-4">Government ID</th>}
-                {visibleColumns.actions && <th className="py-3.5 px-4 text-right">Actions</th>}
+                {visibleColumns.photo && <th className="py-3.5 px-3">Photo</th>}
+                {visibleColumns.name && <th className="py-3.5 px-3">Worker Name</th>}
+                {visibleColumns.employeeNumber && <th className="py-3.5 px-3">Employee ID</th>}
+                {visibleColumns.organization && <th className="py-3.5 px-3">Company / Section</th>}
+                {visibleColumns.title && <th className="py-3.5 px-3">Designation</th>}
+                {visibleColumns.status && <th className="py-3.5 px-3">Status</th>}
+                {visibleColumns.readiness && <th className="py-3.5 px-3">Card Readiness</th>}
+                {visibleColumns.template && <th className="py-3.5 px-3">Template</th>}
+                {visibleColumns.lastIssued && <th className="py-3.5 px-3">Last Issued</th>}
+                {visibleColumns.identity && <th className="py-3.5 px-3">Government ID</th>}
+                {visibleColumns.actions && <th className="py-3.5 px-3 text-right">Quick Action</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#134E4A] border-t-transparent mx-auto mb-2" />
-                    <span>Loading worker records...</span>
+                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                    <RotateCw className="w-5 h-5 animate-spin text-[#0F766E] mx-auto mb-2" />
+                    <span>Loading workers...</span>
                   </td>
                 </tr>
               ) : people.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400 space-y-3">
+                  <td colSpan={12} className="py-12 text-center text-slate-400 space-y-3">
                     <Users className="w-10 h-10 mx-auto text-slate-300" />
-                    <div>
-                      <p className="text-sm font-bold text-slate-700">No worker records found</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Add your first worker or refine search filters.
-                      </p>
-                    </div>
+                    <p className="text-sm font-bold text-slate-700">No worker records found</p>
                     <Link href="/people/new">
                       <Button type="button" variant="primary" size="sm">
                         <UserPlus className="w-3.5 h-3.5 mr-1" />
@@ -472,49 +541,76 @@ export default function PeopleRegistryPage() {
                         isSelected ? 'bg-teal-50/40' : ''
                       }`}
                     >
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-3.5">
                         <input
                           type="checkbox"
-                          aria-label={`Select worker ${person.displayName}`}
+                          aria-label={`Select ${person.displayName}`}
                           checked={isSelected}
                           onChange={() => toggleSelectRow(emp?.id)}
                           className="rounded border-slate-300 text-[#0F766E] focus:ring-[#0F766E]"
                         />
                       </td>
 
+                      {/* Photo Thumbnail */}
+                      {visibleColumns.photo && (
+                        <td className="py-3.5 px-3">
+                          <div className="h-9 w-9 rounded-xl bg-slate-100 border border-slate-200 overflow-hidden flex items-center justify-center font-bold text-[#0F766E]">
+                            {person.photoMediaId ? (
+                              <img
+                                src={`/api/people/${person.id}/photo`}
+                                alt={person.displayName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Camera className="w-4 h-4 text-slate-400" />
+                            )}
+                          </div>
+                        </td>
+                      )}
+
+                      {/* Worker Name */}
+                      {visibleColumns.name && (
+                        <td className="py-3.5 px-3">
+                          <Link
+                            href={`/people/${person.id}`}
+                            className="font-bold text-slate-900 hover:text-[#0F766E] transition-colors block"
+                          >
+                            {person.displayName}
+                          </Link>
+                          {person.displayNameNative && (
+                            <span className="text-[11px] font-medium text-[#0F766E] block leading-tight">
+                              {person.displayNameNative}
+                            </span>
+                          )}
+                        </td>
+                      )}
+
+                      {/* Employee Number */}
                       {visibleColumns.employeeNumber && (
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-3">
                           <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-xs">
                             {emp?.employeeNumber || '—'}
                           </span>
                         </td>
                       )}
 
-                      {visibleColumns.name && (
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-teal-100 border border-teal-200 flex items-center justify-center text-xs font-bold text-[#0F766E] shrink-0">
-                              {person.displayName.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <Link
-                                href={`/people/${person.id}`}
-                                className="font-bold text-slate-900 hover:text-[#0F766E] transition-colors block"
-                              >
-                                {person.displayName}
-                              </Link>
-                              {person.displayNameNative && (
-                                <span className="text-[11px] font-medium text-[#0F766E] block leading-tight">
-                                  {person.displayNameNative}
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                      {/* Company / Section */}
+                      {visibleColumns.organization && (
+                        <td className="py-3.5 px-3">
+                          <span className="font-semibold text-slate-800 block">
+                            {emp?.organizationName || '—'}
+                          </span>
+                          {emp?.orgUnitName && (
+                            <span className="text-[11px] text-slate-500 block">
+                              {emp.orgUnitName}
+                            </span>
+                          )}
                         </td>
                       )}
 
+                      {/* Designation */}
                       {visibleColumns.title && (
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-3">
                           <span className="font-bold text-slate-800 block">
                             {emp?.jobTitle || '—'}
                           </span>
@@ -524,63 +620,87 @@ export default function PeopleRegistryPage() {
                         </td>
                       )}
 
-                      {visibleColumns.organization && (
-                        <td className="py-3.5 px-4">
-                          {emp?.locationName && (
-                            <div className="flex items-center gap-1 text-slate-700">
-                              <MapPin className="w-3 h-3 text-slate-400" />
-                              <span>{emp.locationName}</span>
+                      {/* Status */}
+                      {visibleColumns.status && (
+                        <td className="py-3.5 px-3">{getStatusBadge(emp?.status)}</td>
+                      )}
+
+                      {/* Card Readiness */}
+                      {visibleColumns.readiness && (
+                        <td className="py-3.5 px-3">
+                          <Badge
+                            variant={person.cardReadiness === 'READY' ? 'success' : 'error'}
+                            size="sm"
+                          >
+                            {person.cardReadiness === 'READY' ? 'Ready' : 'Needs Attention'}
+                          </Badge>
+                        </td>
+                      )}
+
+                      {/* Assigned Template */}
+                      {visibleColumns.template && (
+                        <td className="py-3.5 px-3">
+                          <span className="text-slate-700 font-medium">
+                            {person.assignedTemplate || 'Classic Vertical'}
+                          </span>
+                        </td>
+                      )}
+
+                      {/* Last Issued */}
+                      {visibleColumns.lastIssued && (
+                        <td className="py-3.5 px-3">
+                          {person.lastIssuedCard ? (
+                            <div className="space-y-0.5">
+                              <span className="font-mono font-bold text-[#0F766E] block text-[11px]">
+                                {person.lastIssuedCard.cardSerial}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block">
+                                Issue #{person.lastIssuedCard.issueNumber}
+                              </span>
                             </div>
-                          )}
-                          {emp?.orgUnitName && (
-                            <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
-                              <FolderTree className="w-3 h-3 text-slate-400" />
-                              <span>{emp.orgUnitName}</span>
-                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">Never Issued</span>
                           )}
                         </td>
                       )}
 
-                      {visibleColumns.status && (
-                        <td className="py-3.5 px-4">{getStatusBadge(emp?.status)}</td>
-                      )}
-
+                      {/* Identity Document (Masked, optional) */}
                       {visibleColumns.identity && (
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-3">
                           {person.identityDocument ? (
-                            <div className="space-y-0.5">
-                              <span className="font-mono text-slate-700 font-semibold block">
-                                {person.identityDocument.documentNumberMasked}
-                              </span>
-                              <Badge variant="neutral" size="sm">
-                                {person.identityDocument.documentType}
-                              </Badge>
-                            </div>
+                            <span className="font-mono text-slate-700">
+                              {person.identityDocument.documentNumberMasked}
+                            </span>
                           ) : (
                             <span className="text-slate-400 text-[11px]">Unregistered</span>
                           )}
                         </td>
                       )}
 
+                      {/* Row Quick Action */}
                       {visibleColumns.actions && (
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <Link href={`/people/${person.id}?tab=cards`}>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="text-xs text-[#0F766E] hover:bg-teal-50 border-teal-200"
+                                title="Preview & Print ID Badge"
+                              >
+                                <Printer className="w-3.5 h-3.5 mr-1" />
+                                <span>Preview & Print</span>
+                              </Button>
+                            </Link>
+
                             <Link href={`/people/${person.id}`}>
                               <button
                                 type="button"
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-                                title="View Record"
+                                title="View Full Worker Profile"
                               >
                                 <Eye className="w-3.5 h-3.5" />
-                              </button>
-                            </Link>
-                            <Link href={`/people/${person.id}/edit`}>
-                              <button
-                                type="button"
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-[#0F766E] hover:bg-teal-50 transition-colors"
-                                title="Edit Record"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
                               </button>
                             </Link>
                           </div>
@@ -645,8 +765,18 @@ export default function PeopleRegistryPage() {
         </div>
       </div>
 
+      {/* Batch Print Modal */}
+      {batchPrintModalOpen && (
+        <BatchPrintModal
+          isOpen={batchPrintModalOpen}
+          onClose={() => setBatchPrintModalOpen(false)}
+          selectedEmploymentIds={Array.from(selectedIds)}
+          onSuccess={() => setSelectedIds(new Set())}
+        />
+      )}
+
       {/* Bulk Status Update Modal */}
-      {bulkModalOpen && (
+      {bulkStatusModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-md w-full p-6 animate-in fade-in zoom-in-95">
             <h3 className="text-base font-bold text-slate-900">Bulk Update Employment Status</h3>
@@ -682,7 +812,7 @@ export default function PeopleRegistryPage() {
                   type="button"
                   variant="outline"
                   size="md"
-                  onClick={() => setBulkModalOpen(false)}
+                  onClick={() => setBulkStatusModalOpen(false)}
                 >
                   Cancel
                 </Button>

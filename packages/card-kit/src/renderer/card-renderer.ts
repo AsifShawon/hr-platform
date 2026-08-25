@@ -1,13 +1,15 @@
 import crypto from 'node:crypto';
-import { CardLayoutSpecification, CardOrientation } from '@hr/domain';
+import { CardLayoutSpecification } from '@hr/domain';
 import {
   generateCardHtmlDocument,
+  generateBatchCardHtmlDocument,
   generateCalibrationHtmlDocument,
   calculateCardPixelDimensions,
   CardRenderWorkerPayload,
   SheetType,
   COMPANY_VERTICAL_60X90_DIMENSIONS,
-} from '@hr/card-kit';
+} from '../index.js';
+
 import { BrowserPool } from './browser-pool.js';
 import { pino } from 'pino';
 
@@ -100,22 +102,26 @@ export class CardRenderer {
       const pxDims = calculateCardPixelDimensions(dimensions, 300);
 
       const manifest: CardRenderManifest = {
-        formatName:
-          dimensions.orientation === CardOrientation.VERTICAL ? 'Company Vertical' : 'ISO ID-1',
+        formatName: layout.presetId,
         widthMm,
         heightMm,
-        bleedMm: includeBleed ? dimensions.bleedMm : 0,
+        bleedMm: dimensions.bleedMm,
         dpi: 300,
         pixelDimensions: {
-          widthPx: includeBleed ? pxDims.totalWidthWithBleedPx : pxDims.widthPx,
-          heightPx: includeBleed ? pxDims.totalHeightWithBleedPx : pxDims.heightPx,
+          widthPx: pxDims.totalWidthWithBleedPx,
+          heightPx: pxDims.totalHeightWithBleedPx,
         },
         outputFormat: 'PDF',
-        templateVersionId: options.templateVersionId,
+        templateVersionId: options.templateVersionId || null,
         rendererVersion: this.rendererVersion,
         checksumSha256,
         renderedAt: new Date().toISOString(),
       };
+
+      logger.info(
+        { checksumSha256, pageCount, format: layout.presetId },
+        '✅ Card PDF render complete',
+      );
 
       return {
         buffer,
@@ -131,7 +137,7 @@ export class CardRenderer {
   }
 
   /**
-   * Renders a high-resolution PNG image at exact calculated pixel dimensions.
+   * Renders high-DPI raster PNG export (150, 300, or 600 DPI).
    */
   public async renderCardPng(options: RenderCardPngOptions): Promise<{
     buffer: Buffer;
@@ -144,9 +150,13 @@ export class CardRenderer {
     const { layout, worker, side = 'front', dpi = 300, includeBleed = false } = options;
     const { dimensions } = layout;
 
-    const pxDims = calculateCardPixelDimensions(dimensions, dpi);
-    const targetWidthPx = includeBleed ? pxDims.totalWidthWithBleedPx : pxDims.widthPx;
-    const targetHeightPx = includeBleed ? pxDims.totalHeightWithBleedPx : pxDims.heightPx;
+    const widthMm = includeBleed ? dimensions.widthMm + dimensions.bleedMm * 2 : dimensions.widthMm;
+    const heightMm = includeBleed
+      ? dimensions.heightMm + dimensions.bleedMm * 2
+      : dimensions.heightMm;
+
+    const targetWidthPx = Math.round((widthMm / 25.4) * dpi);
+    const targetHeightPx = Math.round((heightMm / 25.4) * dpi);
 
     const html = generateCardHtmlDocument({
       layout,
@@ -156,13 +166,22 @@ export class CardRenderer {
       debugMode: false,
     });
 
-    const { page, close } = await this.pool.createIsolatedPage(targetWidthPx, targetHeightPx);
+    const deviceScaleFactor = dpi === 600 ? 2 : 1;
+    const viewportWidth = dpi === 600 ? Math.round(targetWidthPx / 2) : targetWidthPx;
+    const viewportHeight = dpi === 600 ? Math.round(targetHeightPx / 2) : targetHeightPx;
+
+    const { page, close } = await this.pool.createIsolatedPage(viewportWidth, viewportHeight);
 
     try {
+      await page.setViewportSize({ width: viewportWidth, height: viewportHeight });
       await page.setContent(html, { waitUntil: 'load', timeout: 10000 });
 
-      const cardLocator = page.locator('.card-page').first();
-      const pngBuffer = await cardLocator.screenshot({
+      const element = await page.$('.card-page');
+      if (!element) {
+        throw new Error('Card DOM root element not found during PNG rasterization');
+      }
+
+      const pngBuffer = await element.screenshot({
         type: 'png',
         omitBackground: false,
       });
@@ -171,22 +190,26 @@ export class CardRenderer {
       const checksumSha256 = crypto.createHash('sha256').update(buffer).digest('hex');
 
       const manifest: CardRenderManifest = {
-        formatName:
-          dimensions.orientation === CardOrientation.VERTICAL ? 'Company Vertical' : 'ISO ID-1',
-        widthMm: dimensions.widthMm,
-        heightMm: dimensions.heightMm,
-        bleedMm: includeBleed ? dimensions.bleedMm : 0,
+        formatName: layout.presetId,
+        widthMm,
+        heightMm,
+        bleedMm: dimensions.bleedMm,
         dpi,
         pixelDimensions: {
           widthPx: targetWidthPx,
           heightPx: targetHeightPx,
         },
         outputFormat: 'PNG',
-        templateVersionId: options.templateVersionId,
+        templateVersionId: options.templateVersionId || null,
         rendererVersion: this.rendererVersion,
         checksumSha256,
         renderedAt: new Date().toISOString(),
       };
+
+      logger.info(
+        { checksumSha256, widthPx: targetWidthPx, heightPx: targetHeightPx, dpi },
+        '✅ Card PNG render complete',
+      );
 
       return {
         buffer,
@@ -202,17 +225,82 @@ export class CardRenderer {
   }
 
   /**
-   * Renders the printer calibration PDF sheet with 50 mm measurement check.
+   * Generates printable physical calibration sheet PDF (A4 or US Letter).
    */
   public async renderCalibrationPdf(sheetType: SheetType = 'A4'): Promise<{
     buffer: Buffer;
     checksumSha256: string;
+    sheetType: SheetType;
   }> {
     const html = generateCalibrationHtmlDocument(sheetType);
+
     const { page, close } = await this.pool.createIsolatedPage(1200, 1600);
 
     try {
       await page.setContent(html, { waitUntil: 'load', timeout: 10000 });
+
+      const pdfBuffer = await page.pdf({
+        format: sheetType === 'LETTER' ? 'Letter' : 'A4',
+        preferCSSPageSize: true,
+        printBackground: true,
+        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+      });
+
+      const buffer = Buffer.from(pdfBuffer);
+      const checksumSha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+
+      logger.info({ checksumSha256, sheetType }, '✅ Calibration PDF render complete');
+
+      return {
+        buffer,
+        checksumSha256,
+        sheetType,
+      };
+    } finally {
+      await close();
+    }
+  }
+
+  /**
+   * Renders a multi-card physical batch PDF master.
+   */
+  public async renderBatchCardPdf(options: {
+    items: Array<{ layout: CardLayoutSpecification; worker: CardRenderWorkerPayload }>;
+    side?: 'front' | 'back' | 'duplex';
+    includeBleed?: boolean;
+    debugMode?: boolean;
+  }): Promise<{
+    buffer: Buffer;
+    checksumSha256: string;
+    totalCards: number;
+    pageCount: number;
+  }> {
+    const { items, side = 'duplex', includeBleed = false, debugMode = false } = options;
+    if (items.length === 0) {
+      throw new Error('Cannot render an empty card batch PDF.');
+    }
+
+    const html = generateBatchCardHtmlDocument({
+      items,
+      side,
+      includeBleed,
+      debugMode,
+    });
+
+    const first = items[0]!;
+    const { dimensions } = first.layout;
+    const widthMm = includeBleed ? dimensions.widthMm + dimensions.bleedMm * 2 : dimensions.widthMm;
+    const heightMm = includeBleed
+      ? dimensions.heightMm + dimensions.bleedMm * 2
+      : dimensions.heightMm;
+
+    const { page, close } = await this.pool.createIsolatedPage(
+      Math.round((widthMm / 25.4) * 300),
+      Math.round((heightMm / 25.4) * 300),
+    );
+
+    try {
+      await page.setContent(html, { waitUntil: 'load', timeout: 30000 });
 
       const pdfBuffer = await page.pdf({
         preferCSSPageSize: true,
@@ -222,8 +310,20 @@ export class CardRenderer {
 
       const buffer = Buffer.from(pdfBuffer);
       const checksumSha256 = crypto.createHash('sha256').update(buffer).digest('hex');
+      const pagesPerCard = side === 'duplex' ? 2 : 1;
+      const pageCount = items.length * pagesPerCard;
 
-      return { buffer, checksumSha256 };
+      logger.info(
+        { checksumSha256, totalCards: items.length, pageCount },
+        '✅ Batch Card PDF render complete',
+      );
+
+      return {
+        buffer,
+        checksumSha256,
+        totalCards: items.length,
+        pageCount,
+      };
     } finally {
       await close();
     }

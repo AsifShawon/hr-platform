@@ -1,4 +1,4 @@
-import { chromium, Browser, BrowserContext, Page } from 'playwright';
+import { chromium, Browser, BrowserContext, Page, Route } from 'playwright';
 import { pino } from 'pino';
 
 const logger = pino({ name: 'browser-pool' });
@@ -34,8 +34,11 @@ export class BrowserPool {
     this.isInitializing = true;
     try {
       logger.info('🚀 Launching isolated Chromium render engine...');
+      const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
+
       this.browser = await chromium.launch({
         headless: true,
+        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -74,7 +77,7 @@ export class BrowserPool {
     const page = await context.newPage();
 
     // Defensive: intercept and abort any outbound HTTP/HTTPS network calls (data: URIs allowed)
-    await page.route('**', (route) => {
+    await page.route('**', (route: Route) => {
       const url = route.request().url();
       if (url.startsWith('data:') || url.startsWith('blob:')) {
         route.continue();

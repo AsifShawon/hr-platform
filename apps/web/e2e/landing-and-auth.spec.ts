@@ -1,47 +1,48 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Landing Page & Public Shell', () => {
-  test('renders hero headline, bilingual card pair, and key invariants', async ({ page }) => {
-    await page.goto('/');
-
-    // Hero headline and subhead
-    await expect(page.locator('h1', { hasText: 'Professional employee ID cards' })).toBeVisible();
-    await expect(page.locator('text=on your local workstation or server.').first()).toBeVisible();
-
-    // CTAs exist
-    const signInBtn = page.getByRole('link', { name: 'Sign In to Platform' }).first();
-    await expect(signInBtn).toBeVisible();
-
-    // No public signup or SaaS request access anywhere
-    await expect(page.locator('text=Start Free')).toHaveCount(0);
-    await expect(page.locator('text=Sign up')).toHaveCount(0);
-    await expect(page.locator('text=Create Account')).toHaveCount(0);
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-
-    // Bilingual Card Visuals rendered
-    await expect(page.locator('text=Apex Industrial').first()).toBeVisible();
-    await expect(page.locator('text=এপেক্স ইন্ডাস্ট্রিয়াল গ্রুপ').first()).toBeVisible();
-    await expect(page.locator('text=Tanvir Ahmed').first()).toBeVisible();
-    await expect(page.locator('text=তানভীর আহমেদ').first()).toBeVisible();
-  });
-
-  test('interactive tabs allow switching between registry, org tree, and card lab', async ({
+  test('renders dark editorial hero headline, bilingual card pair, and key invariants', async ({
     page,
   }) => {
     await page.goto('/');
 
-    // Check registry table has fictional worker
-    await expect(page.getByRole('cell', { name: 'EMP-1001' }).first()).toBeVisible();
-    await expect(page.locator('text=Senior Production Manager').first()).toBeVisible();
+    // Hero headline and subhead
+    await expect(
+      page.locator('h1', { hasText: 'Create accurate employee ID cards' }),
+    ).toBeVisible();
+    await expect(page.locator('text=on your own computer.').first()).toBeVisible();
 
-    // Click Org Tree tab
-    await page.getByRole('tab', { name: 'Organization Tree' }).click();
-    await expect(page.locator('text=Dhaka Headquarters')).toBeVisible();
-    await expect(page.locator('text=Gazipur Manufacturing Plant')).toBeVisible();
+    // CTAs exist
+    const signInBtn = page.getByRole('link', { name: 'Sign In to Local Workspace' }).first();
+    await expect(signInBtn).toBeVisible();
 
-    // Click Bilingual Card Lab tab
-    await page.getByRole('tab', { name: 'Bilingual Card Lab' }).click();
-    await expect(page.locator('text=Live Physical Layout Engine')).toBeVisible();
+    // No public signup, SaaS request access, or cloud pricing anywhere
+    await expect(page.locator('text=Start Free')).toHaveCount(0);
+    await expect(page.locator('text=Sign up')).toHaveCount(0);
+    await expect(page.locator('text=Create Account')).toHaveCount(0);
+    await expect(page.locator('text=Request Access')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+
+    // Bilingual Card Visuals rendered
+    await expect(page.locator('text=Apex Industrial').first()).toBeVisible();
+    await expect(page.locator('text=Tanvir Ahmed').first()).toBeVisible();
+  });
+
+  test('interactive tabs allow switching between worker flow, batch queue, and card engine', async ({
+    page,
+  }) => {
+    await page.goto('/');
+
+    // Check Worker Flow tab is default
+    await expect(page.locator('text=Worker Card Creation & Live Preflight')).toBeVisible();
+
+    // Click Batch Queue tab
+    await page.getByRole('button', { name: 'Batch Queue & Defect Sign-off' }).click();
+    await expect(page.locator('text=Persistent Queue & Physical Operator Sign-off')).toBeVisible();
+
+    // Click Bilingual Card Engine tab
+    await page.getByRole('button', { name: 'Bilingual Card Engine' }).click();
+    await expect(page.locator('text=High-Precision Bilingual Imposition Engine')).toBeVisible();
   });
 
   test('presents local deployment modes and direct calibration links', async ({ page }) => {
@@ -50,7 +51,7 @@ test.describe('Landing Page & Public Shell', () => {
     // Deployment mode cards
     await expect(page.locator('text=Single-PC Workstation')).toBeVisible();
     await expect(page.locator('text=Private Factory LAN')).toBeVisible();
-    await expect(page.locator('text=Air-Gapped Ready').first()).toBeVisible();
+    await expect(page.locator('text=100% Offline Capable').first()).toBeVisible();
   });
 
   test('FAQ accordion expands and collapses', async ({ page }) => {
@@ -64,13 +65,13 @@ test.describe('Landing Page & Public Shell', () => {
     // Click to open
     await firstFaqBtn.click();
     await expect(
-      page.locator('text=All assets, fonts (Noto Sans & Noto Sans Bengali)'),
+      page.locator('text=The platform is engineered strictly for on-premises operation'),
     ).toBeVisible();
 
     // Click to close
     await firstFaqBtn.click();
     await expect(
-      page.locator('text=All assets, fonts (Noto Sans & Noto Sans Bengali)'),
+      page.locator('text=The platform is engineered strictly for on-premises operation'),
     ).not.toBeVisible();
   });
 
@@ -97,7 +98,7 @@ test.describe('Sign-In Presentation Shell', () => {
 
     // Local System Badge & recovery guidance
     await expect(page.locator('text=Local On-Premises System')).toBeVisible();
-    await expect(page.locator('text=Local Node')).toBeVisible();
+    await expect(page.locator('text=Local Node Active')).toBeVisible();
     await expect(page.locator('text=Contact your System Owner')).toBeVisible();
 
     // Password input toggle
@@ -145,7 +146,7 @@ test.describe('Sign-In Presentation Shell', () => {
     // Enter wrong password
     await page.fill('#auth-username', 'admin@example.com');
     await page.fill('#auth-password', 'wrong');
-    await page.getByRole('button', { name: 'Sign In to Platform' }).click();
+    await page.getByRole('button', { name: 'Sign In to Workspace' }).click();
 
     // Generic error
     await expect(page.locator('text=Authentication Failed')).toBeVisible();

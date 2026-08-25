@@ -8,7 +8,7 @@ import {
   LocaleFallbackPolicy,
   CardOrientation,
 } from '@hr/domain';
-import { calculateAdaptiveFontSizePt } from '@hr/card-kit';
+import { calculateAdaptiveFontSizePt } from '@hr/card-kit/typography';
 import { QrCode, RefreshCw, AlertTriangle, ShieldCheck, User } from 'lucide-react';
 import { cn } from '@hr/ui';
 

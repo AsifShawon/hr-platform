@@ -1,20 +1,21 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16.4-alpine
     container_name: hr-postgres-prod
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres_secure_production_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required in .env}
       POSTGRES_DB: hr_platform_prod
-    # Note: Port is NOT exposed to host in production-like profile (isolated in internal network)
     volumes:
-      - postgres_prod_data:/var/lib/postgresql/data
+      - hr_postgres_prod_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d hr_platform_prod"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - hr_internal
 
   api:
     build:
@@ -24,13 +25,27 @@ services:
     environment:
       NODE_ENV: production
       PORT_API: 3001
-      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres_secure_production_password}@postgres:5432/hr_platform_prod?schema=public
-      APP_SECRET: ${APP_SECRET:-production_secure_secret_min32characterslong}
-      APP_URL: http://localhost
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/hr_platform_prod?schema=public
+      SYSTEM_ENCRYPTION_KEY: ${SYSTEM_ENCRYPTION_KEY:?SYSTEM_ENCRYPTION_KEY is required in .env}
+      APP_SECRET: ${APP_SECRET:?APP_SECRET is required in .env}
+      APP_URL: ${APP_URL:-http://localhost}
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_PATH: /app/storage/uploads
+      BACKUP_LOCAL_PATH: /app/storage/backups
+    volumes:
+      - hr_media_prod_data:/app/storage/uploads
+      - hr_backup_prod_data:/app/storage/backups
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3001/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
+    networks:
+      - hr_internal
 
   worker:
     build:
@@ -39,11 +54,18 @@ services:
     container_name: hr-worker
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:${DB_PASSWORD:-postgres_secure_production_password}@postgres:5432/hr_platform_prod?schema=public
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@postgres:5432/hr_platform_prod?schema=public
+      SYSTEM_ENCRYPTION_KEY: ${SYSTEM_ENCRYPTION_KEY:?SYSTEM_ENCRYPTION_KEY is required in .env}
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_PATH: /app/storage/uploads
+    volumes:
+      - hr_media_prod_data:/app/storage/uploads
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    networks:
+      - hr_internal
 
   web:
     build:
@@ -53,25 +75,43 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      API_INTERNAL_URL: http://api:3001
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
+    networks:
+      - hr_internal
 
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.8.4-alpine
     container_name: hr-caddy
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HOST_BIND_IP:-127.0.0.1}:80:80"
+      - "${HOST_BIND_IP:-127.0.0.1}:443:443"
     volumes:
-      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - ${CADDYFILE_PATH:-./docker/caddy/Caddyfile.loopback}:/etc/caddy/Caddyfile:ro
+      - hr_caddy_prod_data:/data
+      - hr_caddy_prod_config:/config
     depends_on:
       - web
       - api
     restart: unless-stopped
+    networks:
+      - hr_internal
+
+networks:
+  hr_internal:
+    driver: bridge
 
 volumes:
-  postgres_prod_data:
-    name: hr_postgres_prod_data
-  caddy_data:
-  caddy_config:
+  hr_postgres_prod_data:
+  hr_media_prod_data:
+  hr_backup_prod_data:
+  hr_caddy_prod_data:
+  hr_caddy_prod_config:

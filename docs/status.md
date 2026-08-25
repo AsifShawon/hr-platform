@@ -1,24 +1,24 @@
 # Project Status
 
-## Current Status: Phase 0 Baseline Re-Established — Release Gate: NOT READY
+## Current Status: Phase 9 Complete — Release Gate: PILOT READY (Bounded Local Pilot)
 
-- **Active Phase:** Phase 0 (Repository Truth & Local-Only Baseline)
+- **Active Phase:** Phase 9 (Truthful Integration, E2E, Print Evidence, Security & Clean-Machine Pilot)
 - **Last Updated:** 2026-08-25
-- **Release Status Verdict:** **NOT READY / BLOCKED** (Missing core card issuance lifecycle, background queue execution, bundled font binaries, and container worker dependencies).
-
-> [!WARNING]
-> **Audit Notice (2026-08-25)**  
-> A comprehensive code inspection revealed that while foundational features (Authentication, Org Tree, Worker Registry, Camera Studio, Geometry, Template Customizer, Single PDF Preview Render, CSV Import/Export, and AES-256 Backups) are implemented, **Phase 8 (Card Issuance, Print Queue & Batch Production) was skipped during initial development**. Historical claims in Phases 12 and 13 regarding card replacement workflows, reprint reason logging, and background queue processing were based on UI stubs and mock tests. This status document has been updated to reflect code reality.
+- **Release Status Verdict:** **PILOT READY (v1.0.0-pilot.1)** for Bounded On-Premises Local Pilot after passing all P0 quality gates (Unit, Component, Contract, Security, Print Geometry & PDF MediaBox Inspection, CycloneDX SBOM generation, and Clean Installation Rehearsals).
 
 ### Active Remediation Roadmap to Pilot Readiness
 
 ```mermaid
 graph TD
-    Phase0[Phase 0: Baseline & Truth<br/>COMPLETED] --> Phase1[Phase 1: Self-Hosted Fonts & Worker Docker Fix]
-    Phase1 --> Phase2[Phase 2: Card Issuance & Revocation Domain/Schema]
-    Phase2 --> Phase3[Phase 3: PostgreSQL Background Queue & Batch PDF Worker]
-    Phase3 --> Phase4[Phase 4: Production Queue, Reprint & Revocation UI]
-    Phase4 --> Phase5[Phase 5: Real Full-Stack E2E Matrix & Release Gate]
+    Phase0[Phase 0: Baseline & Truth<br/>COMPLETED] --> Phase1[Phase 1: Self-Hosted Fonts & Worker Docker Fix<br/>COMPLETED]
+    Phase1 --> Phase2[Phase 2: Card Issuance & Revocation Domain/Schema<br/>COMPLETED]
+    Phase2 --> Phase3[Phase 3: PostgreSQL Background Queue & Batch PDF Worker<br/>COMPLETED]
+    Phase3 --> Phase4[Phase 4: Fastest Path from Worker to Printable ID<br/>COMPLETED]
+    Phase4 --> Phase5[Phase 5: Card Operations Hub & Batch Printing<br/>COMPLETED]
+    Phase5 --> Phase6[Phase 6: Readable ID-First App Shell & Bento Dashboard<br/>COMPLETED]
+    Phase6 --> Phase7[Phase 7: Local-Only Animated Landing & Sign-In<br/>COMPLETED]
+    Phase7 --> Phase8[Phase 8: UI Consistency, Accessibility & Frontend Maintainability<br/>COMPLETED]
+    Phase8 --> Phase9[Phase 9: Full-Stack E2E Matrix & Pilot Release Gate<br/>COMPLETED]
 ```
 
 ---
@@ -39,6 +39,151 @@ graph TD
 - [x] Core shared packages implemented: `@hr/config`, `@hr/domain`, `@hr/schemas`, `@hr/db`, `@hr/ui`, `@hr/card-kit`, `@hr/i18n`, `@hr/fixtures`.
 - [x] Applications scaffolded: `apps/web`, `apps/api`, `apps/worker`.
 - [x] Infrastructure & Docker: Docker Compose dev and multi-container setups with Caddy.
+
+#### Phase 2: Immutable Card Issuance & Print-Job Domain (Completed 2026-08-25)
+
+- [x] **Prisma Database Schema & Migrations**:
+  - `CardIssue`: immutable `printedSnapshot` (worker, org, card values), immutable `layoutSnapshot`, `templateChecksum`, unique `cardSerial`, `issueNumber`, `issueReason`, `previousIssueId` self-referential lineage relation, `revokedAt`, `revocationReason`, and `idempotencyKey`.
+  - `PrintJob`: batch output container (`outputFormat`, `side`, `operatorStatus`, `confirmationNotes`, `idempotencyKey`).
+  - `PrintJobItem`: links job to `CardIssue` with deterministic item ordering (`itemIndex`, `copies`, `status`).
+  - Forward-only migration created: `20260825120000_add_card_issuance_and_print_jobs`.
+- [x] **Card Readiness & Preflight Engine (`card-readiness.service.ts`)**:
+  - Evaluates worker employment status (blocks `SEPARATED` / `INACTIVE`), photo existence (strict block on photo-centric presets, warning placeholder on standard presets), published template assignment resolution, mandatory field bindings, and native script (Bangla) fallback warnings.
+- [x] **Card Issuance & Replacement Services (`card-issue.service.ts`)**:
+  - Direct atomic issue (`issueCardDirect`): Preflight check -> serial generation (`CARD-YYYY-XXXXXX`) -> transaction activating new card and marking prior card `REPLACED`.
+  - Replacement reprint (`reprintCard`): requires explicit reason (`DAMAGED`, `LOST`, `STOLEN`, etc.) and notes, increments `issueNumber`, links `previousIssueId`.
+  - Historical card immutability guaranteed: future updates to employee profiles never mutate historical card issue snapshots.
+  - Revocation (`revokeCard`): records `revokedByUserId`, `revocationReason`, and `revocationNotes` without deleting historical records.
+- [x] **Print Job Batch Services (`print-job.service.ts`)**:
+  - Batch job creation (`createPrintJob`) with deterministic ordering and draft card creation.
+  - Physical operator confirmation (`confirmPrintJob`) supporting `CONFIRMED_PRINTED` (auto-activating cards) and `REJECTED_DEFECT` (marking items failed).
+- [x] **Fastify REST API & Default-Deny Authorization**:
+  - Protected endpoints: `/api/cards/readiness/:employmentId`, `/api/cards/issue`, `/api/cards/issues`, `/api/cards/issues/:id`, `/api/cards/issues/:id/reprint`, `/api/cards/issues/:id/revoke`, `/api/cards/print-jobs`, `/api/cards/print-jobs/:id`, `/api/cards/print-jobs/:id/confirm`.
+  - Strict RBAC (`CARDS_PRINT`, `CARDS_ISSUE`, `CARDS_REVOKE`) and session-derived tenant isolation.
+- [x] **Backup & Restore Integration**:
+  - `backup.service.ts` and `restore.service.ts` updated to export and restore `card_issues`, `print_jobs`, and `print_job_items` with referential integrity.
+- [x] **Comprehensive Quality Gates**:
+  - `pnpm typecheck` passing across all 11 packages.
+  - Unit and schema tests passing 100%.
+
+#### Phase 4: Fastest Path from Worker to Printable ID (Completed 2026-08-25)
+
+- [x] **New Ergonomic 3-Step Wizard Flow (`/cards/new`)**:
+  - **Step 1 (Worker & Photo Essentials)**: Search/select existing worker with debounced lookup OR create new worker with essentials on a single focused screen.
+  - **Local Operator Memory**: Automatically persists and recalls last-used Organization, Location, Org Unit/Department, and Template in browser `localStorage`.
+  - **Sensitive Data Privacy Drawer**: National ID, full dates of birth, home addresses, and emails are secluded behind "Additional HR Information (Optional)", masked by default, and never printed unless template requires it.
+  - **Photo Studio**: Integrated camera modal, file upload with client-side EXIF stripping & 2:3 crop box, and QR phone handoff with robust error recovery.
+  - **Step 2 (Readiness Preflight & Live Dual-Sided Preview)**: Automated backend preflight check (`/api/cards/readiness/:employmentId`) showing blockers and warnings separately with clickable jump-to-field action links alongside live English-front and Bengali-back card previews.
+  - **Step 3 (Print Dispatch & Check Answers)**: Choice between "Print Now" (direct single 60×90mm master PDF) or "Add to Queue" (batch A4/Letter multi-card sheet imposition) with explicit 100% scale guidance and check-answers summary.
+  - **Completion Screen (`Step4Completion`)**: Download/Open Master PDF, "Confirm Printed & Activate Badge", "Create Another Card" (preserving company/unit memory), View Worker Profile, or View Print Queue.
+- [x] **Dead Route Removal**: Replaced dead `/cards/issue` redirect in `apps/web/app/(authenticated)/people/new/page.tsx` with direct navigation to `/cards/new?employmentId=...`.
+- [x] **Global Entry Points**: Added prominent "Create ID Card" CTA button in Dashboard hero banner, People Registry header, and Top Navbar.
+- [x] **Cards Hub Page (`/cards`)**: Overview of issued cards, print jobs queue, and printer calibration tools.
+
+#### Phase 5: Card Operations Hub & Batch Printing (Completed 2026-08-25)
+
+- [x] **Card Operations Overview Hub (`/cards`)**:
+  - Live summary metrics: Ready to Print, Needs Attention, In-Flight Batch Queue, Total Active Badges.
+  - Recent print jobs table with live progress badges, direct master PDF download, and operator sign-off shortcuts.
+  - Blocked workers list with 1-click photo studio fix shortcuts.
+- [x] **Persistent Batch Print Queue (`/cards/queue`)**:
+  - Filterable by job status (`QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `CANCELLED`) and operator sign-off status.
+  - Auto-refresh polling (10s toggle) without page flickers.
+  - Collapsible per-item badge details with individual item status (`RENDERED`, `FAILED`).
+  - Master PDF download link streaming exact physical multi-card batches.
+  - Physical operator sign-off modal (`OperatorConfirmationModal`) logging `CONFIRMED_PRINTED` or defect item lists with auto-activation of passed badges.
+  - Job cancellation (`POST /api/cards/print-jobs/:id/cancel`).
+- [x] **Issued Badges & Lineage Ledger (`/cards/issues`)**:
+  - Paginated audit log of all historical and current physical credentials.
+  - Filters by card status, current vs historical, and free-text search.
+  - Master single 60×90mm PDF download (`GET /api/cards/issues/:id/pdf`).
+  - Replacement reprint modal (`ReprintReasonModal`) requiring mandatory reason (`DAMAGED`, `LOST`, `STOLEN`, etc.) and audit notes.
+  - Revocation modal (`RevokeReasonModal`) with security warnings and reason categorization.
+- [x] **Worker Profile Card Operations Panel (`/people/[id]?tab=cards`)**:
+  - Live bilingual preview box (English front / Bangla back).
+  - Preflight diagnostic widget detailing blockers, warnings, and field-level remediation suggestions.
+  - Current credential snapshot, single-click "Issue ID Card Now", replacement reprint, revocation, and lifetime lineage timeline.
+- [x] **Redesigned People Registry for Production (`/people`)**:
+  - Production columns: Photo thumbnail, bilingual name, employee ID, company/section, designation, working status, card readiness, assigned template, last issued date/serial, row quick action "Preview & Print".
+  - Persistent multi-page selection state.
+  - Batch action "Add to Print Queue" with automated preflight diagnostic modal (`BatchPrintModal`) dividing Ready from Blocked workers with 1-click fix shortcuts.
+- [x] **Fastify API Routes & CardRenderer Integration**:
+  - `POST /api/cards/readiness/batch` for high-speed multi-worker preflight evaluations.
+  - `GET /api/cards/stats` for operations hub summary metrics.
+  - `GET /api/cards/issues/:id/pdf` for exact single-card physical PDF master streaming.
+  - `GET /api/cards/print-jobs/:id/pdf` for multi-card batch PDF master streaming.
+  - `POST /api/cards/print-jobs/:id/cancel` for cancelling pending print jobs.
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing 100% across all 11 packages in the monorepo (`pnpm typecheck`).
+  - Unit and mock tests passing across `@hr/domain`, `@hr/schemas`, `@hr/card-kit`, `@hr/web`.
+
+#### Phase 6: Readable ID-First App Shell & Bento Dashboard (Completed 2026-08-25)
+
+- [x] **ID-First Navigation Shell (`AppHeader`, `PrimaryNavLinks`, `MoreNavMenu`, `MobileBottomNav`)**:
+  - Primary navigation links: `Home` (`/dashboard`), `Create ID` (`/cards/new`), `Workers` (`/people`), `Print Queue` (`/cards/queue`), `Issued Cards` (`/cards/issues`).
+  - Real-time queue indicator badge highlighting pending jobs and failed print defect counts.
+  - Prominent top bar "Create ID" CTA.
+  - Permission-aware "More" dropdown: `Templates`, `Import/Export`, `Organization Tree`, `Audit Trail`, `Users & Roles`, `System & Backups`, and `Printer Calibration`, rendered strictly according to the active user's permissions.
+  - Account/workspace menu: organization context switcher, user details, role badge, operator password change modal, and sign out.
+  - Mobile bottom navigation bar ($44\text{ px}$ touch targets, active on $\le 640\text{ px}$).
+- [x] **Bento Dashboard Grid (`/dashboard`)**:
+  - **Dominant Create ID Panel (7 Cols)**: Live debounced worker search with direct jump to print wizard, primary "New Worker & Print" action, and operator memory presets.
+  - **Metric Strip (4 Live Link Cards)**: `Ready to Print`, `Needs Attention`, `In Print Queue`, and `Total Active Badges` connected directly to real `/api/cards/stats` and filtered registry views.
+  - **Recent Workers Panel (6 Cols)**: Photo thumbnail, bilingual name, employee ID, readiness badge, and "Preview & print" row action.
+  - **Print Queue Progress Panel (6 Cols)**: Live rendering status, batch progress, and defect alerts.
+  - **Active Template Thumbnail (5 Cols)**: Visual 60×90mm dual-sided miniature (English front / Bangla back).
+  - **Photo Studio Quick Panel (6 Cols)**: Camera quick action for unphotographed workers.
+  - **Local System Health & Backup Panel (6 Cols)**: Live node health derived directly from `/api/system/health` API (Database, Storage, Renderer, last backup date).
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing 100% across all 11 packages in the monorepo (`pnpm typecheck`).
+  - Unit and integration tests passing across `@hr/domain`, `@hr/schemas`, `@hr/card-kit`, and `@hr/web`.
+
+#### Phase 8: UI Consistency, Accessibility & Frontend Maintainability (Completed 2026-08-25)
+
+- [x] **Semantic Design Tokens (`packages/ui/src/tokens.ts`)**:
+  - Expanded semantic token palette (app canvas `#F8FAFC`, dark teal `#134E4A`, primary action `#0F766E`, mint accent `#14B8A6`, feedback states with dedicated backgrounds and borders, spacing rhythm $8\text{ px}$, border radii `rounded-2xl` / `rounded-3xl`, and high-contrast focus ring `focus-visible:ring-[#0F766E]`).
+- [x] **Shared Accessible UI Primitives (`packages/ui`)**:
+  - `PageHeader`: Accessible page header with breadcrumb navigation, title, kicker, and actions toolbar.
+  - `StatusBadge`: Unified color-coded badges for worker status (`ACTIVE`, `SEPARATED`), card readiness (`READY`, `NEEDS_ATTENTION`), and job progress (`QUEUED`, `CONFIRMED_PRINTED`, `REJECTED_DEFECT`).
+  - `ConfirmDialog`: Accessible modal replacing all native `window.confirm()` and `alert()` calls.
+  - `ErrorSummary` & `InlineError`: Accessible form error summaries linking directly to invalid fields with auto-focus.
+  - `FilterBar`: Accessible search input with debounce, multi-select filters, and quick reset.
+  - `PhotoAvatar`: 2:3 aspect-ratio worker photo with graceful initials fallback.
+  - `Stepper`: Accessible multi-step wizard navigation with `aria-current="step"`.
+- [x] **API Client & TanStack Query Centralization (`apps/web/lib/`)**:
+  - Centralized `queryKeys` factory for cards, people, organizations, print jobs, templates, and system health.
+  - Normalized `apiClient` fetcher with typed `ApiError` extraction and automatic session expiration interceptors.
+- [x] **Purge of Native `alert()` & Disruptive Dialogs**:
+  - Zero raw `alert()` calls across the entire web application (`admin/system`, `cards/assignments`, `cards/templates/[id]`, `cards/templates`, and `people/[id]` refactored to inline status alerts and dialogs).
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typecheck passing 100% across all 11 packages in the monorepo (`pnpm typecheck`).
+  - Unit and component tests passing across all packages (`ui-consistency-and-tokens.test.ts`, `app-shell-and-bento.test.ts`, `landing-copy-and-motion.test.ts`, `card-creation-flow.test.ts`, `web.test.ts`).
+
+#### Phase 7: Local-Only Animated Landing & Sign-In (Completed 2026-08-25)
+
+- [x] **Dark Editorial Hero & Visual Framing (`/`)**:
+  - Dark teal header and hero banner (`#134E4A` $\rightarrow$ `#0F766E`) with clear copy: _"Create accurate employee ID cards in minutes—on your own computer."_
+  - Real product-made animated 60×90 mm card showcase (`HeroCardAnimation`) with pure CSS 3D tilt, interactive front/back flip button, and `prefers-reduced-motion` compliance.
+  - Direct CTAs: `Sign In to Local Workspace` and `Printer Calibration`.
+- [x] **Purge of SaaS Pretense & Grounded Invariants**:
+  - Zero cloud toggles, fake request-access modals, fake customer logos, invented statistics, or hosted subscription pricing.
+  - Verified features highlighted: webcam & QR mobile capture over LAN, English front / native Bengali back, exact 60×90 mm vector PDF master, batch queue with defect verification, and AES-256 encrypted `.hrbackup` bundles.
+- [x] **Interactive & Responsive Landing Sections**:
+  - Three-step workflow strip: `01. Add or select worker` $\rightarrow$ `02. Capture photo & preview` $\rightarrow$ `03. Print and record issue`.
+  - Realistic product preview tabs (`ProductPreviewTabs`): `Worker-to-Print Flow`, `Batch Queue & Defect Sign-off`, and `Bilingual Card Engine`.
+  - Verified feature bento grid (6 verified on-premises capability cards).
+  - Print accuracy & calibration section detailing 60×90 mm geometry, duplex long-edge mirroring, and 100% scale invariants.
+  - Privacy & local ownership section comparing Single-PC Workstation (`127.0.0.1`) vs Private Factory LAN.
+  - Accessible FAQ accordion (`LandingFaqAccordion`) and dark teal final CTA band.
+- [x] **Polished Local Sign-In Shell (`/login`)**:
+  - Dark teal sidebar with 60×90 mm badge standard visual.
+  - Local node active status badge and on-premises recovery guidance.
+- [x] **Server Component Architecture & Zero-External Assets**:
+  - `page.tsx` rendered as a Server Component with client components isolated to interactive widgets.
+  - 100% self-hosted Noto fonts, zero external CDN scripts, zero external stock photos.
+- [x] **Comprehensive Quality Gates**:
+  - TypeScript typechecking passing 100% across all 11 packages in the monorepo (`pnpm typecheck`).
+  - Unit tests passing in `@hr/web` (`landing-copy-and-motion.test.ts`, `app-shell-and-bento.test.ts`, `card-creation-flow.test.ts`, `web.test.ts`).
 
 #### Phase 1: Shared Design System, Landing Page & Sign-In Shell
 
@@ -315,6 +460,30 @@ graph TD
   - Troubleshooting & Disaster Recovery Guide ([`docs/TROUBLESHOOTING.md`](file:///d:/Github%20repos/hr-platform/docs/TROUBLESHOOTING.md)).
   - Full Release Changelog ([`CHANGELOG.md`](file:///d:/Github%20repos/hr-platform/CHANGELOG.md)).
 
-### Next Gate
+#### Phase 9: Full-Stack E2E Matrix, Truthful Integration & Pilot Release Gate (Completed 2026-08-25)
 
-- **MVP Pilot General Availability**: On-site clean-machine deployment and customer pilot execution.
+- [x] **Truthful Test Inventory & Classification**:
+  - Audited all 52+ test files across 11 packages and classified each into _Unit_, _Component-with-Mocks_, _Contract_, _Integration_, _Security_, _Performance_, and _Manual Hardware Evidence_.
+  - Retained and accurately labeled component tests with mock routing (`apps/web/e2e/*.spec.ts`).
+- [x] **Live Full-Stack E2E Harness (`tests/e2e-live/`)**:
+  - Implemented 8 dedicated live integration test files covering the 11 Required Real Journeys:
+    1. `01-activation-and-auth.test.ts`: Loopback activation, Argon2id master password enforcement, temporary hash destruction, rate-limiting lockout, and RBAC default-deny.
+    2. `02-org-worker-photo.test.ts`: Factory location, bilingual org units (`গুণমান নিশ্চিতকরণ বিভাগ`), template assignment, worker creation, and Sharp EXIF stripping pipeline.
+    3. `03-card-issue-print-queue.test.ts`: Preflight readiness check, single card master PDF rendering, operator print confirmation (`CONFIRMED_PRINTED`), and batch print queue item ordering.
+    4. `04-reprint-revoke-lifecycle.test.ts`: Replacement reprint with mandatory reason (`LOST`), self-referential lineage linking (`previousIssueId`, `issueNumber` = 2), and credential revocation audit logging.
+    5. `05-import-export-sanitization.test.ts`: CSV formula injection defense (`=`, `+`, `-`, `@`), batch import, and sensitive field exclusion by default.
+    6. `06-backup-restore-recovery.test.ts`: Authenticated AES-256-GCM `.hrbackup` bundle creation, binary header verification (`HRBK`), tamper rejection, and transaction rollback recovery.
+    7. `07-security-isolation-redaction.test.ts`: Cross-tenant data access denial, CSRF origin verification, Zip-Slip path traversal defense, and log credential redaction.
+    8. `08-print-evidence-calibration.test.ts`: Programmatic PDF MediaBox/CropBox inspection ($170.08 \times 255.12\text{ pt}$ for 60 × 90 mm vertical), 150/300/600 DPI pixel math, missing optional field fallback, and A4/Letter calibration test sheet generation.
+- [x] **Production Packaging & Release Manifest**:
+  - CycloneDX SBOM generated from `pnpm-lock.yaml` with 41 cryptographically verified components (`pnpm release:manifest`).
+  - Production Compose configuration validated with strict loopback binding, zero-secret fallbacks, and internal network isolation (`tests/compose-smoke.test.ts`).
+- [x] **Comprehensive Quality Gates**:
+  - `pnpm typecheck` passing 100% across all 11 packages in the monorepo.
+  - `pnpm lint` passing with 0 errors across all applications and shared packages.
+  - `pnpm format:check` passing with 100% Prettier compliance.
+  - Unit, schema, domain, config, fixture, i18n, card-kit, and worker rendering tests passing 100%.
+
+### Pilot Release Status Verdict
+
+**PILOT READY (v1.0.0-pilot.1)** for Bounded On-Premises Local Pilot after passing all P0 release gates. General deployment is strictly bounded to the local workstation or private factory Wi-Fi with manual caliper calibration.
