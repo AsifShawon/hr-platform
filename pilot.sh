@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # ==============================================================================
 # HR Platform On-Premises MVP - Pilot Management Script (POSIX/Linux)
 # Version: v1.0.0-pilot.1
@@ -87,14 +87,22 @@ EOF
     log_info "Starting PostgreSQL database container..."
     docker compose -f "$COMPOSE_FILE" up -d postgres
 
-    log_info "Waiting for database to report healthy..."
+    log_info "Waiting for database to report healthy (timeout 60s)..."
+    local retries=30
     until [ "$(docker inspect -f {{.State.Health.Status}} hr-postgres-prod 2>/dev/null)" = "healthy" ]; do
+        retries=$((retries - 1))
+        if [ $retries -le 0 ]; then
+            log_error "PostgreSQL database failed to report healthy within 60 seconds."
+            log_error "Inspect logs with: docker compose -f \"$COMPOSE_FILE\" logs postgres"
+            exit 1
+        fi
         sleep 2
     done
     log_success "Database is online and healthy."
 
     log_info "Running schema migrations..."
-    docker compose -f "$COMPOSE_FILE" run --rm --no-deps api pnpm --filter @hr/db db:migrate:deploy || true
+    docker compose -f "$COMPOSE_FILE" run --rm migration
+    log_success "Schema migrations applied successfully."
 
     log_info "Starting full application stack in protected loopback mode (127.0.0.1)..."
     docker compose -f "$COMPOSE_FILE" up -d
@@ -175,7 +183,8 @@ cmd_upgrade() {
     docker compose -f "$COMPOSE_FILE" build --pull
 
     log_info "Step 3: Executing Database Migrations..."
-    docker compose -f "$COMPOSE_FILE" run --rm --no-deps api pnpm --filter @hr/db db:migrate:deploy || true
+    docker compose -f "$COMPOSE_FILE" run --rm migration
+    log_success "Database migrations applied."
 
     log_info "Step 4: Restarting application services..."
     docker compose -f "$COMPOSE_FILE" up -d
