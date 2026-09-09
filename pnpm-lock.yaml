@@ -283,6 +283,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@hr/card-kit':
+        specifier: workspace:*
+        version: link:../card-kit
       '@hr/config':
         specifier: workspace:*
         version: link:../config

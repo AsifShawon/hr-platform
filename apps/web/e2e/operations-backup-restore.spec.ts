@@ -22,7 +22,7 @@ test.describe('Phase 10: System Health, Encrypted Backups & Disaster Recovery', 
       });
     });
 
-    await page.route('**/api/organizations', async (route) => {
+    await page.route('**/api/organizations*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

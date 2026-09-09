@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { prisma } from '@hr/db';
+import { prisma, PermissionType } from '@hr/db';
 import { Permission, TemplatePresetId, JobCategory, EmploymentStatus } from '@hr/domain';
 import { createSession } from '../src/services/auth.service.js';
 import { createTemplate, publishTemplateVersion } from '../src/services/template.service.js';
@@ -72,7 +72,23 @@ describe('Phase 2: Cards API Default-Deny RBAC & Tenant Isolation Tests', () => 
       data: {
         tenantId: tenant1Id,
         name: 'Full Owner',
-        permissions: Object.values(Permission) as any,
+        permissions: [
+          PermissionType.PEOPLE_VIEW,
+          PermissionType.PEOPLE_EDIT,
+          PermissionType.IDENTITY_REVEAL,
+          PermissionType.IDENTITY_EDIT,
+          PermissionType.CARDS_DESIGN,
+          PermissionType.CARDS_PRINT,
+          PermissionType.CARDS_ISSUE,
+          PermissionType.CARDS_REVOKE,
+          PermissionType.EXPORTS_CREATE,
+          PermissionType.ORGANIZATION_MANAGE,
+          PermissionType.USERS_MANAGE,
+          PermissionType.ROLES_MANAGE,
+          PermissionType.AUDIT_VIEW,
+          PermissionType.BACKUP_MANAGE,
+          PermissionType.SYSTEM_MANAGE,
+        ],
       },
     });
     const ownerUser = await prisma.user.create({
@@ -95,10 +111,10 @@ describe('Phase 2: Cards API Default-Deny RBAC & Tenant Isolation Tests', () => 
         tenantId: tenant1Id,
         name: 'Print Operator Role',
         permissions: [
-          Permission.CARDS_PRINT,
-          Permission.CARDS_ISSUE,
-          Permission.PEOPLE_VIEW,
-        ] as any,
+          PermissionType.CARDS_PRINT,
+          PermissionType.CARDS_ISSUE,
+          PermissionType.PEOPLE_VIEW,
+        ],
       },
     });
     const printUser = await prisma.user.create({
@@ -120,7 +136,7 @@ describe('Phase 2: Cards API Default-Deny RBAC & Tenant Isolation Tests', () => 
       data: {
         tenantId: tenant1Id,
         name: 'Viewer Role',
-        permissions: [Permission.PEOPLE_VIEW] as any,
+        permissions: [PermissionType.PEOPLE_VIEW],
       },
     });
     const viewUser = await prisma.user.create({
@@ -219,7 +235,12 @@ describe('Phase 2: Cards API Default-Deny RBAC & Tenant Isolation Tests', () => 
       data: {
         tenantId: tenant2Id,
         name: 'T2 Owner',
-        permissions: Object.values(Permission) as any,
+        permissions: [
+          PermissionType.PEOPLE_VIEW,
+          PermissionType.PEOPLE_EDIT,
+          PermissionType.CARDS_PRINT,
+          PermissionType.CARDS_ISSUE,
+        ],
       },
     });
     const t2User = await prisma.user.create({

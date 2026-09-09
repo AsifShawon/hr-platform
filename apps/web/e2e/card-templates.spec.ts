@@ -291,32 +291,48 @@ test.describe('Phase 6: Card Format Engine & Constrained Bilingual Template Syst
     });
   });
 
-  test('navigates to Card Templates Gallery and creates a new template from preset', async ({
+  test('navigates to Card Templates Gallery and creates a new template with live 2-pane preview', async ({
     page,
   }) => {
     await page.goto('/cards/templates');
     await expect(page.locator('h1')).toContainText('Card Templates & Format Studio');
 
-    // Verify existing template appears in gallery
+    // Verify existing template appears in gallery with real card preview
     await expect(page.locator('text=Factory Standard Bilingual Badge')).toBeVisible();
     await expect(page.locator('text=DRAFT v1')).toBeVisible();
-    await expect(page.locator('text=60 × 90 mm (Bilingual)')).toBeVisible();
+    await expect(page.locator('text=London Boy Apparel Ltd.').first()).toBeVisible();
 
-    // Open "New Template" Modal
-    await page.click('button:has-text("New Template")');
-    await expect(page.locator('h3:has-text("Create New Card Template")')).toBeVisible();
+    // Verify flip button exists and toggles card
+    await page.click('button:has-text("Flip to Bangla Back")');
+    await expect(page.locator('text=Flip to English Front')).toBeVisible();
 
-    // Verify 6 visual presets inside modal
-    await expect(page.locator('.fixed button:has-text("Classic Vertical")')).toBeVisible();
-    await expect(page.locator('.fixed button:has-text("Modern Stripe")')).toBeVisible();
-    await expect(page.locator('.fixed button:has-text("Photo Focus")')).toBeVisible();
-    await expect(page.locator('.fixed button:has-text("Factory / Industrial")')).toBeVisible();
-    await expect(page.locator('.fixed button:has-text("Contractor Badge")')).toBeVisible();
-    await expect(page.locator('.fixed button:has-text("Visitor Pass")')).toBeVisible();
+    // Click "New Template" button to open 2-pane creation experience
+    await page.click('a:has-text("New Template")');
+    await page.waitForURL('**/cards/templates/new');
+    await expect(page.locator('h1')).toContainText('Create Card Template');
 
-    // Close Modal
-    await page.locator('.fixed button:has-text("Cancel")').click();
-    await expect(page.locator('h3:has-text("Create New Card Template")')).not.toBeVisible();
+    // Verify 6 visual presets are selectable
+    await expect(page.locator('[role="radio"]:has-text("Classic Vertical")')).toBeVisible();
+    await expect(page.locator('[role="radio"]:has-text("Modern Stripe")')).toBeVisible();
+    await expect(page.locator('[role="radio"]:has-text("Photo Focus")')).toBeVisible();
+    await expect(page.locator('[role="radio"]:has-text("Factory / Industrial")')).toBeVisible();
+    await expect(page.locator('[role="radio"]:has-text("Contractor Badge")')).toBeVisible();
+    await expect(page.locator('[role="radio"]:has-text("Visitor Pass")')).toBeVisible();
+
+    // Verify live preview updates upon selecting Contractor Badge
+    await page.click('[role="radio"]:has-text("Contractor Badge")');
+    await expect(page.locator('text=CONTRACTOR / সরবরাহকারী')).toBeVisible();
+
+    // Verify live preview updates upon selecting Factory / Industrial
+    await page.click('[role="radio"]:has-text("Factory / Industrial")');
+    await expect(page.locator('text=Factory / Industrial (60 × 90 mm)')).toBeVisible();
+
+    // Fill form and create template
+    await page.fill('#template-name', 'Cutting Unit Shift Badge');
+    await page.click('button:has-text("Initialize & Open Studio")');
+
+    // Expect redirect into the Studio for the new template
+    await page.waitForURL('**/cards/templates/tpl-new-2');
   });
 
   test('opens Constrained Template Customizer Studio, updates settings, and verifies live bilingual preview', async ({

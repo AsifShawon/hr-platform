@@ -9,6 +9,8 @@ export default defineConfig({
       '@hr/config': path.resolve(__dirname, 'packages/config/src/index.ts'),
       '@hr/schemas': path.resolve(__dirname, 'packages/schemas/src/index.ts'),
       '@hr/fixtures': path.resolve(__dirname, 'packages/fixtures/src/index.ts'),
+      '@hr/card-kit/typography': path.resolve(__dirname, 'packages/card-kit/src/typography.ts'),
+      '@hr/card-kit/renderer': path.resolve(__dirname, 'packages/card-kit/src/renderer.ts'),
       '@hr/card-kit': path.resolve(__dirname, 'packages/card-kit/src/index.ts'),
       '@hr/i18n': path.resolve(__dirname, 'packages/i18n/src/index.ts'),
       '@hr/ui': path.resolve(__dirname, 'packages/ui/src/index.ts'),

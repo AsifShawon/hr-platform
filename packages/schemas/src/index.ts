@@ -1517,3 +1517,6 @@ export const cardOperationsStatsSchema = z.object({
 });
 
 export type CardOperationsStatsDTO = z.infer<typeof cardOperationsStatsSchema>;
+
+export * from './dashboard.js';
+

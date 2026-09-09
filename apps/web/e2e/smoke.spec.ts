@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test('homepage renders application shell', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('h1')).toContainText('Professional employee ID cards');
-  await expect(page.locator('text=60 mm × 90 mm').first()).toBeVisible();
+  await expect(page.locator('h1')).toContainText('employee ID cards');
+  await expect(page.locator('text=Local-First • On-Premises Card Engine').first()).toBeVisible();
 });
 
 test('health api returns ok status', async ({ request }) => {

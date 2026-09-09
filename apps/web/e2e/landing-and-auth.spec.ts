@@ -57,22 +57,17 @@ test.describe('Landing Page & Public Shell', () => {
   test('FAQ accordion expands and collapses', async ({ page }) => {
     await page.goto('/');
 
-    const firstFaqBtn = page.getByRole('button', {
-      name: 'Can the system run 100% offline without an internet connection?',
-    });
+    const firstFaqBtn = page.getByTestId('faq-btn-offline');
+    await firstFaqBtn.scrollIntoViewIfNeeded();
     await expect(firstFaqBtn).toBeVisible();
 
     // Click to open
     await firstFaqBtn.click();
-    await expect(
-      page.locator('text=The platform is engineered strictly for on-premises operation'),
-    ).toBeVisible();
+    await expect(page.getByTestId('faq-answer-offline')).toBeVisible();
 
     // Click to close
     await firstFaqBtn.click();
-    await expect(
-      page.locator('text=The platform is engineered strictly for on-premises operation'),
-    ).not.toBeVisible();
+    await expect(page.getByTestId('faq-answer-offline')).toHaveCount(0);
   });
 
   test('no horizontal overflow on mobile viewport', async ({ page }) => {

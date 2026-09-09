@@ -185,7 +185,7 @@ export const CardRenderer: React.FC<CardRendererProps> = ({
           {frontName}
         </h4>
 
-        {front.details.enabledFields.includes('jobTitle') && worker.jobTitle && (
+        {front.details?.enabledFields?.includes('jobTitle') && worker.jobTitle && (
           <p
             className="text-[11px] font-semibold leading-snug mt-0.5"
             style={{ color: theme.secondaryColor }}
@@ -194,26 +194,26 @@ export const CardRenderer: React.FC<CardRendererProps> = ({
           </p>
         )}
 
-        {front.details.enabledFields.includes('department') && worker.department && (
+        {front.details?.enabledFields?.includes('department') && worker.department && (
           <span className="text-[10px] text-slate-500 mt-0.5">{worker.department}</span>
         )}
 
         {/* Key Details Grid */}
         <div className="w-full grid grid-cols-2 gap-1.5 mt-2 p-1.5 bg-slate-50 rounded border border-slate-100 text-left">
-          {front.details.enabledFields.includes('employeeNumber') && (
+          {front.details?.enabledFields?.includes('employeeNumber') && (
             <div>
               <span className="text-[8px] uppercase tracking-wider text-slate-400 block font-medium">
-                {front.details.customLabels.employeeNumber || 'ID No'}
+                {front.details?.customLabels?.employeeNumber || 'ID No'}
               </span>
               <span className="text-[10px] font-mono font-bold text-slate-800">
                 {worker.employeeNumber}
               </span>
             </div>
           )}
-          {front.details.enabledFields.includes('bloodGroup') && (
+          {front.details?.enabledFields?.includes('bloodGroup') && (
             <div>
               <span className="text-[8px] uppercase tracking-wider text-slate-400 block font-medium">
-                {front.details.customLabels.bloodGroup || 'Blood'}
+                {front.details?.customLabels?.bloodGroup || 'Blood'}
               </span>
               <span className="text-[10px] font-bold text-rose-600">
                 {worker.bloodGroup || 'O+'}
@@ -280,7 +280,7 @@ export const CardRenderer: React.FC<CardRendererProps> = ({
           {/* Bengali Name Block */}
           <div className="border-b border-slate-100 pb-2 mb-2">
             <span className="text-[9px] text-slate-400 block font-medium">
-              {back.details.customLabels.displayName || 'নাম'}:
+              {back.details?.customLabels?.displayName || 'নাম'}:
             </span>
             <div className="flex items-center gap-1.5">
               <span
@@ -299,20 +299,20 @@ export const CardRenderer: React.FC<CardRendererProps> = ({
 
           {/* Bengali Details List */}
           <div className="space-y-1.5 text-[10px]">
-            {back.details.enabledFields.includes('emergencyContact') && (
+            {back.details?.enabledFields?.includes('emergencyContact') && (
               <div>
                 <span className="text-slate-400 text-[8px] block font-medium">
-                  {back.details.customLabels.emergencyContact || 'জরুরি যোগাযোগ'}:
+                  {back.details?.customLabels?.emergencyContact || 'জরুরি যোগাযোগ'}:
                 </span>
                 <span className="font-mono font-semibold text-slate-800">
                   {worker.emergencyContact || '+880 1700-000000'}
                 </span>
               </div>
             )}
-            {back.details.enabledFields.includes('bloodGroup') && (
+            {back.details?.enabledFields?.includes('bloodGroup') && (
               <div>
                 <span className="text-slate-400 text-[8px] block font-medium">
-                  {back.details.customLabels.bloodGroup || 'রক্তের গ্রুপ'}:
+                  {back.details?.customLabels?.bloodGroup || 'রক্তের গ্রুপ'}:
                 </span>
                 <span className="font-bold text-rose-600">{worker.bloodGroup || 'O+'}</span>
               </div>

@@ -446,16 +446,48 @@ export async function resolveTemplateForWorker(tenantId: string, query: Template
     };
   }
 
-  // Ultimate fallback to built-in Company Vertical 60x90mm default preset
+  // Ultimate fallback: provision default published template in DB if none exists
   const fallbackLayout = createClassicVerticalPreset();
+  const autoCreated = await prisma.$transaction(async (tx) => {
+    const tpl = await tx.cardTemplate.create({
+      data: {
+        tenantId,
+        name: 'Standard Company Vertical (60×90mm Bilingual)',
+        description: 'Auto-provisioned default bilingual template for physical issuance',
+        presetId: TemplatePresetId.CLASSIC_VERTICAL,
+        isArchived: false,
+      },
+    });
+
+    const ver = await tx.templateVersion.create({
+      data: {
+        tenantId,
+        templateId: tpl.id,
+        versionNumber: 1,
+        status: TemplateVersionStatus.PUBLISHED,
+        layoutSchemaVersion: '1.0.0',
+        layout: fallbackLayout as any,
+        publishedAt: new Date(),
+        checksumSha256: computeLayoutChecksum(fallbackLayout),
+      },
+    });
+
+    await tx.cardTemplate.update({
+      where: { id: tpl.id },
+      data: { activeVersionId: ver.id },
+    });
+
+    return { tpl, ver };
+  });
+
   return {
-    templateId: 'system-default-builtin',
-    templateName: 'Standard Company Vertical (60×90mm Bilingual)',
-    versionId: 'builtin-v1',
-    versionNumber: 1,
+    templateId: autoCreated.tpl.id,
+    templateName: autoCreated.tpl.name,
+    versionId: autoCreated.ver.id,
+    versionNumber: autoCreated.ver.versionNumber,
     layout: fallbackLayout,
     targetType: TemplateAssignmentTarget.SYSTEM,
-    resolutionReason: 'Fallback to built-in Company Vertical 60×90mm Bilingual preset.',
+    resolutionReason: 'Auto-provisioned default Company Vertical 60×90mm Bilingual preset.',
   };
 }
 
@@ -524,11 +556,17 @@ export async function createTemplateAssignment(
 }
 
 /**
- * Lists all templates with active version summary
+ * Lists all templates with active version summary.
+ * If organizationId is provided, returns organization-specific and tenant-wide templates.
  */
-export async function listTemplates(tenantId: string) {
+export async function listTemplates(tenantId: string, organizationId?: string) {
+  const where: any = { tenantId };
+  if (organizationId) {
+    where.OR = [{ organizationId }, { organizationId: null }];
+  }
+
   return prisma.cardTemplate.findMany({
-    where: { tenantId },
+    where,
     include: {
       versions: {
         orderBy: { versionNumber: 'desc' },

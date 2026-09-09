@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -26,6 +26,14 @@ import { PrintJobDTO, PrintJobItemDTO } from '@hr/schemas';
 import { OperatorConfirmationModal } from '../../../components/cards/OperatorConfirmationModal';
 
 export default function PrintQueuePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading print queue...</div>}>
+      <PrintQueueContent />
+    </Suspense>
+  );
+}
+
+function PrintQueueContent() {
   const searchParams = useSearchParams();
   const highlightedJobId = searchParams.get('jobId');
 

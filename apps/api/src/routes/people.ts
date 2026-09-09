@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { prisma } from '@hr/db';
 import { Permission, AuditAction } from '@hr/domain';
 import {
   createPersonRequestSchema,
@@ -40,6 +41,19 @@ export const peopleRoutes: FastifyPluginAsync = async (fastify) => {
           error: 'Bad Request',
           message: parsedQuery.error.errors[0]?.message || 'Invalid query parameters.',
         });
+      }
+
+      if (parsedQuery.data.organizationId) {
+        const org = await prisma.organization.findFirst({
+          where: { id: parsedQuery.data.organizationId, tenantId },
+        });
+        if (!org) {
+          return reply.code(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Organization not found in workspace.',
+          });
+        }
       }
 
       const result = await searchPeople(tenantId, parsedQuery.data);

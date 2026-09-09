@@ -17,6 +17,7 @@ import { checkCardReadiness } from './card-readiness.service.js';
 import { generateCardSerial } from './card-issue.service.js';
 import { computeLayoutChecksum } from './template.service.js';
 import { recordAuditEvent } from './audit.service.js';
+import { getPhotoBuffer } from './photo-processing.service.js';
 
 export class PrintJobError extends Error {
   constructor(
@@ -112,7 +113,8 @@ export async function createPrintJob(
     const templateVersionId = readiness.resolvedTemplate.versionId;
     const layout = readiness.resolvedTemplate.layout;
     const templateChecksum = computeLayoutChecksum(layout);
-    const cardSerial = await generateCardSerial(tenantId);
+    const baseSerial = await generateCardSerial(tenantId);
+    const cardSerial = `${baseSerial}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const priorCount = await prisma.cardIssue.count({
       where: { tenantId, employmentId: emp.id },
     });
@@ -436,6 +438,7 @@ export async function getPrintJobById(tenantId: string, jobId: string) {
                   displayName: true,
                   displayNameLatin: true,
                   displayNameNative: true,
+                  photoMedia: true,
                 },
               },
               employment: {
@@ -472,38 +475,52 @@ export async function renderPrintJobPdfBuffer(tenantId: string, jobId: string) {
 
   const renderer = new CardRenderer();
 
-  // Map each item to CardRenderer input
-  const items = job.items.map((item) => {
-    const rawSnap = item.cardIssue.printedSnapshot as any;
-    const layout = item.cardIssue.layoutSnapshot as unknown as CardLayoutSpecification;
+  // Map each item to CardRenderer input with embedded base64 photos
+  const items = await Promise.all(
+    job.items.map(async (item) => {
+      const rawSnap = item.cardIssue.printedSnapshot as any;
+      const layout = item.cardIssue.layoutSnapshot as unknown as CardLayoutSpecification;
 
-    const worker: CardRenderWorkerPayload = {
-      displayName: rawSnap?.worker?.displayName || item.cardIssue.person?.displayName || 'Worker',
-      displayNameLatin:
-        rawSnap?.worker?.displayNameLatin || item.cardIssue.person?.displayNameLatin || null,
-      displayNameNative:
-        rawSnap?.worker?.displayNameNative || item.cardIssue.person?.displayNameNative || null,
-      jobTitle: rawSnap?.worker?.jobTitle || item.cardIssue.employment?.jobTitle || '',
-      department: rawSnap?.worker?.department || '',
-      employeeNumber:
-        rawSnap?.worker?.employeeNumber || item.cardIssue.employment?.employeeNumber || '',
-      bloodGroup: rawSnap?.worker?.bloodGroup || null,
-      joinDate: rawSnap?.worker?.joinDate || '2026-01-01',
-      emergencyContact: rawSnap?.worker?.emergencyContact || null,
-      photoUrl: rawSnap?.worker?.photoMediaId
-        ? `/api/people/${item.cardIssue.personId}/photo`
-        : null,
-      orgName: rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'Company',
-      orgNameBangla:
-        rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'প্রতিষ্ঠান',
-      serialNumber: item.cardIssue.cardSerial,
-    };
+      let photoBase64: string | null = null;
+      if (item.cardIssue.person?.photoMedia?.storageKeyCardReady || item.cardIssue.person?.photoMedia?.storageKeyMaster) {
+        const key =
+          item.cardIssue.person.photoMedia.storageKeyCardReady ||
+          item.cardIssue.person.photoMedia.storageKeyMaster;
+        const photoData = await getPhotoBuffer(key, tenantId);
+        if (photoData) {
+          photoBase64 = `data:${photoData.mimeType};base64,${photoData.buffer.toString('base64')}`;
+        }
+      }
 
-    return {
-      layout,
-      worker,
-    };
-  });
+      const worker: CardRenderWorkerPayload = {
+        displayName: rawSnap?.worker?.displayName || item.cardIssue.person?.displayName || 'Worker',
+        displayNameLatin:
+          rawSnap?.worker?.displayNameLatin || item.cardIssue.person?.displayNameLatin || null,
+        displayNameNative:
+          rawSnap?.worker?.displayNameNative || item.cardIssue.person?.displayNameNative || null,
+        jobTitle: rawSnap?.worker?.jobTitle || item.cardIssue.employment?.jobTitle || '',
+        department: rawSnap?.worker?.department || '',
+        employeeNumber:
+          rawSnap?.worker?.employeeNumber || item.cardIssue.employment?.employeeNumber || '',
+        bloodGroup: rawSnap?.worker?.bloodGroup || null,
+        joinDate: rawSnap?.worker?.joinDate || '2026-01-01',
+        emergencyContact: rawSnap?.worker?.emergencyContact || null,
+        photoUrl: photoBase64 || (rawSnap?.worker?.photoMediaId
+          ? `/api/people/${item.cardIssue.personId}/photo`
+          : null),
+        photoBase64,
+        orgName: rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'Company',
+        orgNameBangla:
+          rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'প্রতিষ্ঠান',
+        serialNumber: item.cardIssue.cardSerial,
+      };
+
+      return {
+        layout,
+        worker,
+      };
+    }),
+  );
 
   const side = job.side === 'FRONT' ? 'front' : job.side === 'BACK' ? 'back' : 'duplex';
 

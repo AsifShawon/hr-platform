@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -24,6 +24,14 @@ import { Step4Completion } from './Step4Completion';
 import { CardRenderer, CardWorkerData } from '../../../components/cards/CardRenderer';
 
 export default function CreateCardWizardPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-slate-400">Loading wizard...</div>}>
+      <CreateCardWizardContent />
+    </Suspense>
+  );
+}
+
+function CreateCardWizardContent() {
   const searchParams = useSearchParams();
   const initialEmploymentId = searchParams.get('employmentId');
 

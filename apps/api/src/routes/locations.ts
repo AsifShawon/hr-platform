@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { prisma } from '@hr/db';
 import { Permission, AuditAction } from '@hr/domain';
 import { createLocationRequestSchema, updateLocationRequestSchema } from '@hr/schemas';
 import {
@@ -20,6 +21,18 @@ export const locationRoutes: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const tenantId = request.user!.tenantId;
       const { organizationId } = request.query as { organizationId?: string };
+      if (organizationId) {
+        const org = await prisma.organization.findFirst({
+          where: { id: organizationId, tenantId },
+        });
+        if (!org) {
+          return reply.code(404).send({
+            statusCode: 404,
+            error: 'Not Found',
+            message: 'Organization not found in workspace.',
+          });
+        }
+      }
 
       const locations = await getLocations(tenantId, organizationId);
       return reply.send({ locations });

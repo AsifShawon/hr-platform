@@ -3,6 +3,14 @@ import { prisma } from '@hr/db';
 import { DiagnosticsService } from '../services/diagnostics.service.js';
 
 export const healthRoutes: FastifyPluginAsync = async (server) => {
+  // GET /health - Unauthenticated liveness probe for Docker / Orchestration
+  server.get('/health', async (_request, reply) => {
+    return reply.send({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // GET /api/system/health - Lightweight health endpoint for authenticated UI shell
   server.get(
     '/api/system/health',

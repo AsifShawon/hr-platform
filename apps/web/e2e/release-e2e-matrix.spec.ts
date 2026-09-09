@@ -53,7 +53,7 @@ test.describe('Phase 12: Release-Quality 10-Journey E2E Test Matrix', () => {
       });
     });
 
-    await page.route('**/api/organizations', async (route) => {
+    await page.route('**/api/organizations*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -29,6 +29,7 @@ import {
 import { Button, Input, Badge } from '@hr/ui';
 import { EmploymentStatus, JobCategory } from '@hr/domain';
 import { BatchPrintModal } from './BatchPrintModal';
+import { useActiveOrg } from '../../context/ActiveOrgContext';
 
 interface PersonRow {
   id: string;
@@ -81,6 +82,7 @@ interface PaginationMeta {
 }
 
 export default function PeopleRegistryPage() {
+  const { activeOrgId, activeOrg } = useActiveOrg();
   const [people, setPeople] = useState<PersonRow[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta>({
     page: 1,
@@ -137,12 +139,16 @@ export default function PeopleRegistryPage() {
       params.set('sortBy', sortBy);
       params.set('sortDirection', sortDirection);
 
+      if (activeOrgId) params.set('organizationId', activeOrgId);
       if (searchQuery.trim()) params.set('search', searchQuery.trim());
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (categoryFilter !== 'ALL') params.set('jobCategory', categoryFilter);
       if (hasPhotoFilter !== 'ALL') params.set('hasPhoto', hasPhotoFilter);
 
-      const res = await fetch(`/api/people?${params.toString()}`);
+      const headers: Record<string, string> = {};
+      if (activeOrgId) headers['X-Organization-Id'] = activeOrgId;
+
+      const res = await fetch(`/api/people?${params.toString()}`, { headers });
       if (res.ok) {
         const data = await res.json();
         let items: PersonRow[] = data.items || [];
@@ -158,6 +164,7 @@ export default function PeopleRegistryPage() {
       setIsLoading(false);
     }
   }, [
+    activeOrgId,
     pagination.page,
     pagination.limit,
     searchQuery,

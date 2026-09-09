@@ -34,9 +34,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm start',
+    command: 'pnpm --filter @hr/web dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120000,
   },
 });

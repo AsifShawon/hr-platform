@@ -27,6 +27,7 @@ import { backupRoutes } from './routes/backups.js';
 import { restoreRoutes } from './routes/restore.js';
 import { cardsRoutes } from './routes/cards.js';
 import { printJobsRoutes } from './routes/print-jobs.js';
+import { dashboardRoutes } from './routes/dashboard.js';
 
 export function buildServer() {
   const server = Fastify({
@@ -131,6 +132,7 @@ export function buildServer() {
   server.register(restoreRoutes);
   server.register(cardsRoutes);
   server.register(printJobsRoutes);
+  server.register(dashboardRoutes);
 
   return server;
 }

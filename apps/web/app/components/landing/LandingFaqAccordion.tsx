@@ -49,7 +49,7 @@ const FAQ_ITEMS: FaqItem[] = [
 ];
 
 export function LandingFaqAccordion() {
-  const [openId, setOpenId] = useState<string | null>(FAQ_ITEMS[0]?.id || null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const toggleItem = (id: string) => {
     setOpenId(openId === id ? null : id);
@@ -68,6 +68,7 @@ export function LandingFaqAccordion() {
               type="button"
               onClick={() => toggleItem(item.id)}
               aria-expanded={isOpen}
+              data-testid={`faq-btn-${item.id}`}
               className="w-full text-left p-5 flex items-center justify-between gap-4 font-bold text-sm sm:text-base text-slate-900 hover:text-[#0F766E] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
             >
               <span>{item.question}</span>
@@ -79,7 +80,10 @@ export function LandingFaqAccordion() {
             </button>
 
             {isOpen && (
-              <div className="px-5 pb-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3 animate-in fade-in duration-150">
+              <div
+                data-testid={`faq-answer-${item.id}`}
+                className="px-5 pb-5 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3 animate-in fade-in duration-150"
+              >
                 {item.answer}
               </div>
             )}

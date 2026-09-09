@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR ID Platform — Project Audit</title>
+<style>
+:root{
+  color-scheme: light;
+  --ink:#141a1f; --ink-2:#3d4a54; --ink-3:#6b7a86;
+  --paper:#f7f6f3; --card:#ffffff; --line:#e2e0da;
+  --accent:#0f766e; --accent-soft:#e6f2f0;
+  --crit:#8f1d1d; --crit-bg:#fbeceb;
+  --high:#a04606; --high-bg:#fdf0e4;
+  --med:#7a5c00; --med-bg:#fbf5e0;
+  --low:#3f5566; --low-bg:#eef1f4;
+  --good:#14603f; --good-bg:#e8f4ed;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+code,.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+
+/* ---------- masthead ---------- */
+header.mast{border-bottom:1px solid var(--line);background:var(--card)}
+.mast-in{max-width:1080px;margin:0 auto;padding:34px 24px 28px}
+.eyebrow{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:650}
+h1{font-family:Georgia,"Iowan Old Style","Times New Roman",serif;font-size:34px;line-height:1.15;margin:10px 0 8px;font-weight:600;letter-spacing:-.01em}
+.sub{color:var(--ink-2);max-width:70ch;margin:0}
+.meta{margin-top:16px;font-size:12.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 18px}
+
+/* ---------- verdict ---------- */
+.verdict{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--crit);border-radius:3px;padding:20px 22px;margin:26px 0}
+.verdict h2{font-family:Georgia,serif;font-size:19px;margin:0 0 10px;font-weight:600}
+.verdict p{margin:0 0 10px;color:var(--ink-2)}
+.verdict p:last-child{margin-bottom:0}
+.verdict strong{color:var(--ink)}
+
+/* ---------- tally ---------- */
+.tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:10px;margin:26px 0}
+.t{background:var(--card);border:1px solid var(--line);border-radius:3px;padding:13px 14px}
+.t .n{font-size:27px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.t .l{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-top:6px;font-weight:600}
+.t.c .n{color:var(--crit)} .t.h .n{color:var(--high)} .t.m .n{color:var(--med)} .t.l_ .n{color:var(--low)} .t.g .n{color:var(--good)}
+
+/* ---------- section head ---------- */
+h2.sec{font-family:Georgia,serif;font-size:22px;font-weight:600;margin:44px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.sec-note{color:var(--ink-3);font-size:13.5px;margin:0 0 18px}
+
+/* ---------- filters ---------- */
+.filters{position:sticky;top:0;z-index:20;background:var(--paper);padding:14px 0 12px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.frow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px}
+.frow:last-child{margin-bottom:0}
+.flabel{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-right:6px;min-width:56px}
+button.chip{font:inherit;font-size:12.5px;padding:4px 11px;border:1px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:100px;cursor:pointer;transition:all .12s}
+button.chip:hover{border-color:var(--ink-3)}
+button.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+button.chip[aria-pressed="true"].sc{background:var(--crit);border-color:var(--crit)}
+button.chip[aria-pressed="true"].sh{background:var(--high);border-color:var(--high)}
+button.chip[aria-pressed="true"].sm{background:var(--med);border-color:var(--med)}
+button.chip[aria-pressed="true"].sl{background:var(--low);border-color:var(--low)}
+input.search{font:inherit;font-size:13px;padding:6px 11px;border:1px solid var(--line);border-radius:3px;background:var(--card);width:250px;color:var(--ink)}
+input.search:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.count{font-size:12.5px;color:var(--ink-3);margin-left:auto}
+
+/* ---------- finding ---------- */
+.f{background:var(--card);border:1px solid var(--line);border-radius:3px;margin-bottom:8px;overflow:hidden}
+.f-head{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;cursor:pointer;user-select:none}
+.f-head:hover{background:#fcfcfb}
+.f-id{font-size:11px;color:var(--ink-3);font-weight:600;padding-top:3px;min-width:30px;flex-shrink:0}
+.f-title{flex:1;font-weight:550;font-size:14.5px;line-height:1.4}
+.sev{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;padding:3px 7px;border-radius:2px;flex-shrink:0;margin-top:1px}
+.sev.critical{color:var(--crit);background:var(--crit-bg)}
+.sev.high{color:var(--high);background:var(--high-bg)}
+.sev.medium{color:var(--med);background:var(--med-bg)}
+.sev.low{color:var(--low);background:var(--low-bg)}
+.f-area{font-size:11px;color:var(--ink-3);flex-shrink:0;margin-top:3px;letter-spacing:.02em}
+.f-body{padding:0 15px 16px 57px;border-top:1px solid #f0efeb;display:none}
+.f.open .f-body{display:block}
+.f.open .f-head{background:#fcfcfb}
+.blk{margin-top:13px}
+.blk-l{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);font-weight:700;margin-bottom:5px}
+.blk p{margin:0;color:var(--ink-2)}
+ul.ev{list-style:none;padding:0;margin:0}
+ul.ev li{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--ink-2);padding:3px 0 3px 12px;border-left:2px solid var(--accent-soft);margin-bottom:2px;word-break:break-all}
+ul.ev li b{color:var(--accent);font-weight:600}
+.fix{background:var(--accent-soft);border-radius:2px;padding:10px 12px;color:#0c4f4a;font-size:13.5px}
+
+/* ---------- solid list ---------- */
+.solid{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--good);border-radius:3px;padding:6px 18px 14px}
+.solid dl{margin:0}
+.solid dt{font-weight:600;font-size:14px;margin-top:13px}
+.solid dd{margin:2px 0 0;color:var(--ink-2);font-size:13.5px}
+
+/* ---------- plan ---------- */
+ol.plan{list-style:none;counter-reset:p;padding:0;margin:0}
+ol.plan li{counter-increment:p;background:var(--card);border:1px solid var(--line);border-radius:3px;padding:14px 16px 14px 54px;position:relative;margin-bottom:8px}
+ol.plan li::before{content:counter(p);position:absolute;left:16px;top:14px;width:24px;height:24px;border-radius:100px;background:var(--ink);color:#fff;font-size:12px;font-weight:650;display:flex;align-items:center;justify-content:center}
+ol.plan h4{margin:0 0 4px;font-size:14.5px;font-weight:600}
+ol.plan p{margin:0;color:var(--ink-2);font-size:13.5px}
+.ids{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:var(--ink-3);margin-top:6px}
+
+footer{margin-top:52px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink-3)}
+.empty{padding:36px;text-align:center;color:var(--ink-3);background:var(--card);border:1px dashed var(--line);border-radius:3px}
+@media(max-width:660px){
+  h1{font-size:26px} .f-body{padding-left:15px} .f-area{display:none} .count{margin-left:0;width:100%}
+  input.search{width:100%}
+}
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div class="mast-in">
+    <div class="eyebrow">Codebase Audit</div>
+    <h1>HR ID Platform — what to improve</h1>
+    <p class="sub">A verified review of the local-first employee registry and bilingual ID-card issuance monorepo, weighted toward missing features and user-experience quality. Every finding below was confirmed by reading the source; the highest-severity claims were re-checked independently.</p>
+    <div class="meta">
+      <span>3 September 2026</span>
+      <span>~57,000 lines TypeScript</span>
+      <span>3 apps · 8 packages</span>
+      <span>100 findings</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <h2>The short version</h2>
+    <p>The synchronous core of this product is real and often well built. Auth, RBAC, tenant scoping, optimistic concurrency, immutable print snapshots, the import wizard, backup envelope crypto and the hardened zip extractor are all genuine, careful engineering — better than most codebases this age.</p>
+    <p>Almost everything <strong>asynchronous, scheduled, or machine-readable is a facade</strong>. The worker does nothing but log a heartbeat. The <code>JobQueue</code> table has lease and retry columns and zero references. Print jobs never leave <code>QUEUED</code>. Scheduled backups stamp <code>lastRunAt</code> and produce no backup. Cards never expire. Both the phone-handoff QR and the printed card barcode are decorative icons.</p>
+    <p>The most dangerous findings are the ones where <strong>the UI actively reports success</strong>: the backup schedule's "last run", the print queue depth, worker health, the TLS certificate download, and the LAN toggle. An operator has no way to discover they are being told something untrue.</p>
+    <p>Separately, <code>docs/status.md</code> declares "Release Gate: READY (v1.0.0-rc.1)" with all 13 phases complete. That claim does not survive contact with the source — and four independent defects mean a <strong>clean deployment cannot currently start at all</strong> (findings 4, 5, 6, 7).</p>
+  </div>
+
+  <div class="tally">
+    <div class="t c"><div class="n">13</div><div class="l">Critical</div></div>
+    <div class="t h"><div class="n">40</div><div class="l">High</div></div>
+    <div class="t m"><div class="n">34</div><div class="l">Medium</div></div>
+    <div class="t l_"><div class="n">13</div><div class="l">Low</div></div>
+    <div class="t g"><div class="n">21</div><div class="l">Solid</div></div>
+  </div>
+
+  <h2 class="sec">Findings</h2>
+  <p class="sec-note">Click any row to expand evidence, user-facing impact, and a concrete fix. Filter by severity or area, or search file paths and titles.</p>
+
+  <div class="filters">
+    <div class="frow">
+      <span class="flabel">Severity</span>
+      <button class="chip sc" data-sev="critical" aria-pressed="false">Critical</button>
+      <button class="chip sh" data-sev="high" aria-pressed="false">High</button>
+      <button class="chip sm" data-sev="medium" aria-pressed="false">Medium</button>
+      <button class="chip sl" data-sev="low" aria-pressed="false">Low</button>
+    </div>
+    <div class="frow">
+      <span class="flabel">Area</span>
+      <span id="areaChips"></span>
+    </div>
+    <div class="frow">
+      <span class="flabel">Search</span>
+      <input class="search" id="q" type="search" placeholder="e.g. backup, restore.service, Bangla, modal">
+      <button class="chip" id="expandAll" aria-pressed="false">Expand all</button>
+      <button class="chip" id="reset" aria-pressed="false">Clear filters</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <div id="list"></div>
+  <div class="empty" id="empty" style="display:none">No findings match those filters.</div>
+
+  <h2 class="sec">What is genuinely solid</h2>
+  <p class="sec-note">Worth knowing what not to touch. These were verified, not assumed.</p>
+  <div class="solid"><dl id="solid"></dl></div>
+
+  <h2 class="sec">Suggested order of work</h2>
+  <p class="sec-note">Sequenced by dependency and risk rather than by severity alone — there is no point fixing features on a stack that cannot boot.</p>
+  <ol class="plan" id="plan"></ol>
+
+  <footer>
+    Audit performed by reading source directly across <code>apps/api</code>, <code>apps/web</code>, <code>apps/worker</code>, <code>packages/*</code>, Docker and pilot scripts. Line numbers reflect the working tree at commit <code>75ef57d</code>. Findings marked with file references were individually confirmed; nothing here is inferred from documentation alone.
+  </footer>
+</div>
+
+<script>
+const F = [
+/* ============ CRITICAL ============ */
+{id:1,sev:"critical",area:"Security",t:"Zip-slip on backup restore allows arbitrary file write",
+ev:["apps/api/src/services/restore.service.ts:497-506 — <b>path.resolve(storageRoot, entry.entryName)</b> with no containment check, no extension filter, no size cap","apps/api/src/services/zip-archive.service.ts:113-145 — a hardened extractor with exactly these checks already exists and is not used here"],
+im:"An archive entry named <code>media/../../../../app/apps/api/dist/server.js</code> resolves outside the storage root and is written with process privileges. Restoring an attacker-supplied <code>.hrbackup</code> is the documented disaster-recovery workflow, and the passphrase is chosen by whoever produced the file. This is remote code execution via the recovery path.",
+fx:"Route media unpack through the existing <code>extractAndValidateZip</code>, or at minimum assert <code>destPath.startsWith(storageRoot + path.sep)</code> plus an extension allowlist and per-entry size cap."},
+
+{id:2,sev:"critical",area:"Security",t:"Export bundles containing full PII download without authentication",
+ev:["apps/api/src/routes/exports.ts:86-96 — the only route in the codebase registered with no <b>preHandler</b>","apps/api/src/routes/exports.ts:95 — <b>actorId: request.user?.id ?? null</b> — always null, because no auth ever runs","apps/api/src/services/worker-export.service.ts:355-375 — downloadCount is incremented but never capped"],
+im:"The URL is a bearer capability to the complete worker CSV, including plaintext national ID numbers when <code>includeSensitive</code> was set. It leaks through browser history, proxy logs and Referer headers, and every audit row for a download records <code>actorId: null</code> — so the one operation that exfiltrates everything is also the one nobody can attribute.",
+fx:"Require <code>authenticate</code> plus <code>EXPORTS_CREATE</code>, verify the token belongs to the caller's tenant, and cap downloads at one."},
+
+{id:3,sev:"critical",area:"Ops & Deploy",t:"Scheduled backups produce nothing while the UI reports success",
+ev:["apps/worker/src/index.ts:41-66 — the due-schedule branch logs a line and runs <b>prisma.backupSchedule.update({ data: { lastRunAt: now } })</b>; it never calls the backup service","apps/api/src/routes/backups.ts:175-278 — the operator's cronExpression is persisted and never read; nextRunAt is displayed but written nowhere","apps/api/src/server.ts:35 — production log level is warn, so even the info line is suppressed"],
+im:"An operator enables scheduled backups, sees <em>Enabled · last run 2 hours ago</em>, and trusts it. There are no backups. This is a silent total data-protection failure with positive confirmation in the UI — the worst possible failure mode for an on-premises system holding employee PII. The user's chosen cron expression is decorative.",
+fx:"Call <code>createBackup</code>, stamp <code>lastRunAt</code> only on success, parse the cron with a real library, persist <code>nextRunAt</code>, and surface failures in a visible field."},
+
+{id:4,sev:"critical",area:"Ops & Deploy",t:"Docker healthchecks probe a route that does not exist, so the web container never starts",
+ev:["docker-compose.yml:42, docker-compose.prod.yml:58, docker-compose.prod.yml:157 — all probe <b>/api/health</b>","apps/api/src/routes/health.ts:7,16 — the only routes registered are <b>/health</b> and <b>/api/system/health</b>","docker-compose.yml:79-81, docker-compose.prod.yml:118-120 — web gates on <b>condition: service_healthy</b>"],
+im:"The API container is permanently <code>unhealthy</code>, so <code>web</code> never leaves <code>Created</code> and the Caddy healthcheck also fails in production. A cold-start deployment does not come up.",
+fx:"Point the healthchecks at <code>/health</code> or register an <code>/api/health</code> alias. <code>docs/operations.md:59</code> documents the wrong URL too, while line 45 has it right."},
+
+{id:5,sev:"critical",area:"Ops & Deploy",t:"Database migrations never run — every call site invokes a script that does not exist",
+ev:["packages/db/package.json:18-21 — the scripts are <b>db:generate | db:migrate | db:deploy | db:seed</b>. There is no <b>db:migrate:deploy</b>","pilot.sh:97, pilot.sh:178, pilot.ps1:81, pilot.ps1:155, docker/Dockerfile.migration:16 — all five call <b>db:migrate:deploy</b>","pilot.sh appends <b>|| true</b>, swallowing the failure","docker/Dockerfile.migration is referenced by no service in any compose file"],
+im:"A fresh install produces an empty schema. The API starts against a database with no tables, and <code>pilot.sh</code> reports success.",
+fx:"Rename to <code>db:deploy</code> at all five sites, drop the <code>|| true</code>, and add a one-shot migration service with <code>api.depends_on: condition: service_completed_successfully</code>."},
+
+{id:6,sev:"critical",area:"Ops & Deploy",t:"pilot.sh cannot execute on Linux — a UTF-8 BOM precedes the shebang",
+ev:["pilot.sh:1 — first bytes are <b>ef bb bf 23 21</b>; executing it yields <b>line 1: \\ufeff#!/usr/bin/env: No such file or directory</b>, then falls through to sh and fails on <b>set: pipefail: invalid option name</b>","7 tracked files carry a BOM: pilot.sh, pilot.ps1, CHANGELOG.md, docs/PILOT-RUNBOOK.md, docs/PREREQUISITES.md, docs/TROUBLESHOOTING.md, apps/api/tests/reliability-chaos.test.ts"],
+im:"The documented one-command install, upgrade, backup and LAN-toggle path fails at the first line on every Linux host — the primary target platform for an on-prem Docker product.",
+fx:"Strip the BOMs (<code>sed -i '1s/^\\xEF\\xBB\\xBF//'</code>), add a <code>.gitattributes</code> rule, and add a CI guard rejecting BOMs in shell scripts."},
+
+{id:7,sev:"critical",area:"Ops & Deploy",t:"pilot.sh backup prints a message instead of taking a backup",
+ev:["pilot.sh:140 — the entire body of <b>cmd_backup()</b> is <b>docker compose exec -T api node -e \"console.log('Initiating backup generation...')\" || true</b>","pilot.sh has no <b>restore</b> subcommand at all, despite a working restore service in the API"],
+im:"Operators believe they hold a backup. <code>cmd_upgrade</code> step 1, labelled \"Pre-Upgrade Snapshot Backup\", therefore takes no snapshot before applying migrations — combining with finding 5 into an upgrade path with no recovery point.",
+fx:"Invoke the real backup service, assert a non-zero-byte artifact exists, fail loudly on error, and add <code>pilot.sh restore &lt;file&gt;</code>."},
+
+{id:8,sev:"critical",area:"Security",t:"Restore erases the audit trail and every role grant, locking the system out of itself",
+ev:["apps/api/src/services/restore.service.ts:242-249 — deletes <b>auditEvent</b>, <b>roleGrant</b>, <b>templateAssignment</b>, <b>customFieldValue</b>, <b>customFieldDefinition</b> for the tenant","apps/api/src/services/restore.service.ts:260-491 — the re-insert block restores organizations, people, employments, media, templates and card issues, and none of the five deleted above","apps/api/src/services/backup.service.ts:214-223 — the backup does capture them, so this is pure data loss, not a bundle gap"],
+im:"After any restore, every user including the owner loses all role grants and therefore all permissions — the system permanently locks itself out. The entire compliance audit history is also erased, in a product whose main selling point is traceability.",
+fx:"Re-insert roleGrants, auditEvents, custom field definitions/values and template assignments — or stop deleting what cannot be restored."},
+
+{id:9,sev:"critical",area:"Features",t:"No password reset exists anywhere, and recovery codes can never be redeemed",
+ev:["Repo-wide grep for <b>resetPassword | reset-password | forgot</b> across apps/api/src and apps/web/app: zero matches","apps/api/src/services/auth.service.ts:233 — <b>verifyAndConsumeRecoveryCode</b> is exported and called by no route in the repository","apps/api/src/routes/users.ts:189-205 — the user update handler destructures only email, isActive, roleIds, roleGrants; user.service.ts contains no passwordHash reference","apps/web/app/activate/page.tsx:79-93 — the UI generates, displays and offers a download of 8 recovery codes"],
+im:"An admin cannot reset a subordinate's password, a user cannot self-serve, and the advertised break-glass recovery codes have no endpoint that accepts them. The only remedy is deleting and recreating the user, which destroys audit linkage. This is a guaranteed day-one support call, and for the owner account it is unrecoverable through the product.",
+fx:"Add <code>POST /api/users/:id/reset-password</code> gated on <code>USERS_MANAGE</code> setting a temporary password with <code>mustChangePassword</code>, plus a rate-limited, audited recovery-code login route wired to the service function that already exists."},
+
+{id:10,sev:"critical",area:"Features",t:"A fabricated join date is printed on physical ID cards",
+ev:["apps/web/app/(authenticated)/cards/new/page.tsx:110 — <b>joinDate: workerMode === 'EXISTING_WORKER' ? '2026-01-01' : formData.joinDate || '2026-01-01'</b>","apps/api/src/services/print-job.service.ts:506 — <b>rawSnap?.worker?.joinDate || '2026-01-01'</b>","apps/api/src/services/card-issue.service.ts:681 — same literal","apps/web/app/components/cards/CardRenderer.tsx:231 and packages/card-kit/src/index.ts:584 — same literal in both preview and print output"],
+im:"For an existing worker the UI unconditionally discards the real join date and substitutes a literal, which is then baked into the immutable printed snapshot and printed onto the badge. Five independent sites hardcode the same date, so the fallback also silently masks any snapshot mapping bug. Every card is wrong and the audit snapshot preserves the wrong value forever.",
+fx:"Delete all five literals. Read <code>employment.joinDate</code>, which is already loaded at print-job.service.ts:141; render an empty field or fail preflight when it is genuinely absent."},
+
+{id:11,sev:"critical",area:"UX & UI",t:"Photo upload failures are swallowed, so badges are printed with no portrait",
+ev:["apps/web/app/(authenticated)/cards/new/useCardCreationState.ts:380-399 — upload wrapped in a catch whose handler is <b>console.warn('Photo upload non-fatal, proceeding with placeholder')</b>; the inner <b>if (uploadRes.ok)</b> has no else","apps/web/app/(authenticated)/people/new/page.tsx:280-293 — photo POST in <b>try { await fetch(...) } catch { }</b>; res.ok is never checked and the operator is redirected on success","apps/web/app/capture/[token]/page.tsx:60-71 — FileReader has no onerror, so a corrupt image makes the button silently inert"],
+im:"A 413 or 400 leaves <code>photoMediaId</code> null and the flow proceeds to issue the card. An ID badge is physically printed without a face photo — the single thing the badge exists for. The operator discovers it at the gate; the card is scrapped and the worker re-registered.",
+fx:"Check <code>uploadRes.ok</code>, surface a blocking inline error, and gate the issue step on a non-null <code>photoMediaId</code> unless the operator explicitly chooses to issue without one. Add <code>reader.onerror</code>."},
+
+{id:12,sev:"critical",area:"i18n",t:"No fonts are shipped, so Bangla on the printed card depends on whatever the host has",
+ev:["Verified absent repo-wide: zero .woff/.woff2/.ttf/.otf files, zero next/font imports, zero @font-face rules, zero fonts.googleapis links","apps/web/app/globals.css:18 declares <b>font-family: 'Noto Sans', system-ui</b>; tailwind.config.mjs declares <b>font-bengali: ['Noto Sans Bengali']</b>","packages/card-kit/src/index.ts:137,707 and apps/web/app/components/cards/CardRenderer.tsx:259 set 'Noto Sans Bengali' in the HTML used for PDF output"],
+im:"README promises \"All fonts (Noto Sans, Noto Sans Bengali) self-hosted\" and air-gapped operation. On an offline factory workstation or a headless render container without the font installed, Bangla falls back silently — wrong metrics, or tofu boxes — on the physical ID card, not just on screen. Latin text never gets Noto Sans either, so the design intent is never delivered.",
+fx:"Vendor Noto Sans and Noto Sans Bengali woff2/ttf into the repo, load via <code>next/font/local</code>, and explicitly register the TTF with the PDF renderer so output never depends on host fonts."},
+
+{id:13,sev:"critical",area:"Testing",t:"No CI/CD of any kind — every quality gate is opt-in",
+ev:["git ls-files matching .github | gitlab-ci | jenkins | circleci | drone: zero results","git log: 4 commits — <b>update</b>, <b>Refactor landing and authentication tests</b>, <b>feat: Add pilot management script</b>, <b>first commit</b>"],
+im:"Nothing enforces typecheck, lint, tests or the release manifest. This is the root cause of the deployment-blocking defects above: findings 4, 5 and 6 are all statically detectable and would have been caught by a single workflow on the first push.",
+fx:"One workflow running <code>pnpm install --frozen-lockfile &amp;&amp; pnpm typecheck &amp;&amp; pnpm lint &amp;&amp; pnpm test</code>, plus a release-manifest check and a BOM guard."},
+
+/* ============ HIGH ============ */
+{id:14,sev:"high",area:"Features",t:"The phone-handoff QR code is a decorative icon; no QR library exists in the repo",
+ev:["apps/web/app/components/photo-capture/PhoneHandoffModal.tsx:184 — comment reads \"High-Contrast SVG QR Placeholder or Dynamic Canvas\"","PhoneHandoffModal.tsx:186 — renders <b>&lt;QrCode className=\"w-24 h-24\" /&gt;</b>, the lucide-react glyph","PhoneHandoffModal.tsx:191 — prints <b>tokenData.token.slice(0,16)</b> as plain text beneath it","Grep across every package.json: no qrcode, qrcode.react, qr-image or bwip-js dependency anywhere"],
+im:"The flagship interaction of the phone-capture feature — point your camera at the screen — does not work. Only the copy-link fallback functions, on a screen designed around the QR. The SSE transport behind it is genuinely well built, which makes this the last mile of an otherwise complete feature.",
+fx:"Add a QR dependency or vendor a server-side generator per the spec, and render the actual handoff URL. Until then remove the fake QR panel so operators are not left scanning an icon."},
+
+{id:15,sev:"high",area:"Features",t:"The barcode printed on every card is a hardcoded decorative SVG path",
+ev:["packages/card-kit/src/index.ts:643-659 — line 644 only checks <b>type !== NONE</b>; lines 648-650 emit a fixed 28x28 <b>&lt;path d=\"M2 2h8v8H2V2z...\"&gt;</b>","packages/card-kit/src/index.ts:654 — the serial is printed as text beneath it","apps/web/app/(authenticated)/cards/templates/[id]/page.tsx:914-924 — the editor only toggles on/off and always writes QR_CODE; templates/new/page.tsx:435 shows a static 'CODE128' label corresponding to nothing"],
+im:"Every card in the system prints the identical glyph. CODE_128 and QR_CODE render the same thing, and neither is machine-readable — so scanner-based verification, the reason a badge carries a code at all, is impossible.",
+fx:"Generate real SVG QR and Code-128 server-side from the opaque serial, branch on <code>barcode.type</code>, and expose the type in the editor."},
+
+{id:16,sev:"high",area:"i18n",t:"The authenticated app has no i18n at all; the Bangla language setting is a no-op",
+ev:["packages/i18n/src/index.ts — 123 lines, 63 keys per locale, scoped to landing/login/card-face labels only. No t(), no provider, no locale detection","<b>@hr/i18n</b> appears only in apps/web/package.json:20 and next.config.mjs:16 — it is imported by zero source files","apps/web/app/layout.tsx:33 — <b>&lt;html lang=\"en\"&gt;</b> hardcoded; no language switcher exists anywhere","apps/web/app/(authenticated)/admin/company/page.tsx:474-479 — offers a bn-BD locale selector whose value is only echoed back by the organization service"],
+im:"Roughly 26,000 lines of authenticated UI are hardcoded English, in a product built for Bangla-speaking factory HR staff doing high-volume repetitive entry against labels, validation messages and error banners. Selecting Bengali changes nothing — shipping a dead language toggle to a Bangladesh deployment is worse than shipping English only.",
+fx:"Add a locale provider and <code>t()</code> to @hr/i18n, drive <code>&lt;html lang&gt;</code> from it, and extract strings starting with the three highest-traffic screens: people/new, cards/new, capture/[token]. Or remove the selector and correct the spec."},
+
+{id:17,sev:"high",area:"Features",t:"Print jobs never leave QUEUED — the lifecycle is unreachable and the queue metric never drains",
+ev:["apps/api/src/services/print-job.service.ts:181 — <b>QUEUED</b> is the only status ever written besides CANCELLED at :564","print-job.service.ts:289-299 — <b>confirmPrintJob</b> updates operatorStatus, confirmedByUserId, confirmedAt, confirmationNotes and never touches job.status","print-job.service.ts:609-614 — counts QUEUED|PROCESSING for the \"In Print Queue\" statistic","packages/db/prisma/schema.prisma:994-1033 — processedItems, failedItems, outputStorageKey, attempts, startedAt, completedAt are never written by any code"],
+im:"PROCESSING, COMPLETED and FAILED are unreachable states. A job that has been printed and operator-confirmed still reports QUEUED, so the queue count grows monotonically forever and the operations dashboard shows a permanent fake backlog. The guard against cancelling completed jobs is a branch that can never be taken.",
+fx:"Set COMPLETED and completedAt inside the confirm transaction, FAILED on a defect rejection, and populate processedItems/failedItems from the item loop."},
+
+{id:18,sev:"high",area:"Architecture",t:"The job queue is dead schema and Chromium renders inline in the API request",
+ev:["packages/db/prisma/schema.prisma:518 — <b>model JobQueue</b> with attempts, maxAttempts, lockedAt, lockedBy, failedReason and an index on (status, lockedAt): zero code references repo-wide","apps/worker/src/index.ts:30-38 — the worker's only other activity is a 15-second <b>SELECT 1</b> heartbeat that logs","apps/api/src/services/print-job.service.ts:476, card-issue.service.ts:657, routes/render.ts:54 — <b>new CardRenderer()</b> constructed in-process per request","print-job.service.ts:479-523 — every photo is base64-embedded, then the whole batch renders inside the request lifecycle"],
+im:"No retry, no dead-letter, no concurrency cap, no crash recovery. A 100-card batch blocks a Fastify worker for the full render while holding every photo in memory as base64, and can exhaust the container's 2 GB limit. The spec promises background jobs with progress, cancellation and retry; the schema advertises lease semantics that do not exist.",
+fx:"Move rendering into apps/worker behind <code>SELECT ... FOR UPDATE SKIP LOCKED</code> claiming against the columns that already exist, reuse a single browser with a bounded page pool, stream photos from disk, and write progress to processedItems."},
+
+{id:19,sev:"high",area:"Security",t:"National ID blind-index hashes are keyed with the non-secret tenant ID",
+ev:["apps/api/src/services/crypto.service.ts:72-76 — <b>hashForBlindIndex(value, tenantSalt = 'default-tenant-salt')</b> using HMAC-SHA256 with tenantSalt as the key","Every caller passes tenantId: identity.service.ts:38, person.service.ts:174,344, worker-import.service.ts:713,768,1021","tenantId is not secret — it appears in API responses and in manifest.tenant.id inside every backup (backup.service.ts:341-345)"],
+im:"Bangladeshi NIDs occupy a 10/13/17-digit space. With a known HMAC key, an offline dictionary attack recovers every NID from <code>documentNumberHash</code> alone, without ever touching the ciphertext. The encryption of the NID column becomes irrelevant.",
+fx:"Key the blind index with a separate secret pepper — <code>HMAC(pepper, tenantId || value)</code> — and rotate existing hashes on migration."},
+
+{id:20,sev:"high",area:"Security",t:"Field encryption key derived with bare SHA-256, no KDF or salt; 16-byte GCM IV",
+ev:["apps/api/src/services/crypto.service.ts:12-26 — <b>crypto.createHash('sha256').update(envKey).digest()</b> with no KDF, no salt, no iterations","crypto.service.ts:5 — <b>IV_LENGTH = 16</b> for AES-GCM instead of the standard 12","crypto.service.ts:19-24 — the production guard only fires when SYSTEM_ENCRYPTION_KEY is unset AND APP_SECRET literally contains the string 'development_secret'"],
+im:"A deployment that sets a weak <code>APP_SECRET</code> and omits <code>SYSTEM_ENCRYPTION_KEY</code> passes the guard, and all PII at rest is encrypted under <code>sha256(\"changeme...\")</code>. A non-standard IV length weakens GCM's security margin.",
+fx:"Derive the data key with PBKDF2 or scrypt against a stored salt, use a 12-byte IV, and validate key length and entropy at boot."},
+
+{id:21,sev:"high",area:"Security",t:"Environment validation does not fail fast — working secret defaults ship to production",
+ev:["packages/config/src/index.ts:17 — <b>APP_SECRET: z.string().min(16).default('development_secret_do_not_use_in_production_min32chars')</b>","packages/config/src/index.ts:18-21 — <b>SYSTEM_ENCRYPTION_KEY</b> is .optional(); <b>DATABASE_URL</b> has a working localhost default","packages/db/src/seed.ts:21 — falls back to the literal <b>'hr-platform-local-secure-key-2026-32b!'</b>","Four vars used by compose and scripts are absent from the schema: BACKUP_LOCAL_PATH, HOST_BIND_IP, CADDYFILE_PATH, API_INTERNAL_URL"],
+im:"A production deploy with a missing <code>.env</code> boots successfully on a hardcoded session secret and a hardcoded encryption key committed to git — meaning PII encrypted with a public key, shared across every deployment. The <code>min(16)</code> also contradicts the variable's own \"min32chars\" self-description.",
+fx:"Remove all three defaults, make SYSTEM_ENCRYPTION_KEY required outside development, add a production refinement rejecting known defaults, register the four missing vars, and fail closed at boot."},
+
+{id:22,sev:"high",area:"Security",t:"No rate limiting anywhere, and the login lockout map wipes itself",
+ev:["apps/api/src/server.ts:40-111 — no @fastify/rate-limit or equivalent is registered","apps/api/src/routes/auth.ts:23-46 — the only control is an in-process map; <b>cleanupExpiredTrackers</b> calls <b>loginFailures.clear()</b> when size exceeds MAX_TRACKER_ENTRIES","State is also lost on restart and not shared across workers"],
+im:"An attacker floods distinct usernames to exceed the tracker cap, and all accumulated lockouts — including their target's — are cleared, giving unlimited password guessing against <code>admin</code>. The unauthenticated handoff upload route accepts 25 MB multipart plus a Sharp decode up to 16 MP with no concurrency cap, making memory exhaustion trivial.",
+fx:"Register a rate-limit plugin globally with tighter buckets on login, activation and both public handoff routes, and persist failure counters on the User row."},
+
+{id:23,sev:"high",area:"Security",t:"Login resolves users across tenants",
+ev:["apps/api/src/routes/auth.ts:78-85 — <b>prisma.user.findFirst({ where: { OR: [{ username }, { email }] } })</b> with no tenantId predicate","packages/db/prisma/schema.prisma:398 — uniqueness is <b>@@unique([tenantId, username])</b>","schema.prisma:374 — <b>User.email</b> is nullable and not unique, yet is used as a login identifier"],
+im:"With more than one tenant provisioned — and a provisioning script exists — <code>findFirst</code> returns an arbitrary matching row. Username collisions across tenants make login non-deterministic, and a user can be authenticated into a tenant other than the one they typed credentials for.",
+fx:"Resolve the tenant first from host, slug or an explicit field, scope the lookup to it, and add <code>@@unique([tenantId, email])</code>."},
+
+{id:24,sev:"high",area:"Security",t:"Role grant org/location scoping is stored, indexed, and then silently ignored",
+ev:["apps/api/src/services/auth.service.ts:146 — <b>session.user.roleGrants.map((rg) => rg.role)</b> discards organizationId and locationId","packages/db/prisma/schema.prisma:457-475 — RoleGrant.organizationId and locationId exist, nullable, both indexed; nothing in apps/api ever reads them for authorization","apps/api/src/routes/users.ts:143-147,267-272 — grants are created without validating the supplied org/location belongs to the caller's tenant"],
+im:"A grant intended as \"HR Manager for the Dhaka plant only\" confers that permission across every organization and location in the tenant. The data model and the admin UI both imply a scoping control that does not exist.",
+fx:"Either enforce scope in <code>requirePermission</code> by passing the target org/location, or remove the columns and the UI that sets them so nothing implies a control that is not there."},
+
+{id:25,sev:"high",area:"Security",t:"USERS_MANAGE self-escalation — no self-edit guard on user update",
+ev:["apps/api/src/routes/users.ts:189-330 — <b>PUT /api/users/:id</b> has no check that params.id differs from request.user.id, while DELETE does have one at :340-346","routes/users.ts:267-272 — role replacement happens in the same handler","apps/api/src/routes/roles.ts:178-190 — a ROLES_MANAGE holder can add SYSTEM_MANAGE to a custom role; built-ins are correctly protected at :155-161"],
+im:"Any USERS_MANAGE holder can grant themselves SYSTEM_OWNER, or take over another admin's account. The last-owner protections elsewhere are carefully written, which makes this gap look like an oversight rather than a design choice.",
+fx:"Forbid self-role-modification, require holding a permission in order to grant it, and separate password reset from profile update."},
+
+{id:26,sev:"high",area:"Security",t:"CSV photo column allows arbitrary image reads, including other tenants' photos",
+ev:["apps/api/src/services/worker-import.service.ts:734-735 and 1029-1030 — <b>path.normalize(rawPhoto).replace(/^(\\.\\.(\\/|\\\\|$))+/, '')</b> then <b>path.resolve(STORAGE_ROOT, job.id, 'extracted', cleanRel)</b>","The regex strips only leading ../ and does nothing for absolute paths; path.resolve discards preceding segments when a later one is absolute","Verified: \"/etc/passwd\" resolves to /etc/passwd; \"C:\\\\Windows\\\\x.png\" likewise on Win32. No containment check follows"],
+im:"Any PEOPLE_EDIT user with a crafted CSV can read any file the process can read and attach it as a person's photo. Magic-byte validation downstream constrains this to real image files — which includes every other tenant's employee photos under storage/uploads/photos. That is cross-tenant PII exfiltration of face images.",
+fx:"Resolve, then assert the result starts with the extraction directory plus a path separator."},
+
+{id:27,sev:"high",area:"Ops & Deploy",t:"Diagnostics fabricates worker, renderer, web and API health",
+ev:["apps/api/src/services/diagnostics.service.ts:166-176 — <b>web: {status:'ok'}</b>, <b>api: {status:'ok'}</b>, <b>worker: { status:'ok', lastHeartbeat: new Date().toISOString() }</b>, <b>renderer: { status:'ok', poolReady:true }</b>","diagnostics.service.ts:174 — <b>path: './storage/uploads'</b> hardcoded, contradicting the env.STORAGE_LOCAL_PATH actually probed at :76","diagnostics.service.ts:43-50 — the disk fallback fabricates <b>usedPercentage: 50, isLowDisk: false</b>"],
+im:"docs/status.md advertises a 7-component health matrix; four components are constants. The worker's <em>lastHeartbeat</em> is literally \"now\" on every request, so a dead worker always reports healthy — and per finding 3 the worker does nothing anyway. The fabricated <code>isLowDisk: false</code> silently defeats the low-disk warning the spec requires.",
+fx:"Derive worker status from a real heartbeat row with a staleness threshold, probe the renderer by pinging Chromium, drop or genuinely implement web/api, return status 'unknown' when statfs fails, and read the storage path from env."},
+
+{id:28,sev:"high",area:"Ops & Deploy",t:"The TLS root-CA download silently serves a placeholder certificate",
+ev:["apps/api/src/routes/system.ts:201-224 — three real candidate paths are checked first, which is good","apps/api/src/routes/system.ts:226-234 — when none exist it returns the string literal <b>MIIBtzCCAVygAwIBAgIUQ7mF1sF7Zk3l2...LocalHRInternalRootCA...</b> with HTTP 200 as a .crt attachment"],
+im:"README instructs operators to install this certificate into the trusted credentials store on staff phones. They will install a garbage anchor and then be unable to diagnose why LAN HTTPS still warns — and returning 200 makes the failure undetectable. Phone camera capture over LAN depends on this working.",
+fx:"Return 503 with actionable text when the real CA is absent, and never synthesize a certificate."},
+
+{id:29,sev:"high",area:"Security",t:"The LAN toggle has two disconnected sources of truth and does not affect binding",
+ev:["apps/api/src/server.ts:145 — <b>host: '0.0.0.0'</b> unconditionally, with no in-process loopback gate","apps/api/src/routes/system.ts:160-171 — /api/system/lan-toggle checks activation then writes only the DB lanEnabled flag","pilot.sh:144-165 — cmd_lan_enable seds HOST_BIND_IP and CADDYFILE_PATH and recreates Caddy, never touching the DB flag and never checking activation","docker-compose.yml:95-98 — actual exposure is governed solely by ${HOST_BIND_IP:-127.0.0.1}"],
+im:"The admin UI toggle is cosmetic. The two paths can disagree in both directions: the UI claims LAN is enabled while the port is loopback-only, or <code>pilot.sh lan-enable</code> opens the LAN on an unactivated instance with bootstrap credentials still live — defeating the spec's explicit gate that LAN cannot be enabled before activation.",
+fx:"Make one source authoritative: have pilot.sh read the DB activation and lanEnabled state, or drive HOST_BIND_IP from an API-written state file, and enforce loopback in-process when lanEnabled is false."},
+
+{id:30,sev:"high",area:"Features",t:"Custom field values are accepted by the API and thrown away",
+ev:["packages/schemas/src/index.ts:636 — <b>createPersonRequestSchema</b> accepts customFieldValues","apps/api/src/services/person.service.ts — zero customField references anywhere in the file","apps/api/src/routes/custom-fields.ts — 84 lines exposing only GET and POST; no update, no delete, no reorder","CustomFieldValue is touched only by backup.service.ts and restore.service.ts. No web UI exists","packages/db/prisma/schema.prisma:325-346 — CustomFieldDefinition has no accessLevel column, though status.md claims PUBLIC/INTERNAL/CONFIDENTIAL scoping"],
+im:"A client can define a field and POST values for it; the values are accepted with 201 and discarded. A field created by mistake is permanent. Backup and restore faithfully round-trip a table that can only ever be empty.",
+fx:"Persist customFieldValues in createPerson and updatePerson with type validation against the definition, add PUT and soft-delete on definitions, add the accessLevel column or retract the claim, and build a minimal admin CRUD plus person-detail render."},
+
+{id:31,sev:"high",area:"Features",t:"No archive or soft-delete for people, though the spec mandates it",
+ev:["apps/api/src/routes/people.ts — handlers are list, create, validate, get, update person, update employment, bulk status. There is no DELETE and no archive route","packages/db/prisma/schema.prisma:231-300 — Person and Employment have no archivedAt, isArchived or deletedAt column","docs/product-spec.md:344 requires soft-delete/archive by default with previewed, audited admin-only permanent deletion; :361 lists \"Worker CRUD/archive\" in scope"],
+im:"A duplicate or test record entered on day one is in the registry forever, permanently polluting the roster, exports, card-readiness counts and every dashboard metric. Combined with finding 100, bad data can be created but never removed.",
+fx:"Add archivedAt and archivedByUserId, exclude archived rows from searchPeople by default with an explicit includeArchived filter, add archive and restore routes, and a previewed admin-only purge."},
+
+{id:32,sev:"high",area:"Features",t:"Cards never expire, and the operator's Expired filter always returns nothing",
+ev:["apps/api/src/services/card-issue.service.ts:194,235 — <b>validUntil</b> is written only from caller input, with no default and no template-derived validity period","Nothing in the repository ever transitions an issue to <b>CardIssueStatus.EXPIRED</b>","apps/web/app/(authenticated)/cards/issues/page.tsx:236 — an <b>Expired</b> option in the status filter"],
+im:"Expired badges stay ISSUED and isCurrent forever, counting toward active-badge totals and passing card-readiness preflight. The Expired filter is guaranteed to return zero rows regardless of reality — the classic case where a feature works but the answer is always empty, so nobody notices it is broken.",
+fx:"Default validUntil from the template or org policy at issue time, add a daily job that flips past-due rows to EXPIRED and clears isCurrent, and surface an \"expiring in 30 days\" list for reissue."},
+
+{id:33,sev:"high",area:"Features",t:"Bulk status change skips concurrency checks, end dates and card revocation",
+ev:["apps/api/src/services/person.service.ts:693-712 — a bare <b>employment.updateMany({ data: { status, version: { increment: 1 } } })</b> with no version compare, no endDate, no CardIssue handling, no transition validation","apps/api/src/routes/people.ts:293-304 — records one aggregate audit event with no entityId","Contrast routes/people.ts:197 where single-record edits correctly return 409 on version conflict"],
+im:"Terminating 50 employees leaves 50 active, current badges that still open doors and still pass print preflight. Incrementing version without comparing it silently clobbers concurrent edits, breaking the optimistic-concurrency contract honoured everywhere else. The reason the operator typed is stored in a blob keyed to no entity, so per-employee audit history shows nothing. Any status transition is permitted, including TERMINATED back to PREBOARDING.",
+fx:"Loop per-employment inside a transaction with a version compare, set endDate for terminal statuses, revoke or flag current card issues, validate against an allowed-transitions map, and emit one audit event per employment with entityId and reason."},
+
+{id:34,sev:"high",area:"UX & UI",t:"52 of 85 fetch sites are happy-path only, so server errors look like empty data",
+ev:["Census across apps/web/app: 85 <b>await fetch(</b> sites; only 17 use a guard clause; 52 use <b>if (res.ok) { ... }</b> with no else; 16 never check .ok at all","Representative: people/page.tsx:151-160, people/new/page.tsx:129-149, cards/new/useCardCreationState.ts:172-197, cards/queue/page.tsx:63-66, cards/issues/page.tsx:68-78","apps/web/lib/api-client.ts — a correct 94-line client with ApiError, statusCode, field errors and 401 redirect, bypassed by nearly every page"],
+im:"HTTP 403 and 500 are indistinguishable from \"no data\", because the catch blocks only fire on network errors. At people/new/page.tsx:451-463 a failed organizations request renders the required Organization select with zero options and no explanation — the form is unsubmittable with no stated reason.",
+fx:"Route every fetch through the existing api-client and give each load an explicit error branch. The right abstraction is already written; only adoption is missing."},
+
+{id:35,sev:"high",area:"UX & UI",t:"Failed loads render as reassuring zeros and green success messages",
+ev:["apps/web/app/(authenticated)/cards/page.tsx:143,155,168,182 — <b>{isLoading ? '—' : (stats?.readyToPrintCount ?? 0)}</b>; a failed request renders 0","cards/page.tsx:305-308 — on failure blockedWorkers stays [], rendering the green \"All registered workers have photos and meet badge requirements!\"","people/new/page.tsx:182-184 — the duplicate-check catch is empty, leaving warnings empty, which renders \"No duplicate collisions detected. Ready for registration.\" at :916-921"],
+im:"Worse than an error message. The operator is actively told there is no work to do, or that a duplicate check passed, when the check never ran — which directly causes duplicate worker records and missed print batches.",
+fx:"Distinguish null (failed or not loaded) from 0 in the stat components, and render an error affordance instead of the success state when the underlying request failed."},
+
+{id:36,sev:"high",area:"UX & UI",t:"18 of 21 modals have no dialog semantics, and only one closes on Escape",
+ev:["21 files contain <b>fixed inset-0</b>; only 3 have <b>role=\"dialog\"</b>; only GlobalSearchDialog.tsx has an ESC handler","Missing dialog semantics include: OperatorConfirmationModal, ReprintReasonModal, RevokeReasonModal, CameraModal, PhoneHandoffModal, BatchPrintModal, and the bulk-status and version-history overlays","packages/ui/src/components/dialog.tsx — already implements ESC (:52-60), scroll lock (:33), initial focus (:36-41), focus restore (:44) and role/aria-modal/aria-labelledby (:74-77) — imported by 5 files; ConfirmDialog by zero"],
+im:"Keyboard users cannot dismiss the operator sign-off, reprint-reason, revoke-reason, camera or batch-print modals; Tab escapes into the page behind the overlay; focus is lost on close. Screen readers announce all of these as ordinary divs. The affected dialogs are precisely the accountability steps of card issuance.",
+fx:"Replace the hand-rolled overlays with the existing Dialog and ConfirmDialog, and add a Tab focus trap to dialog.tsx — it manages initial and restored focus but does not trap."},
+
+{id:37,sev:"high",area:"UX & UI",t:"103 of 130 form labels have no htmlFor association",
+ev:["Counted across apps/web/app/(authenticated): 130 <b>&lt;label&gt;</b> elements, 27 <b>htmlFor</b> attributes","Worst: cards/templates/[id]/page.tsx (20 labels, 0 htmlFor), admin/company/page.tsx (15/0), people/[id]/edit/page.tsx (13/0 — zero association on the entire edit form, and no Input carries an id)","packages/ui/src/components/input.tsx:142-143 — FormGroup computes errorId and helperId and never attaches them to the child; aria-invalid is never set"],
+im:"Clicking a label does not focus its field, which is a measurable speed cost in repetitive entry, and screen readers announce unlabelled inputs. Because FormGroup drops the ids it computes, even the best-built form in the app — the only one with real inline per-field errors — is inaccessible: a screen reader reaching an invalid field hears neither the error text nor the invalid state.",
+fx:"Add id/htmlFor pairs, and have FormGroup clone its child with id, aria-describedby and aria-invalid so every future form inherits the fix."},
+
+{id:38,sev:"high",area:"UX & UI",t:"The highest-volume data-entry screen has no form element, so Enter does not submit",
+ev:["apps/web/app/(authenticated)/people/new/page.tsx — 1021 lines, <b>&lt;form</b> count is zero","<b>required</b> is set at :478, :541, :582 and :827 and does nothing without a form","Contrast people/[id]/edit/page.tsx:240 and cards/new/Step1WorkerEssentials.tsx:86-92, which both use a real form onSubmit"],
+im:"On the screen operators use hundreds of times per shift, keyboard submission is impossible and every native validation attribute is inert. Combined with finding 92 (almost no autofocus anywhere), each record requires an unnecessary mouse round-trip per step.",
+fx:"Wrap each step in a form with onSubmit."},
+
+{id:39,sev:"high",area:"UX & UI",t:"The people-list readiness filter is applied client-side after pagination",
+ev:["apps/web/app/(authenticated)/people/page.tsx:155-157 — the readiness filter runs over the already-fetched page","people/page.tsx:727-728 — still renders <b>Showing {people.length} of {pagination.totalCount} workers</b>"],
+im:"Filtering for \"missing photo\" searches only the current 25 rows. An operator on page 1 sees 3 results and concludes 3 workers need photos when there may be hundreds — silently wrong data on the primary work-queue screen, sitting next to a total count that contradicts it.",
+fx:"Pass the readiness filter to the API as a query parameter."},
+
+{id:40,sev:"high",area:"UX & UI",t:"Employee numbers are generated in the browser and collide across workstations",
+ev:["apps/web/app/(authenticated)/people/new/page.tsx:79 — <b>employeeNumber: 'EMP-1007'</b> hardcoded as the default for every new worker","people/new/page.tsx:299 — regenerates as <b>EMP-${Math.floor(1000 + Math.random()*9000)}</b>","The employeeNumberRule (prefix, padLength, nextSequence) fetched at :37 is never used on this page","cards/new/useCardCreationState.ts:226-229 applies the rule correctly — the pattern exists and was not carried over"],
+im:"Two HR staff registering simultaneously generate the same number, and a distracted operator saves the literal EMP-1007. Both produce duplicate or wrong badge identifiers on physical cards, which is expensive to discover and worse to correct.",
+fx:"Allocate the number server-side on submit. Porting the existing rule-based generator is a reasonable interim step."},
+
+{id:41,sev:"high",area:"UX & UI",t:"No unsaved-changes protection anywhere in the application",
+ev:["Verified zero occurrences of <b>beforeunload</b>, <b>isDirty</b> or <b>hasUnsavedChanges</b> across all of apps/web/app","Highest-loss screens: people/new/page.tsx:341 (Cancel link on a three-step registration), people/[id]/edit/page.tsx:386, and cards/templates/[id]/page.tsx — a 1126-line card designer holding layout entirely in local state","packages/ui ConfirmDialog exists and is imported by zero files"],
+im:"One mis-click on Cancel, or the browser back button, silently discards a completed three-step worker registration or an entire template redesign. No confirmation, no draft recovery.",
+fx:"Track a dirty flag per form, add a beforeunload listener, and intercept Cancel and back with the ConfirmDialog that already exists."},
+
+{id:42,sev:"high",area:"UX & UI",t:"Print confirmation is fire-and-forget, so sign-off can be recorded that never persisted",
+ev:["apps/web/app/(authenticated)/cards/new/page.tsx:240-252 — <b>onConfirmPhysicalPrint</b> awaits the confirm POST with no res.ok check and no catch, then updates UI state to confirmed","The correct pattern is already used at cards/issues/page.tsx:109,130 and cards/queue/page.tsx:148"],
+im:"A 500 or a dropped LAN connection leaves the operator believing the card is signed off while the server has no record, and a network throw becomes an unhandled rejection. This is the operator-accountability step of a card-issuance audit trail.",
+fx:"Check res.ok, throw on failure, and let the modal surface the error in place — copy the pattern from cards/issues."},
+
+{id:43,sev:"high",area:"UX & UI",t:"An empty catch in the auth bootstrap leaves the shell half-authenticated",
+ev:["apps/web/app/(authenticated)/layout.tsx:71-73 — <b>catch { // Handle network error }</b>","layout.tsx:89 — hasPerm returns false for every permission while user is null","There is no isLoadingUser state, so the shell always renders once with user null"],
+im:"If /api/auth/me throws, user stays null forever with no error, no retry and no redirect. Every permission check then fails, so the sidebar renders a stripped-down nav and the user concludes their access was revoked. Even on success, gated nav groups pop in after the fetch resolves — layout shift on every page load.",
+fx:"Set an error state with a retry or redirect to login, and add an explicit loading state that renders the nav skeleton instead of a false permission-denied nav."},
+
+{id:44,sev:"high",area:"UX & UI",t:"The live card preview shows fabricated values the operator proofreads as real",
+ev:["apps/web/app/(authenticated)/cards/new/page.tsx:108 — <b>bloodGroup: 'B+'</b>; :113 — <b>'+880 1700-000000'</b>; :125 — <b>'CARD-2026-PREVIEW'</b>","cards/new/useCardCreationState.ts:103 — <b>bloodGroup: 'B+'</b> as the form's initial value","Step1WorkerEssentials.tsx:275 already offers an <b>&lt;option value=\"\"&gt;Unknown&lt;/option&gt;</b>"],
+im:"The preview is the only proofing surface before an irreversible physical print. An untouched blood-group field prints \"B+\" on an emergency ID for someone who may not be — a plausible-looking wrong value is far more dangerous than a blank one.",
+fx:"Render empty, placeholder-styled slots for unknown values rather than plausible fake ones, and default bloodGroup to empty."},
+
+{id:45,sev:"high",area:"Architecture",t:"pnpm lint is a no-op for 10 of 11 packages and checks zero TypeScript rules",
+ev:["git ls-files matching eslint | biome: only <b>apps/web/.eslintrc.json</b> exists","Iterating all 11 workspace package.json files: exactly one defines a lint script (next lint)","turbo.json's lint task has no config, so it silently succeeds where the script is undefined","apps/web/.eslintrc.json is <b>{\"extends\":[\"next/core-web-vitals\"]}</b> — no @typescript-eslint plugin anywhere in the repo"],
+im:"A green <code>pnpm lint</code> means almost nothing. apps/api, the largest codebase, is never linted at all, and no rule can catch the type debt in finding 46. <code>next lint</code> is also removed in Next 16 and the legacy .eslintrc format is deprecated under ESLint 9.",
+fx:"Add a shared flat eslint.config.js at the root with typescript-eslint, a lint script in every package, and dependsOn wiring in turbo.json."},
+
+{id:46,sev:"high",area:"Architecture",t:"Type-safety debt concentrated in the API and an unvalidated web client",
+ev:["In hand-written source: 86 <b>as any</b>, 155 <b>any</b> annotations, 256 non-null assertions, and zero @ts-ignore/@ts-expect-error","apps/web/lib/api-client.ts — returns <b>(await response.json()) as T</b> with no runtime validation; <b>errors?: Record&lt;string, any&gt;</b> at line 8","packages/schemas exports 214 Zod schemas, used only for server-side request validation"],
+im:"Responses are hand-asserted on the client, so any API shape change becomes a runtime undefined in the browser rather than a build error — despite 214 schemas being available to prevent exactly that. The 256 non-null assertions are latent TypeErrors that <code>noUncheckedIndexedAccess</code> was enabled specifically to catch. To the credit of the codebase, the debt is honest <code>any</code> rather than suppressed errors, which makes it mechanically fixable.",
+fx:"Parse responses through the matching Zod schema in api-client.ts, or generate a typed client from the schemas, and ban any and non-null assertions via the lint config from finding 45."},
+
+{id:47,sev:"high",area:"Architecture",t:"Card geometry is duplicated between the print renderer and the web preview",
+ev:["packages/card-kit/src/index.ts:487 — <b>generateCardHtmlDocument()</b>, the canonical print path","apps/web/app/components/cards/CardRenderer.tsx:118 — <b>(front.header.heightMm / 90) * 360</b>; :154-155 — <b>(front.photo.widthMm / 60) * 220</b> and <b>(front.photo.heightMm / 90) * 330</b>","CardRenderer.tsx imports only calculateAdaptiveFontSizePt from card-kit, not the mm conversion helpers"],
+im:"WYSIWYG is not guaranteed: preview and printed PDF derive dimensions from independent formulas, and the hardcoded /90 and /60 divisors silently break for any template that is not 60x90mm — including both ISO ID-1 presets the spec requires. No test compares the two outputs.",
+fx:"Export the mm conversion helpers from card-kit, have CardRenderer consume them, and add a test asserting preview and print geometry agree for at least two template sizes."},
+
+{id:48,sev:"high",area:"Testing",t:"The 13-spec Playwright release matrix mocks the API and never exercises the backend",
+ev:["81 <b>page.route</b> interceptions across 12 of 13 specs in apps/web/e2e/","apps/web/e2e/release-e2e-matrix.spec.ts — \"Phase 12: Release-Quality 10-Journey E2E Test Matrix\" has 13 page.route and 14 route.fulfill calls in beforeEach alone, stubbing system status, auth/me with a hardcoded full permission list, and organizations"],
+im:"These tests assert that the frontend renders fixtures the test itself wrote. They cannot detect auth failures, RBAC regressions, contract drift, or the deployment-blocking defects in findings 4 and 5 — yet their names imply end-to-end release confidence that does not exist.",
+fx:"Rename them as component and visual tests, and promote a handful of journeys onto the real stack. The harness for this already exists in tests/e2e-live."},
+
+{id:49,sev:"high",area:"Testing",t:"Structural test defects: tautologies and tests that pass on failure",
+ev:["apps/worker/tests/worker.test.ts — the whole file is <b>await worker.start(); await worker.stop(); expect(true).toBe(true);</b>","apps/api/tests/health.test.ts:23 — <b>expect([200, 503]).toContain(response.statusCode)</b> — passes when health fails","packages/db/tests/db.test.ts — catches and asserts PrismaClientInitializationError, so it passes whether the database exists or not","apps/api/tests/performance.test.ts:82 — titled \"sub-50ms latency budget\", asserts less than 250ms","tests/compose-smoke.test.ts — 90 lines of readFileSync plus toContain on compose files; never invokes Docker, which is why it misses finding 4","No coverage threshold in vitest.config.ts or any package config"],
+im:"A green suite is not evidence of correctness; several tests are structurally incapable of failing. The worker tautology is why finding 3 — backups that never run — went unnoticed.",
+fx:"Delete or rewrite the tautologies, tighten the health assertion to 200, add coverage thresholds, and make compose-smoke actually run <code>docker compose config</code>."},
+
+{id:50,sev:"high",area:"Testing",t:"The four features most likely to corrupt output have no automated verification",
+ev:["Mapping 60 test files against critical paths: crypto is well covered (apps/api/tests/crypto.test.ts), backup and restore have unit tests, RBAC is covered in tests/e2e-live","No tests exist for: card rendering geometry (no assertion on mm to px/pt output, and nothing checks that print and preview agree), CSV import end-to-end, photo processing (no sharp/resize/EXIF test anywhere), or the worker's scheduling logic","docs/status.md:422,443 self-reports that E2E coverage is mocked and that Chromium/Alpine rendering is unverified — in the same document that declares the release gate READY"],
+im:"Rendering geometry, CSV import, the photo pipeline and the worker are exactly where silent data corruption and wrong physical output originate. status.md concedes the core output path is unvalidated in the deployment image while calling the release ready.",
+fx:"Golden-file tests for rendered card geometry, a round-trip CSV fixture test, a photo-pipeline test on a real EXIF-bearing JPEG, and a worker test asserting a backup artifact is actually produced."},
+
+{id:51,sev:"high",area:"Ops & Deploy",t:"No graceful shutdown in the API, so Chromium leaks on every restart",
+ev:["apps/api/src/server.ts:140-156 — start() calls server.listen() with no SIGTERM or SIGINT handler and no server.close()","The only signal handlers in the repo are in apps/worker/src/index.ts:85-91","packages/card-kit/src/renderer/browser-pool.ts:102 — <b>shutdown()</b> is defined and called only from a test"],
+im:"<code>docker compose restart</code>, <code>down</code>, and every <code>pilot.sh upgrade</code> SIGKILL the API after the grace period: in-flight requests are dropped mid-transaction, and Chromium single-process children survive as zombies across restarts, compounding against the container's 2 GB limit.",
+fx:"Handle SIGTERM and SIGINT: await server.close(), BrowserPool.shutdown() and prisma.$disconnect() before exit."},
+
+{id:52,sev:"high",area:"Security",t:"pilot.sh writes .env.bak with plaintext secrets at default permissions",
+ev:["pilot.sh:148-149 and :160-161 — <b>sed -i.bak</b> on .env; only .env itself is hardened with chmod 600 at pilot.sh:78","The .bak copy is never removed or chmod'd","pilot.sh:194-197 — the \"sanitized\" support bundle dumps raw docker compose logs with no redaction"],
+im:"A world-readable .env.bak containing APP_SECRET, SYSTEM_ENCRYPTION_KEY and database credentials sits next to the deliberately protected original — created by the LAN toggle, which is the command most likely to be run. Secrets can also leave the site inside support bundles.",
+fx:"Use sed -i without a suffix, or chmod 600 and shred the backup, and pipe support-bundle log output through a redaction filter."},
+
+{id:53,sev:"high",area:"Security",t:"Recovery codes have 40 bits of entropy and an unsalted hash",
+ev:["apps/api/src/services/auth.service.ts:208-219 — codes from <b>crypto.randomBytes(5)</b>, stored via <b>hashToken</b>, which is plain unsalted SHA-256 at :26-28","packages/db/prisma/schema.prisma:403-414 — RecoveryCode has no unique constraint on (userId, codeHash)"],
+im:"If the redemption path from finding 9 is implemented as-is, unsalted SHA-256 over a 40-bit space is offline-crackable from a single database read or from any backup — turning the break-glass mechanism into a backdoor.",
+fx:"Raise to at least 128 bits and hash with Argon2id before wiring up redemption."},
+
+/* ============ MEDIUM ============ */
+{id:54,sev:"medium",area:"Data & API",t:"All-or-nothing CSV import is not atomic",
+ev:["apps/api/src/services/worker-import.service.ts:918-924 — <b>BATCH_SIZE = 50</b> with a separate <b>prisma.$transaction</b> per chunk","The dry-run gate at :895-899 reduces but cannot eliminate this, since uniqueness collisions and FK races are only detectable at write time"],
+im:"A failure in chunk N leaves chunks 1..N-1 committed while the API reports failure and isCommitted is never set. The operator can neither retry (rerunning duplicates committed rows) nor roll back. The spec explicitly requires that a 100-worker import never partially commits.",
+fx:"Use a single transaction with an increased timeout, or record per-row commit state so the job is resumable."},
+
+{id:55,sev:"medium",area:"Security",t:"Card serials are sequential, enumerable, and generated with a race",
+ev:["apps/api/src/services/card-issue.service.ts:37-66 — <b>count()</b> then <b>CARD-${year}-${padStart(n,6)}</b> then a non-atomic collision probe, all outside the issuing transaction","apps/api/src/services/print-job.service.ts:116-117 — <b>${baseSerial}-${Math.random().toString(36).substring(2,6)}</b>","docs/product-spec.md:206 requires an opaque random serial; status.md:340 claims CARD-UUID-V4 serials, which is not what the code produces"],
+im:"Serials are guessable (CARD-2026-000001), defeating the spec's reason for having them. In a batch every item derives from one base serial plus a 4-character suffix, so a 100-card batch has roughly a 0.3% chance of a duplicate that fails the whole transaction, and concurrent operators can collide on the counter.",
+fx:"Use crypto.randomUUID() or a 128-bit token per issue, rely on the unique constraint with a bounded retry, and delete the count-based path."},
+
+{id:56,sev:"medium",area:"Data & API",t:"No global error handler, so raw error messages reach clients",
+ev:["apps/api/src/server.ts — no setErrorHandler or setNotFoundHandler, so Fastify's default returns err.message in 500 bodies","Unmapped rethrows: routes/people.ts:109,158,211,264","Explicit leaks: routes/backups.ts:39, routes/restore.ts:34,86, routes/imports.ts:73,150,180,214 all pass err.message to the client","apps/api/src/services/restore.service.ts:540-542 returns the absolute host path of the pre-restore snapshot"],
+im:"Prisma error messages embed model names, column names and query fragments, handing an attacker a schema map. Absolute filesystem paths disclose the deployment layout.",
+fx:"One setErrorHandler that logs the full error server-side and returns a correlation ID with a generic message for 5xx."},
+
+{id:57,sev:"medium",area:"Security",t:"Audit write failures are swallowed and the trail is not append-only",
+ev:["apps/api/src/services/audit.service.ts:72-75 — <b>catch (error) { console.error('Failed to write audit event', error) }</b>","AuditEvent is a plain table with no hash chain or signature, and <b>prisma.auditEvent.deleteMany</b> is reachable at restore.service.ts:242"],
+im:"The mutation succeeds and returns 200 with no audit row — silent, invisible gaps in the trail. \"Immutable audit events\" is aspirational rather than enforced, which matters for a product sold on traceability. Compounded by finding 8, where restore deletes the trail wholesale.",
+fx:"Write the audit row inside the same transaction as the mutation where feasible, fail the request or queue for retry otherwise, add a per-tenant prevHash chain, and revoke DELETE/UPDATE on the table at the database-role level."},
+
+{id:58,sev:"medium",area:"Security",t:"Several state-mutating operations write no audit event at all",
+ev:["apps/api/src/services/phone-handoff.service.ts:114-171 — creates a MediaAsset and attaches it to a person with no recordAuditEvent anywhere in the file; this is the one photo-ingest path reachable unauthenticated","apps/api/src/services/cleanup.service.ts — deletes expired jobs and files, no audit","apps/api/src/routes/system.ts:156-189 — the LAN toggle changes network exposure posture with no audit event"],
+im:"The least-attributable write in the system — an unauthenticated phone upload — is also the least logged. A change to network exposure leaves no record of who made it or when.",
+fx:"Add audit events to all three paths, with the handoff slot and token identifier recorded for the unauthenticated case."},
+
+{id:59,sev:"medium",area:"Data & API",t:"Data-model gaps: missing indexes, missing uniques, cascade hazards",
+ev:["schema.prisma:494-509 — <b>AuditEvent.actorId</b> has no FK and no index; routes/audit.ts:31-33 filters on action, actorId and entityType, none of which are indexed, causing full scans on the largest table","schema.prisma:302-323 — IdentityDocument has no unique on (tenantId, personId, documentType), so one person can accumulate unlimited conflicting NID rows; identity.service.ts:70 does not bind the supplied docId to the person in the URL","schema.prisma:944-992 — nothing enforces one isCurrent card per employment; the invariant rests on an updateMany, and restore copies isCurrent verbatim","schema.prisma:28-38 — SystemInstallation has no singleton constraint while auth.service.ts:142 uses findFirst; the unauthenticated status endpoint creates the row","schema.prisma:171 — OrgUnit.parent cascades, so deleting a mid-tree unit silently destroys the whole subtree","schema.prisma:112 — Organization.isDefault defaults to true with no partial unique index"],
+im:"Audit queries degrade to table scans as the trail grows. Ambiguous identity documents are exploitable for cross-record reveals. Two current cards for one employment is representable. Deleting a department can silently delete everything under it.",
+fx:"Add the missing indexes and unique constraints, change OrgUnit to restrict on delete, and enforce singleton and default-org invariants at the database level."},
+
+{id:60,sev:"medium",area:"Data & API",t:"A few routes skip Zod validation, and a backup path can escape its directory",
+ev:["apps/api/src/routes/system.ts:156-157 — <b>request.body as { enabled?: boolean }</b> with no schema","apps/api/src/routes/backups.ts:25,239 — targetDirectory is only z.string() and flows to <b>path.resolve(process.cwd(), targetDir)</b> at backup.service.ts:161, with mkdir -p creating the tree","apps/api/src/routes/media.ts:40-49 — crop options come from JSON.parse typed any and reach Sharp's extract(); a cropX beyond the raw width makes the computed width negative and Sharp throws a 500","CropCoordinatesInput exists in @hr/schemas and is not used at the boundary"],
+im:"A BACKUP_MANAGE holder can write .hrbackup files anywhere the process can write. Malformed crop coordinates produce a 500 instead of a 400. Most routes validate exemplarily — people.ts validates every body and query — which makes these the exceptions worth closing.",
+fx:"Apply the existing schemas at these three boundaries and constrain targetDirectory to an allowlisted root."},
+
+{id:61,sev:"medium",area:"Security",t:"The phone-handoff SSE stream has no tenant or ownership check",
+ev:["apps/api/src/services/phone-handoff.service.ts:197-212 — the event bus is keyed only <b>slot:${slotId}</b>, with no tenant namespace","apps/api/src/routes/media.ts:283-324 — subscribes to a slotId with no ownership or tenant verification","phone-handoff.service.ts:103-108 — verifyPhoneHandoffToken returns tenantId to an unauthenticated caller","phone-handoff.service.ts:129-138 — a TOCTOU gap between the isConsumed read and the update permits a double upload"],
+im:"Any authenticated PEOPLE_EDIT user in any tenant who learns or guesses a slot id receives another tenant's capture events. The single-use guarantee on the token is not actually single-use.",
+fx:"Namespace the bus by tenant, verify slot ownership on subscribe, stop returning tenantId to unauthenticated callers, and consume the token with a conditional update."},
+
+{id:62,sev:"medium",area:"Features",t:"Expired import and export artifacts are never purged despite a written promise",
+ev:["apps/api/src/services/cleanup.service.ts:18 — <b>purgeExpiredArtifacts()</b> is called by nothing; the only wired cleanup is the unrelated cleanupExpiredTrackers in routes/auth.ts","apps/web/app/(authenticated)/import-export/page.tsx:210-215 — tells the user artifacts are automatically deleted after 24 hours"],
+im:"The product makes a data-retention commitment it does not keep. CSVs full of employee PII accumulate on disk indefinitely and will eventually fill the volume that the fabricated low-disk warning from finding 27 is supposed to catch.",
+fx:"Invoke purgeExpiredArtifacts on a schedule and log the count purged, or remove the UI claim."},
+
+{id:63,sev:"medium",area:"UX & UI",t:"A complete design system exists and is almost entirely unused",
+ev:["Import counts across apps/web/app — EmptyState 0, Skeleton 0, ErrorSummary 0, InlineError 0, PageHeader 0, StatusBadge 0, PhotoAvatar 0, FilterBar 0, ConfirmDialog 0, TableShell 1, Stepper 1, FormGroup 4, Dialog 5","Only Button (54 files), Badge (48) and Input (19) are genuinely adopted","TableShell even ships a proper tabIndex/role=region scroll container that no real table uses"],
+im:"Every page re-implements empty, loading, error and modal states slightly differently, so the app looks and behaves inconsistently screen to screen — and every accessibility fix has to be made N times instead of once. Findings 34 through 37 and 65 are all downstream of this.",
+fx:"Migrate screen by screen, starting with empty, loading and error states on the list pages, and adopt ErrorSummary in the two registration forms."},
+
+{id:64,sev:"medium",area:"UX & UI",t:"436 hardcoded hex colours instead of the tokens that already exist",
+ev:["Across apps/web/app: #0F766E x322, #134E4A x81, #14B8A6 x26, plus a handful of neutrals","packages/ui/src/tokens.ts defines all of these as COLOR_TOKENS, and tailwind.config.mjs defines the equivalent teal scale — both bypassed","Mitigating: the values are internally consistent, with no off-palette drift"],
+im:"Low user-facing impact today, but a theme change, a white-label deployment, or a contrast remediation would require 436 edits — so in practice it will not happen.",
+fx:"Codemod the literals to the teal utility classes."},
+
+{id:65,sev:"medium",area:"UX & UI",t:"No toast system; five hand-rolled banners and almost nothing announced",
+ev:["Five separate, differently-styled implementations: cards/new/page.tsx:202-231 (has role=status but no auto-dismiss), people/page.tsx:314-338, cards/issues/page.tsx:181-205, cards/queue/page.tsx, people/[id]/edit/page.tsx","App-wide across ~30,000 lines: aria-live x1, role=status x2, role=alert x4"],
+im:"Feedback appears in different places with different colours and dismiss behaviour on every screen. Because these are inline top-of-page elements, on the long step-3 content in cards/new a success or error message can be scrolled entirely off-screen — the operator never sees it. Assistive technology is told almost nothing.",
+fx:"One fixed-position, auto-dismissing, aria-live toast provider in @hr/ui, replacing all five."},
+
+{id:66,sev:"medium",area:"UX & UI",t:"The mobile capture screen mislabels upload failures and dead-ends on expiry",
+ev:["apps/web/app/capture/[token]/page.tsx:132-140 — the error heading is hardcoded <b>\"Session Inactive\"</b> even when the message came from an upload failure at :93/:96, and the error box renders simultaneously with the cropper","An invalid or expired token offers no retry and no path to request a new QR","capture/[token]/page.tsx:78-85 — POSTs the cropped image as a base64 JSON body, roughly 33% size inflation, with no progress indication beyond a pulsing div at :203","capture/[token]/page.tsx:158 — <b>active:scale-98</b> is not a default Tailwind value and is not extended in the config, so the press feedback silently does nothing"],
+im:"A floor operator on a phone over factory Wi-Fi is told the session is inactive when the upload merely failed, so they walk back to the desk for a new QR instead of retrying. Large photos upload with no progress, making stalled indistinguishable from slow.",
+fx:"Separate session errors from upload errors with distinct headings and a Retry button, POST as multipart with an upload-progress handler, add a client-side size check, and define or remove scale-98."},
+
+{id:67,sev:"medium",area:"UX & UI",t:"Orphaned and inverted navigation leaves built pages unreachable",
+ev:["26 authenticated routes against 14 nav hrefs","apps/web/app/(authenticated)/admin/locations/page.tsx — 510 lines with zero inbound links from anywhere; AppSidebar.tsx:157 has an isActive predicate matching /admin/locations while its href points at /organization","/cards — the 340-line Card Production Hub — is not in the nav and is linked only upward from its own children, so the hub is reachable only from the pages it is meant to introduce","/cards/assignments reachable only from cards/templates; /admin/backups only from admin/system and admin/restore; /admin/restore only from admin/backups"],
+im:"Substantial built functionality is undiscoverable, and the location manager cannot be reached at all. To the codebase's credit, every href that <em>is</em> in the nav resolves to a real page — there are no 404 links.",
+fx:"Link /admin/locations from /organization or delete it, and add /cards to the card-operations nav group."},
+
+{id:68,sev:"medium",area:"UX & UI",t:"Backup and restore screens are not reachable from the navigation",
+ev:["apps/web/app/(authenticated)/admin/backups/page.tsx and admin/restore/page.tsx exist, but neither path appears in AppSidebar.tsx, PrimaryNavLinks.tsx, MoreNavMenu.tsx or MobileBottomNav.tsx"],
+im:"Two of the most operationally important screens in an on-premises product are URL-only. Combined with findings 3 and 7, the entire backup story is hard to reach and does not work when reached.",
+fx:"Add both under an Admin nav group gated on the backup permission."},
+
+{id:69,sev:"medium",area:"Features",t:"Session-management endpoints are fully built with zero UI",
+ev:["apps/api/src/routes/auth.ts:363 — GET /api/auth/sessions returning id, IP, user-agent, isCurrent, lastActiveAt, expiresAt; :390 — DELETE by id; :430 — revoke-others","Repo-wide grep of apps/web/app for <b>auth/sessions</b>: zero matches"],
+im:"A well-shaped, complete feature is unreachable by users. Nobody can see or kill a forgotten session on a shared print-room workstation — a real risk in a factory setting.",
+fx:"Add a sessions panel to the account page. The API contract is already complete, so this is a small UI task with a good payoff."},
+
+{id:70,sev:"medium",area:"Features",t:"No import or export job history — the wizard is write-only",
+ev:["apps/api/src/routes/imports.ts — a genuine upload, mapping, dry-run, commit and error-CSV pipeline, but no LIST endpoint; same for exports.ts","apps/web/app/(authenticated)/import-export/page.tsx — 220 lines of entirely static marketing copy with no data fetching at all"],
+im:"Close the browser tab mid-import and the job is unreachable: you cannot find the id, resume, re-download the error CSV, or see who imported what and when. The landing page describes capabilities instead of showing state.",
+fx:"Add paginated list endpoints for both and render a job table with status, row counts, actor and an error-CSV link."},
+
+{id:71,sev:"medium",area:"Features",t:"Template assignment rules cannot be deleted",
+ev:["apps/api/src/routes/templates.ts — GET and POST for /api/templates/assignments; no DELETE","apps/web/app/(authenticated)/cards/assignments/page.tsx:17 — imports <b>Trash2</b> and never uses it"],
+im:"A mis-scoped priority rule is permanent and keeps silently resolving the wrong template for a whole population of employees. The unused icon import is direct evidence the delete affordance was designed and abandoned.",
+fx:"Add an audited DELETE route and wire the trash button that is already imported."},
+
+{id:72,sev:"medium",area:"Features",t:"The audit log is a single read-only endpoint with no export or retention",
+ev:["apps/api/src/routes/audit.ts — 71 lines exposing exactly one route, GET /api/audit-events. No CSV export, no per-entity history endpoint, no retention or archival policy"],
+im:"For a compliance-oriented on-premises HR product this is thin: an auditor cannot be handed a file, nobody can pull everything that happened to one employee, and the table grows without bound. Compounded by finding 33, whose aggregate events carry no entityId and are therefore unqueryable per record.",
+fx:"Add a streaming CSV export gated on an audit permission, an entity-timeline query, and a retention policy tied to backups."},
+
+{id:73,sev:"medium",area:"Architecture",t:"turbo.json has no globalDependencies, so stale cache hits are possible",
+ev:["turbo.json — six tasks, no globalDependencies, no globalEnv, no per-task inputs","typecheck and test declare dependsOn ^build but no outputs; lint and format:check are entirely empty objects"],
+im:"Editing tsconfig.base.json — which controls strictness for all 11 packages — invalidates nothing, so Turbo replays a cached success. Environment changes likewise do not bust the cache.",
+fx:"Add globalDependencies for tsconfig.base.json, .env.example and .prettierrc.json, plus globalEnv for the runtime variables."},
+
+{id:74,sev:"medium",area:"Architecture",t:"Runtime dependencies are declared as root devDependencies, and engines is absent",
+ev:["Root package.json has no <b>dependencies</b> key; fastify, pino, sharp, @node-rs/argon2, adm-zip and the @fastify/* plugins are all under devDependencies","No <b>engines</b> field, though packageManager is pinned to pnpm@10.5.0"],
+im:"<code>pnpm install --prod</code> in a Docker stage would omit the entire runtime, so anything relying on the dev/prod split is unsafe. Without engines, nothing guards against a Node version mismatch between the dev machine and the container.",
+fx:"Move runtime packages into the owning workspace's dependencies and add an engines constraint."},
+
+{id:75,sev:"medium",area:"Ops & Deploy",t:"The SBOM covers 41 of 1415 packages and mislabels devDependencies as required",
+ev:["release/sbom.json — 41 components, timestamped 2026-08-25; the first component is <b>@axe-core/playwright</b>, a devDependency, with <b>scope: 'required'</b>","pnpm-lock.yaml has 1415 entries in its packages section; the SBOM is direct-only with no transitive closure","packages/schemas/tests/sbom-consistency.test.ts asserts only bomFormat, specVersion, components.length > 20 and hash <em>shape</em> — it never re-hashes files, so it cannot detect staleness"],
+im:"Unusable for CVE triage, since 97% of the dependency graph is absent, and it misrepresents test tooling as production runtime — a compliance liability for a product marketed on air-gapped assurance. To the codebase's credit, release-manifest.json digests were independently re-verified and are all correct.",
+fx:"Generate with cyclonedx-npm from the lockfile, set scope from the actual dependency type, and extend the test to recompute digests and fail on drift."},
+
+{id:76,sev:"medium",area:"Ops & Deploy",t:"Production log level warn suppresses all operational logging; no request IDs, no redaction",
+ev:["apps/api/src/server.ts:35 — <b>level: env.NODE_ENV === 'development' ? 'info' : 'warn'</b>","No genReqId and no pino redact option anywhere in the file"],
+im:"In production nothing below warn is emitted: no request logs, no correlation between a web error and an API call. Combined with finding 3, a silently failing backup produces literally zero output. Without a redact config, any future error logging of a request body writes PII to disk.",
+fx:"Set level info in production, add genReqId propagating x-request-id, and configure redact for cookies, passwords, national IDs and photo payloads."},
+
+{id:77,sev:"medium",area:"Ops & Deploy",t:"Health endpoints are shallow, with no readiness split and no disk check",
+ev:["apps/api/src/routes/health.ts — 54 lines total for both routes, with no liveness/readiness separation","No check of free disk for storage, browser-pool availability, or worker heartbeat age","storage/uploads/photos and storage/temp already hold hundreds of UUID directories with no observable quota"],
+im:"A container reports healthy while the disk is full or Chromium is unavailable. The spec requires a health page reporting database, file volume, free disk, backup age, certificate expiry and worker status; the current implementation reports a fraction of that, and fabricates several of the rest per finding 27.",
+fx:"Split /health (process liveness) from /ready (database, storage writability and free bytes, browser pool), and report worker heartbeat age."},
+
+{id:78,sev:"medium",area:"Ops & Deploy",t:"docs/operations.md diverges from the shipped system in four places",
+ev:["docs/operations.md:59 documents /api/health, which does not exist, while :45 correctly uses :3001/health","operations.md section 3 line 55 says to run docker compose up --build with no mention of .env.example or migrations","operations.md section 4.1 documents automated backups as a delivered feature","Section 7 lists format, typecheck, test and e2e but omits pnpm lint"],
+im:"Following the runbook verbatim produces a broken deployment and false confidence in backups — the two failure modes that matter most during a pilot.",
+fx:"Reconcile after fixing findings 3, 4 and 5, and add a docs check that greps documented URLs against registered routes."},
+
+{id:79,sev:"medium",area:"Architecture",t:"Two divergent release scripts, only one wired up",
+ev:["scripts/build-release-package.ts (189 lines) versus scripts/build-release-package.js (122 lines, CJS, BOM-prefixed)","They disagree materially: the .ts derives the SBOM from pnpm-lock.yaml importers and sets schemaVersion 20260825_phase1_init, bundling docker-compose.yml and README.md; the .js derives it from apps/*/package.json ranges and sets 20260825_phase13_init, bundling CHANGELOG.md","Only the .ts is referenced by the release:manifest script"],
+im:"Two conflicting definitions of \"the release\", including two different schema-version baselines. Running the wrong one produces a manifest that misstates the migration baseline required for upgrades.",
+fx:"Delete the .js copy."},
+
+{id:80,sev:"medium",area:"Data & API",t:"Every authenticated request performs a session write and an extra lookup",
+ev:["apps/api/src/services/auth.service.ts:133-139 — a <b>session.update</b> on every request for sliding expiry","auth.service.ts:142 — <b>prisma.systemInstallation.findFirst()</b> on every request"],
+im:"Every GET costs a database write plus an unnecessary read, which works against the spec's p95-under-250ms target at 10,000 workers and adds avoidable write amplification on modest pilot hardware.",
+fx:"Slide the expiry only when more than N minutes have elapsed, and cache the installation row in memory with explicit invalidation."},
+
+{id:81,sev:"medium",area:"Data & API",t:"Restore inserts row by row inside a 30-second transaction",
+ev:["apps/api/src/services/restore.service.ts:260-491 — a per-row create for every entity, with <b>{ timeout: 30000 }</b> at :493","apps/api/src/services/worker-export.service.ts:111 — getPhotoBuffer inside the per-employment loop, so photo reads are sequential"],
+im:"A realistic tenant will exceed the transaction timeout and abort the restore <em>after</em> the deletes at :242 have already run — turning a recovery attempt into data loss. Export is merely slow by comparison.",
+fx:"Use createMany with a longer or absent timeout, and batch photo reads on export."},
+
+{id:82,sev:"medium",area:"UX & UI",t:"The two primary list screens refetch on every keystroke",
+ev:["people/page.tsx:347-353 with searchQuery in the useCallback deps, and cards/issues/page.tsx:51-88 with searchTerm in deps — neither debounces","Both replace the entire tbody with a spinner row while loading (people :519-525, issues :282-288)","Debounce is already implemented in three of five search inputs: ExistingWorkerSelector.tsx:23-59, GlobalSearchDialog.tsx:52, CreateIdBentoPanel.tsx:75"],
+im:"Typing a ten-character name fires ten requests and blanks the table ten times. On a LAN-hosted box with real data volumes this reads as broken software.",
+fx:"Reuse the existing 300ms debounce pattern and render skeleton rows instead of collapsing the table body."},
+
+{id:83,sev:"medium",area:"UX & UI",t:"Loading states collapse content instead of preserving layout",
+ev:["people/page.tsx:519-525 and cards/issues/page.tsx:282-288 replace the whole tbody with one centered spinner row","cards/templates/[id]/page.tsx:151-157 replaces the entire studio with a single pulsing line","people/new/page.tsx:71 — <b>isLoadingMeta</b> is declared and set at :153 but never referenced in render, so the organization and location selects have no loading state at all"],
+im:"Heavy layout shift on every filter change and keystroke, and selects that appear empty rather than loading — which the operator reasonably reads as missing data.",
+fx:"Use the existing Skeleton component for rows and surface isLoadingMeta on the selects."},
+
+{id:84,sev:"medium",area:"UX & UI",t:"Native confirm() guards a destructive print-job cancellation",
+ev:["apps/web/app/(authenticated)/cards/queue/page.tsx:111 — <b>if (!confirm('Are you sure you want to cancel this queued print job?')) return;</b> — the only native dialog in the app"],
+im:"An unstyled, English-only OS dialog on a destructive action, which browsers allow users to suppress. Once suppressed, cancellation proceeds with no confirmation at all.",
+fx:"Use the ConfirmDialog already in @hr/ui."},
+
+{id:85,sev:"medium",area:"i18n",t:"Bangla text is rendered in the Latin font stack",
+ev:["<b>font-bengali</b> is used in exactly one place app-wide: GlobalSearchDialog.tsx:214","Native-script values rendered without it: cards/issues/page.tsx:318 (displayNameNative in the ledger), people/new/page.tsx:934 (review-step preview)","cards/templates/[id]/page.tsx:947-963 — the label reads \"Property &amp; Return Policy Notice (Bangla)\" but the textarea has no font-bengali class"],
+im:"Bangla worker names and card copy render with wrong metrics and inconsistent weight, and the template designer composes Bangla text in a font that does not match what will print. Compounds with finding 12 — the class is meaningless until fonts actually ship.",
+fx:"Apply font-bengali to every native-script input and display site."},
+
+{id:86,sev:"medium",area:"UX & UI",t:"Bangladesh-specific defaults are hardcoded and a customer domain leaks into a placeholder",
+ev:["people/new/page.tsx:97,99,104 — <b>addressCity: 'Dhaka'</b>, <b>addressCountry: 'Bangladesh'</b>, <b>identityDocCountry: 'BGD'</b>","cards/new/useCardCreationState.ts:121,427 — the same two literals","people/new/page.tsx:756 — placeholder <b>worker@londonboyapparel.com</b>"],
+im:"Silently wrong address data for any worker at a non-Dhaka site, in a product whose spec explicitly commits to an international data model. One customer's domain is visible to every other customer.",
+fx:"Derive defaults from the organization record and make the email placeholder generic."},
+
+{id:87,sev:"medium",area:"Features",t:"Duplicate detection exists but is advisory and trivially bypassed",
+ev:["apps/api/src/routes/people.ts:115 — POST /api/people/validate calls checkDuplicates","routes/people.ts:65,83 — the create path calls createPerson without consulting it; the only hard constraint is DuplicateEmployeeNumberError at :102"],
+im:"Same-name, same-phone and same-NID duplicates are creatable by any client that simply skips the dry-run call — and with no archive (finding 31) they can never be removed. The spec names duplicate warnings as a P0 requirement.",
+fx:"Run checkDuplicates server-side inside createPerson and require an explicit acknowledgement token to override, so the guard cannot be bypassed by not asking."},
+
+{id:88,sev:"medium",area:"Ops & Deploy",t:"Dockerfile.migration never chowns before dropping to USER node",
+ev:["docker/Dockerfile.migration:14 — <b>USER node</b> with no preceding chown -R node:node","docker/Dockerfile.migration:16 — CMD runs the migration script"],
+im:"Even once the script name from finding 5 is fixed, prisma migrate deploy may fail writing to a root-owned node_modules/.prisma or engine cache.",
+fx:"Add COPY --chown=node:node or an explicit chown before USER node."},
+
+/* ============ LOW ============ */
+{id:89,sev:"low",area:"UX & UI",t:"Sorting is dead state on the people list",
+ev:["people/page.tsx:101-104 declares sortBy and sortDirection and :139-140,175-176 send them to the API, but the setters are never called anywhere in the file and no column header is clickable"],
+im:"A table of thousands of workers cannot be sorted at all — a half-built feature invisible to the user.",
+fx:"Wire sortable th buttons with aria-sort."},
+
+{id:90,sev:"low",area:"UX & UI",t:"Card hub counts are capped by the fetch limit",
+ev:["cards/page.tsx:197,205 render <b>Print Queue ({recentJobs.length})</b> and <b>Issued Badges Ledger ({recentIssues.length})</b>, both fetched with limit=5"],
+im:"The hub reports \"Print Queue (5)\" when 200 jobs are queued.",
+fx:"Render the API's total count rather than the array length."},
+
+{id:91,sev:"low",area:"UX & UI",t:"Step indicators are not announced as steps",
+ev:["cards/new/page.tsx:158-197 — a nav with aria-label is present but there is no aria-current=step, and the completion glyph has no accessible name","people/new/page.tsx:353-419 — step tabs are plain buttons in a grid with no aria-current; the Stepper from @hr/ui is unused here","AppSidebar.tsx:282-303 — the active nav link gets ring styling but no aria-current=page; app-wide there is exactly one aria-current, on a breadcrumb span"],
+im:"Screen-reader users cannot tell which step they are on, which steps are complete, or where they are in a five-group navigation.",
+fx:"Add aria-current for steps and pages, adopt Stepper, and wrap the sidebar groups in a nav element."},
+
+{id:92,sev:"low",area:"UX & UI",t:"Almost no autofocus on a keyboard-driven data-entry product",
+ev:["App-wide there is exactly one <b>autoFocus</b>: ExistingWorkerSelector.tsx:119","No step in people/new or cards/new focuses its first field on entry"],
+im:"Every step transition requires a mouse trip to the first field, multiplied across hundreds of registrations per shift — directly against the spec's sub-90-second entry target.",
+fx:"Focus the first empty or first invalid field on step entry."},
+
+{id:93,sev:"low",area:"UX & UI",t:"Dropdowns do not close the way users expect",
+ev:["people/page.tsx:413-438 — the column-picker dropdown has no click-outside close, no ESC handler and no aria-expanded","cards/new/Step1WorkerEssentials.tsx:316 — the optional-fields collapse toggle has no aria-expanded"],
+im:"The column picker stays stuck open over the table, and collapse state is invisible to assistive technology.",
+fx:"Add outside-click and ESC handlers plus aria-expanded."},
+
+{id:94,sev:"low",area:"UX & UI",t:"resetForNextCard leaves stale state behind",
+ev:["cards/new/useCardCreationState.ts:547-578 — does not reset printOptions and does not clear toastMessage"],
+im:"In the batch workflow this product is built around, print options silently carry over to the next worker and the previous worker's success toast persists over a fresh form.",
+fx:"Reset both in the same function."},
+
+{id:95,sev:"low",area:"UX & UI",t:"Two skip links on every authenticated page, and a hardcoded version string",
+ev:["globals.css:42-61 defines .skip-link and (authenticated)/layout.tsx:129-134 adds a second inline one","AppSidebar.tsx:316,319 render <b>v0.1.0</b> and <b>v0.1</b> as literals rather than reading package.json"],
+im:"Keyboard users tab through two consecutive skip links, and the displayed version will silently go stale and mislead support.",
+fx:"Keep one skip link and read the version from package.json at build time."},
+
+{id:96,sev:"low",area:"UX & UI",t:"No dark mode",
+ev:["Zero occurrences of the <b>dark:</b> variant in apps/web/app or packages/ui, although packages/ui/src/tokens.ts looks built for theming"],
+im:"Defensible for a fixed-workstation internal tool. Noted only because the token layer suggests it was intended.",
+fx:"No action needed unless requested."},
+
+{id:97,sev:"low",area:"Data & API",t:"Activation and recovery-code storage are not transactional",
+ev:["apps/api/src/routes/auth.ts:477 versus :503-517 — a TOCTOU gap between the activation token's usedAt check and its update","routes/auth.ts:519 — saveRecoveryCodes sits outside the transaction, so a crash yields an activated tenant with no recovery codes","apps/api/src/routes/system.ts:80-109 — activation performs several writes plus rotateSession with no transaction","apps/api/src/services/photo-processing.service.ts:230-260 — three derivative files are written before the database row, so a failure orphans them with no cleanup"],
+im:"A crash mid-activation can leave a half-activated installation, or an activated tenant whose recovery codes were never persisted — compounding finding 9.",
+fx:"Wrap each ceremony in a single transaction and write media rows before or alongside their files."},
+
+{id:98,sev:"low",area:"Ops & Deploy",t:"The restore CLI owner-password path always fails",
+ev:["apps/api/src/scripts/restore-cli.ts:88-104 — selects the first user in the tenant as the owner and passes <b>ownerPassword || 'bypassed_cli_physical_recovery'</b>","The literal cannot match a hash, and verifyPassword at restore.service.ts:196 is unconditional, so a CLI run without --owner-password always fails"],
+im:"A misleading dead path rather than an authentication bypass — but it is the documented last-resort recovery tool, and it does not work as its own fallback implies.",
+fx:"Require --owner-password explicitly and fail with a clear message rather than a sentinel value."},
+
+{id:99,sev:"low",area:"Architecture",t:"Repo cleanliness: orphaned assets, opaque history, tests in the production image",
+ev:["git ls-files shows 7 tracked files under needed/ (char-1..4.png, fictional_workers.csv, londonboy-logo.png/svg) referenced from nowhere in the codebase","Four commits with messages update, Refactor landing and authentication tests, feat: Add pilot management script, first commit","Three test files live under apps/api/src/services/ while apps/api/tsconfig.json includes src/**/*, so tsc compiles them into dist and they ship in the production image","tests/e2e-live/helpers/stack-harness.ts imports ../../../apps/api/src/server.js, reaching across the workspace boundary into internal file layout"],
+im:"Unexplained binary assets and a placeholder-branded sample dataset in a release repo; no bisectable history for a product with versioned schema baselines; test code and fixtures widen the runtime attack surface; root tests can pass against source while the built entrypoints are broken.",
+fx:"Move real fixtures into packages/fixtures and delete the rest, adopt conventional commits, exclude test files from the API tsconfig, and export buildServer through the package exports."},
+
+{id:100,sev:"low",area:"Architecture",t:"packages/config validates the environment as an import-time side effect",
+ev:["packages/config/src/index.ts:45 — <b>export const env = getEnv();</b> at module scope"],
+im:"Any importer, including test files and the seed script, triggers validation at import time, so a configuration error surfaces as an opaque module-load crash rather than a clean startup diagnostic — and tests cannot inject alternative environments.",
+fx:"Export getEnv() and memoize on first explicit call from the application entrypoint."}
+];
+
+const SOLID = [
+["Auth and session design","Opaque 32-byte tokens stored only as hashes, so a database read yields nothing usable. Sliding idle expiry with an absolute ceiling, isActive re-checked per request, rotation on privilege transitions, and all sessions revoked when a user is deactivated. Cookies are httpOnly with sameSite lax and secure in production."],
+["Default-deny RBAC","requirePermission preHandlers on essentially every route — people.ts:32,68,118,141,167,220,273 is representative. Least-privilege taxonomy separating IDENTITY_REVEAL from IDENTITY_EDIT, immutable built-in roles, roles in use cannot be deleted, and the last SYSTEM_OWNER cannot be removed or demoted."],
+["Tenant scoping discipline","tenantId is taken from the session in every route handler across all 23 route files, never from body, params or query. Where a client supplies a foreign key it is validated against the tenant first. Only identity.service.ts departs from this."],
+["Argon2id with sane parameters","memoryCost 65536, timeCost 3, parallelism 1, outputLen 32 — consistent between the auth service and the seed script."],
+["Backup envelope crypto","Textbook work: a fresh 32-byte salt and fresh 12-byte IV per backup with no IV reuse, PBKDF2-HMAC-SHA256 at 100k iterations, GCM tag verified on decrypt with a generic failure message that does not distinguish wrong passphrase from tampering, a versioned magic-byte header rejecting unknown versions, and post-creation self-verification that re-decrypts and checks every manifest checksum."],
+["The hardened zip extractor","zip-archive.service.ts is genuinely well built: magic bytes, a 2000-entry cap, a 100 MB uncompressed cap, a 100:1 compression-ratio cap for zip bombs, null-byte rejection, ../ and absolute rejection, canonical containment, and an extension blocklist. The CSV import path uses it. Only restore bypasses it, which is finding 1."],
+["Photo processing pipeline","A 10 MB cap, a 16-megapixel decompression-bomb guard, magic-byte format allowlisting rather than trusting the declared mimetype, EXIF and GPS stripped by a full re-encode, random UUID filenames in per-tenant directories, and a real tenant-boundary containment check on read."],
+["Audit redaction","A REDACTED_KEYS set covering passwords, tokens, recovery codes and national IDs, applied recursively through nested objects with email masking. Every NID reveal is audited and records only the masked value. Covered by tests."],
+["Optimistic concurrency","version columns with 409 responses correctly plumbed through to HTTP, plus a thoughtful \"Reload Latest\" recovery button in the edit UI. Rare in codebases this size, and correctly done — which is exactly why the bulk path in finding 33 stands out."],
+["Idempotency on card issuance","A unique constraint on (tenantId, idempotencyKey) plus pre-checks, with the isCurrent flip and the new issue inside one transaction."],
+["Immutable print snapshots","createPrintedSnapshot with a layoutSnapshot and templateChecksum means a reprint reproduces the original card exactly, and editing a worker later cannot rewrite issued history. Genuinely good design; only the fabricated join date in finding 10 spoils it."],
+["Card revocation and reprint, end to end","Reprint and revoke routes wired to real UI with reason-capture modals, lineage via previousIssueId, and correct prior-card deactivation."],
+["CSV injection is handled","The parser prefixes =, @, tab, CR, + and - cells, and applies the same treatment to every cell on serialize with proper quote escaping. Rarely done at all, let alone on both directions."],
+["Privileged-operation ceremony on restore","Owner password re-verified, a pre-restore safety snapshot taken, the bundle dry-inspected with version-compatibility gating, and maintenance mode set and released in a finally block."],
+["The activation ceremony","Real work: password-strength validation, Argon2id rehash, the temporary bootstrap flag cleared, recovery codes generated, session rotated, and an audit event written. Pre-activation bootstrap sessions are correctly blocked from all application routes."],
+["BrowserPool is defensively written","A singleton with an isInitializing race guard, an offline browser context, and a route handler aborting every non-data, non-blob request. Rendering untrusted template HTML with the network hard-blocked is exactly right for an on-premises product."],
+["Strict TypeScript throughout","tsconfig.base.json enables strict, noUncheckedIndexedAccess, noImplicitOverride, forceConsistentCasingInFileNames and isolatedModules — and not one of the 11 per-package configs weakens it. noUncheckedIndexedAccess in particular is rarely adopted."],
+["Zero dependency version skew","Every shared external dependency resolves to an identical range across all 12 package.json files. Unusual discipline in a pnpm monorepo this size. packages/domain is genuinely the shared layer with 91 import sites, and there are no circular workspace dependencies."],
+["tests/e2e-live is real integration testing","Boots the actual Fastify server in-process, creates real tenant, organization and template rows, publishes a template version, and establishes three genuine RBAC sessions. This is the one suite that would catch real regressions and the right foundation for fixing finding 48."],
+["Docker and network defaults","All four Dockerfiles are multi-stage and run as non-root. Next.js standalone output with outputFileTracingRoot is correctly configured for a monorepo. HOST_BIND_IP defaults to loopback, production publishes no Postgres port, and Caddy terminates TLS internally for LAN. Production compose has resource limits, log rotation, restart policies and named volumes."],
+["Frontend craft in specific places","Step1WorkerEssentials is a properly built form — real onSubmit, loading state on submit, genuine per-field inline errors, a required-for-card legend, and progressive disclosure. The template designer has stress fixtures for long names, missing native script and missing photos with bleed and safe-area overlays. Operator preferences persist to localStorage across a shift. The capture screen covers all five states. api-client.ts is a correct, well-designed client — it just needs adopting."]
+];
+
+const PLAN = [
+["Make a clean deployment possible again","Nothing else can be validated until the stack boots. Fix the healthcheck path, the migration script name, the BOM in the pilot scripts, and the fake backup command — four small, independent edits.","4, 5, 6, 7"],
+["Stop the silent lies","These are the findings where the UI reports success that never happened, which is what destroys operator trust and hides everything else. Make scheduled backups real, let print jobs complete, stop fabricating health, and stop serving a placeholder certificate.","3, 17, 27, 28, 29"],
+["Close the exploitable holes","Zip-slip on restore, the unauthenticated export download, the CSV photo path escape, and the restore that deletes every role grant. Then the crypto and rate-limiting work.","1, 2, 8, 26, 19, 20, 21, 22, 23"],
+["Fix what gets printed on the card","The badge is the product. Remove the fabricated join date, block issuance when the photo upload failed, stop defaulting blood group, ship real fonts, and generate a real barcode.","10, 11, 12, 44, 15, 47"],
+["Make lockout recoverable","Add password reset and wire up recovery-code redemption. This is a guaranteed early support call and currently has no answer inside the product.","9, 53"],
+["Add CI, then a real end-to-end test","One workflow running typecheck, lint and test. Then promote a handful of journeys onto the real stack and add golden-file tests for card geometry. Everything above stays fixed only if something enforces it.","13, 45, 48, 49, 50"],
+["Repay the UX debt systematically","Adopt the design system that already exists rather than patching 26 screens individually: error and empty states via the api-client and EmptyState, modals via Dialog, forms via FormGroup with real label association. One migration fixes findings 34 through 37, 63 and 65 together.","63, 34, 35, 36, 37, 38, 41"],
+["Decide the i18n question","Either wire next-intl to the existing catalogs and extract strings from the three highest-traffic screens, or remove the dead Bangla toggle and correct the spec. The current middle state promises bilingual support and delivers none.","16, 85"],
+["Finish the half-built features","Custom field values that persist, archive for people, card expiry, a session-management UI, import/export history, deletable template assignments, and audit export. Each is small; together they are most of the gap between the spec and the product.","30, 31, 32, 69, 70, 71, 72"],
+["Move rendering to the worker","Implement the JobQueue that already exists in the schema, move Chromium out of the request path, and give batches progress, cancellation and retry. This is the largest single piece of work and unblocks the performance budgets in the spec.","18, 51, 81"]
+];
+
+/* ---------- render ---------- */
+const AREAS=[...new Set(F.map(f=>f.area))].sort();
+const SEV_ORDER={critical:0,high:1,medium:2,low:3};
+let fSev=new Set(), fArea=new Set(), q="", allOpen=false;
+
+const list=document.getElementById("list");
+const chipBox=document.getElementById("areaChips");
+AREAS.forEach(a=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.dataset.area=a; b.setAttribute("aria-pressed","false");
+  b.textContent=a+" ("+F.filter(f=>f.area===a).length+")";
+  chipBox.appendChild(b);
+});
+
+function esc(s){return s.replace(/&(?!#?\w+;)/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function card(f){
+  const evs=f.ev.map(e=>"<li>"+e+"</li>").join("");
+  return '<article class="f" data-id="'+f.id+'">'
+    +'<div class="f-head" role="button" tabindex="0" aria-expanded="false">'
+      +'<span class="f-id">'+f.id+'</span>'
+      +'<span class="sev '+f.sev+'">'+f.sev+'</span>'
+      +'<span class="f-title">'+f.t+'</span>'
+      +'<span class="f-area">'+f.area+'</span>'
+    +'</div>'
+    +'<div class="f-body">'
+      +'<div class="blk"><div class="blk-l">Evidence</div><ul class="ev">'+evs+'</ul></div>'
+      +'<div class="blk"><div class="blk-l">Impact</div><p>'+f.im+'</p></div>'
+      +'<div class="blk"><div class="blk-l">Recommended fix</div><div class="fix">'+f.fx+'</div></div>'
+    +'</div></article>';
+}
+
+function render(){
+  const needle=q.trim().toLowerCase();
+  const rows=F.filter(f=>{
+    if(fSev.size && !fSev.has(f.sev)) return false;
+    if(fArea.size && !fArea.has(f.area)) return false;
+    if(needle){
+      const hay=(f.t+" "+f.area+" "+f.im+" "+f.fx+" "+f.ev.join(" ")).toLowerCase();
+      if(!hay.includes(needle)) return false;
+    }
+    return true;
+  }).sort((a,b)=>SEV_ORDER[a.sev]-SEV_ORDER[b.sev]||a.id-b.id);
+
+  list.innerHTML=rows.map(card).join("");
+  document.getElementById("empty").style.display=rows.length?"none":"block";
+  const n=rows.length;
+  document.getElementById("count").textContent=n===F.length?n+" findings":n+" of "+F.length+" findings";
+  if(allOpen) list.querySelectorAll(".f").forEach(el=>{el.classList.add("open");el.querySelector(".f-head").setAttribute("aria-expanded","true");});
+  try{localStorage.setItem("hrAudit",JSON.stringify({s:[...fSev],a:[...fArea],q}));}catch(e){}
+}
+
+list.addEventListener("click",e=>{
+  const h=e.target.closest(".f-head"); if(!h) return;
+  const f=h.parentElement; const open=f.classList.toggle("open");
+  h.setAttribute("aria-expanded",open?"true":"false");
+});
+list.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  const h=e.target.closest(".f-head"); if(!h) return;
+  e.preventDefault(); h.click();
+});
+
+document.querySelectorAll("[data-sev]").forEach(b=>b.addEventListener("click",()=>{
+  const v=b.dataset.sev;
+  fSev.has(v)?fSev.delete(v):fSev.add(v);
+  b.setAttribute("aria-pressed",fSev.has(v)?"true":"false"); render();
+}));
+chipBox.addEventListener("click",e=>{
+  const b=e.target.closest("[data-area]"); if(!b) return;
+  const v=b.dataset.area;
+  fArea.has(v)?fArea.delete(v):fArea.add(v);
+  b.setAttribute("aria-pressed",fArea.has(v)?"true":"false"); render();
+});
+document.getElementById("q").addEventListener("input",e=>{q=e.target.value;render();});
+document.getElementById("expandAll").addEventListener("click",e=>{
+  allOpen=!allOpen; e.target.setAttribute("aria-pressed",allOpen?"true":"false");
+  e.target.textContent=allOpen?"Collapse all":"Expand all";
+  list.querySelectorAll(".f").forEach(el=>{
+    el.classList.toggle("open",allOpen);
+    el.querySelector(".f-head").setAttribute("aria-expanded",allOpen?"true":"false");
+  });
+});
+document.getElementById("reset").addEventListener("click",()=>{
+  fSev.clear(); fArea.clear(); q=""; document.getElementById("q").value="";
+  document.querySelectorAll(".chip[data-sev],.chip[data-area]").forEach(c=>c.setAttribute("aria-pressed","false"));
+  render();
+});
+
+document.getElementById("solid").innerHTML=SOLID.map(([t,d])=>"<dt>"+t+"</dt><dd>"+d+"</dd>").join("");
+document.getElementById("plan").innerHTML=PLAN.map(([t,d,ids])=>
+  "<li><h4>"+t+"</h4><p>"+d+"</p><div class='ids'>Findings "+ids+"</div></li>").join("");
+
+try{
+  const s=JSON.parse(localStorage.getItem("hrAudit")||"{}");
+  if(s.s)s.s.forEach(v=>{fSev.add(v);const b=document.querySelector('[data-sev="'+v+'"]');if(b)b.setAttribute("aria-pressed","true");});
+  if(s.a)s.a.forEach(v=>{fArea.add(v);const b=document.querySelector('[data-area="'+v+'"]');if(b)b.setAttribute("aria-pressed","true");});
+  if(s.q){q=s.q;document.getElementById("q").value=s.q;}
+}catch(e){}
+render();
+</script>
+</body>
+</html>

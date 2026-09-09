@@ -5,7 +5,7 @@ test.describe('Phase 2: Activation Wizard Flow', () => {
     page,
   }) => {
     // Mock activation endpoint for E2E isolation
-    await page.route('/api/system/status', async (route) => {
+    await page.route('**/api/system/status', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -18,7 +18,7 @@ test.describe('Phase 2: Activation Wizard Flow', () => {
       });
     });
 
-    await page.route('/api/system/activate', async (route) => {
+    await page.route('**/api/system/activate', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -36,6 +36,27 @@ test.describe('Phase 2: Activation Wizard Flow', () => {
             'M6N7P8Q9R0',
           ],
           user: { id: 'usr-1', username: 'admin' },
+        }),
+      });
+    });
+
+    await page.route('**/api/auth/me', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: {
+            id: 'usr-1',
+            tenantId: 't-1',
+            username: 'admin',
+            email: 'admin@company.local',
+            isActive: true,
+            isTemporaryBootstrap: false,
+            mustChangePassword: false,
+            roles: ['system_owner'],
+            permissions: ['people.view', 'system.manage', 'audit.view'],
+          },
+          system: { isActivated: true, requiresActivation: false },
         }),
       });
     });
@@ -93,7 +114,7 @@ test.describe('Phase 2: Activation Wizard Flow', () => {
 test.describe('Phase 2: Authenticated App Shell & Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     // Mock authenticated user context
-    await page.route('/api/auth/me', async (route) => {
+    await page.route('**/api/auth/me', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -114,7 +135,7 @@ test.describe('Phase 2: Authenticated App Shell & Dashboard', () => {
       });
     });
 
-    await page.route('/api/organizations', async (route) => {
+    await page.route('**/api/organizations*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -137,7 +158,76 @@ test.describe('Phase 2: Authenticated App Shell & Dashboard', () => {
       });
     });
 
-    await page.route('/api/auth/sessions', async (route) => {
+    await page.route('**/api/dashboard/overview*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          scope: {
+            mode: 'ORGANIZATION',
+            organizationId: 'org-1',
+            organizationName: 'London Boy Apparel',
+            organizationCode: 'LONDON_BOY',
+          },
+          primaryAction: {
+            canCreateCard: true,
+            canRegisterWorker: true,
+            canManagePrintQueue: true,
+          },
+          metrics: {
+            activeWorkers: 15,
+            readyForCard: 12,
+            needsAttention: 3,
+            missingPhotoCount: 3,
+            queuedPrintJobs: 2,
+            issuedToday: 5,
+            totalActiveBadges: 145,
+            totalRevokedBadges: 4,
+          },
+          readiness: {
+            totalChecked: 15,
+            readyCount: 12,
+            needsAttentionCount: 3,
+            reasons: [
+              {
+                code: 'MISSING_PHOTO',
+                label: 'Missing Employee Photo',
+                count: 3,
+                severity: 'WARNING',
+                actionHref: '/people?filter=missing-photo',
+              },
+            ],
+          },
+          recentWorkers: [],
+          printQueue: {
+            totalsByStatus: {
+              queued: 2,
+              processing: 0,
+              completed: 10,
+              failed: 0,
+              cancelled: 0,
+            },
+            totalActiveQueue: 2,
+            defectAlertCount: 0,
+            recentJobs: [],
+          },
+          activeTemplate: null,
+          system: {
+            status: 'ok',
+            api: 'ok',
+            database: { status: 'ok', latencyMs: 2 },
+            storage: { status: 'ok', writable: true },
+            renderer: { status: 'ok', poolReady: true },
+            lastVerifiedBackup: null,
+            backupState: 'healthy',
+            backupWarning: false,
+          },
+          generatedAt: new Date().toISOString(),
+        }),
+      });
+    });
+
+    await page.route('**/api/auth/sessions', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -156,7 +246,18 @@ test.describe('Phase 2: Authenticated App Shell & Dashboard', () => {
       });
     });
 
-    await page.route('/api/audit-events*', async (route) => {
+    await page.route('**/api/cards/print-jobs*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [],
+          totalCount: 0,
+        }),
+      });
+    });
+
+    await page.route('**/api/audit-events*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -196,39 +297,58 @@ test.describe('Phase 2: Authenticated App Shell & Dashboard', () => {
   }) => {
     await page.goto('/dashboard');
 
-    // Header & User badge
+    // Header & Brand
     await expect(page.locator('text=HR ID Platform').first()).toBeVisible();
-    await expect(
-      page.locator('h1', { hasText: 'System Security & Workspace Dashboard' }),
-    ).toBeVisible();
 
-    const mobileToggle = page.getByRole('button', { name: 'Toggle navigation menu' });
-    if (await mobileToggle.isVisible()) {
-      await mobileToggle.click();
-      await expect(page.locator('.sm\\:hidden').getByText('system_owner')).toBeVisible();
-      await mobileToggle.click();
-    } else {
-      await expect(page.locator('.sm\\:flex').getByText('system_owner')).toBeVisible();
+    // Bento Dashboard Metric Strips
+    await expect(page.locator('text=Ready for Card').first()).toBeVisible();
+    await expect(page.locator('text=In Print Queue').first()).toBeVisible();
+    await expect(page.locator('text=Active Workers').first()).toBeVisible();
+
+    // User Profile / Account Menu
+    const userMenuBtn = page.getByRole('button', { name: /User account menu/i });
+    if (await userMenuBtn.isVisible()) {
+      await userMenuBtn.click();
+      await expect(page.locator('text=Change Master Password')).toBeVisible();
+      await page.keyboard.press('Escape');
     }
-
-    // Security Foundations Cards
-    await expect(page.locator('text=Authentication Layer')).toBeVisible();
-    await expect(page.locator('text=Argon2id (64 MiB)')).toBeVisible();
-    await expect(page.locator('text=Authorization & RBAC')).toBeVisible();
-    await expect(page.locator('text=Strict Default-Deny')).toBeVisible();
-
-    // Sessions table
-    await expect(page.locator('text=Active User Sessions')).toBeVisible();
-    await expect(page.locator('text=Current Session')).toBeVisible();
-
-    // Password change modal open and close
-    await page.getByRole('button', { name: 'Change Password' }).click();
-    await expect(page.locator('text=Change Master Password')).toBeVisible();
-    await page.getByRole('button', { name: 'Cancel' }).click();
-    await expect(page.locator('text=Change Master Password')).toHaveCount(0);
   });
 
   test('renders audit trail table and filtering', async ({ page }) => {
+    await page.route(/\/api\/audit-events/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          events: [
+            {
+              id: 'evt-1',
+              tenantId: 't-1',
+              actorId: 'usr-1',
+              action: 'system.activated',
+              entityType: 'SystemInstallation',
+              entityId: 'inst-1',
+              details: { username: 'admin', deploymentMode: 'local' },
+              ipAddress: '127.0.0.1',
+              createdAt: new Date().toISOString(),
+            },
+            {
+              id: 'evt-2',
+              tenantId: 't-1',
+              actorId: 'usr-1',
+              action: 'user.login_success',
+              entityType: 'User',
+              entityId: 'usr-1',
+              details: { username: 'admin' },
+              ipAddress: '127.0.0.1',
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          pagination: { page: 1, limit: 15, totalCount: 2, totalPages: 1 },
+        }),
+      });
+    });
+
     await page.goto('/audit');
 
     await expect(page.locator('h1', { hasText: 'System Audit Trail' })).toBeVisible();

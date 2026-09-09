@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Button, Input, Badge } from '@hr/ui';
 import { OrgUnitType } from '@hr/domain';
+import { useActiveOrg } from '../../context/ActiveOrgContext';
 
 interface OrgUnitItem {
   id: string;
@@ -50,6 +51,7 @@ interface LocationSummary {
 }
 
 export default function OrganizationTreePage() {
+  const { activeOrgId, activeOrg } = useActiveOrg();
   const [units, setUnits] = useState<OrgUnitItem[]>([]);
   const [locations, setLocations] = useState<LocationSummary[]>([]);
   const [organizationId, setOrganizationId] = useState<string>('');
@@ -62,10 +64,11 @@ export default function OrganizationTreePage() {
   const [collapsedNodes, setCollapsedNodes] = useState<Set<string>>(new Set());
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Modals
+  // Modal State
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingUnit, setEditingUnit] = useState<OrgUnitItem | null>(null);
   const [parentForNewUnit, setParentForNewUnit] = useState<string | null>(null);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [movingUnit, setMovingUnit] = useState<OrgUnitItem | null>(null);
   const [archiveUnit, setArchiveUnit] = useState<OrgUnitItem | null>(null);
   const [deleteUnit, setDeleteUnit] = useState<OrgUnitItem | null>(null);
@@ -82,18 +85,21 @@ export default function OrganizationTreePage() {
   const [newParentIdForMove, setNewParentIdForMove] = useState<string | null>(null);
 
   const loadData = async () => {
+    setIsLoading(true);
     try {
       const orgsRes = await fetch('/api/organizations');
       if (orgsRes.ok) {
         const orgsData = await orgsRes.json();
-        const firstOrg = orgsData.organizations?.[0];
-        if (firstOrg) {
-          setOrganizationId(firstOrg.id);
-          setOrganizationName(firstOrg.displayName || firstOrg.name);
+        const orgList = orgsData.organizations || [];
+        const currentOrg = (activeOrgId ? orgList.find((o: any) => o.id === activeOrgId) : null) || orgList[0];
+
+        if (currentOrg) {
+          setOrganizationId(currentOrg.id);
+          setOrganizationName(currentOrg.displayName || currentOrg.name);
 
           const [unitsRes, locsRes] = await Promise.all([
-            fetch(`/api/org-units?organizationId=${firstOrg.id}&includeArchived=true`),
-            fetch(`/api/locations?organizationId=${firstOrg.id}`),
+            fetch(`/api/org-units?organizationId=${currentOrg.id}&includeArchived=true`),
+            fetch(`/api/locations?organizationId=${currentOrg.id}`),
           ]);
 
           if (unitsRes.ok) {
@@ -115,7 +121,7 @@ export default function OrganizationTreePage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [activeOrgId]);
 
   const toggleCollapse = (id: string) => {
     setCollapsedNodes((prev) => {

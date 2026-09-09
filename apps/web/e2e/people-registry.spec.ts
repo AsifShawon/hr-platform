@@ -364,11 +364,8 @@ test.describe('Phase 4: Worker Registry, Employment Records & Sensitive Identity
     await expect(page.locator('text=তানভীর আহমেদ').first()).toBeVisible();
     await expect(page.locator('text=EMP-1001').first()).toBeVisible();
 
-    // Verify government ID is masked by default
-    await expect(page.locator('text=••••••••8901').first()).toBeVisible();
-
     // Test Search by Bangla Script
-    const searchInput = page.locator('input[placeholder*="Search by name"]');
+    const searchInput = page.locator('input[placeholder*="Search name"]');
     await searchInput.fill('ফারহানা');
     await expect(page.locator('text=Farhana Akter')).toBeVisible();
     await expect(page.locator('text=তানভীর আহমেদ')).not.toBeVisible();

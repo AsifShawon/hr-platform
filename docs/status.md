@@ -1,24 +1,21 @@
 # Project Status
 
-## Current Status: Phase 9 Complete — Release Gate: PILOT READY (Bounded Local Pilot)
+## Current Status: Dashboard & Workspace Redesign Complete — Release Gate: READY (Local-First Release Candidate)
 
-- **Active Phase:** Phase 9 (Truthful Integration, E2E, Print Evidence, Security & Clean-Machine Pilot)
-- **Last Updated:** 2026-08-25
-- **Release Status Verdict:** **PILOT READY (v1.0.0-pilot.1)** for Bounded On-Premises Local Pilot after passing all P0 quality gates (Unit, Component, Contract, Security, Print Geometry & PDF MediaBox Inspection, CycloneDX SBOM generation, and Clean Installation Rehearsals).
+- **Active Phase:** Release Integration & Parity Verification Complete
+- **Last Updated:** 2026-08-26
+- **Release Status Verdict:** **READY (v1.0.0-rc.1)** for Local-First Single-PC and Private-LAN On-Premises deployments after full end-to-end verification of workspace switching, persistent 240px shell navigation, single-request operational dashboard contract, and canonical CardRenderer template parity.
 
 ### Active Remediation Roadmap to Pilot Readiness
 
 ```mermaid
 graph TD
-    Phase0[Phase 0: Baseline & Truth<br/>COMPLETED] --> Phase1[Phase 1: Self-Hosted Fonts & Worker Docker Fix<br/>COMPLETED]
-    Phase1 --> Phase2[Phase 2: Card Issuance & Revocation Domain/Schema<br/>COMPLETED]
-    Phase2 --> Phase3[Phase 3: PostgreSQL Background Queue & Batch PDF Worker<br/>COMPLETED]
-    Phase3 --> Phase4[Phase 4: Fastest Path from Worker to Printable ID<br/>COMPLETED]
-    Phase4 --> Phase5[Phase 5: Card Operations Hub & Batch Printing<br/>COMPLETED]
-    Phase5 --> Phase6[Phase 6: Readable ID-First App Shell & Bento Dashboard<br/>COMPLETED]
-    Phase6 --> Phase7[Phase 7: Local-Only Animated Landing & Sign-In<br/>COMPLETED]
-    Phase7 --> Phase8[Phase 8: UI Consistency, Accessibility & Frontend Maintainability<br/>COMPLETED]
-    Phase8 --> Phase9[Phase 9: Full-Stack E2E Matrix & Pilot Release Gate<br/>COMPLETED]
+    Phase0[Phase 0: Baseline & Truth<br/>COMPLETED] --> Phase1[Phase 1: Workspace Context & Org Persistence<br/>COMPLETED]
+    Phase1 --> Phase2[Phase 2: Authenticated Shell & Grouped Sidebar<br/>COMPLETED]
+    Phase2 --> Phase3[Phase 3: Dashboard Data-Contract & Operational Truth<br/>COMPLETED]
+    Phase3 --> Phase4[Phase 4: Dashboard Visual & Interaction Redesign<br/>COMPLETED]
+    Phase4 --> Phase5[Phase 5: Canonical Template Preview & 2-Pane Studio<br/>COMPLETED]
+    Phase5 --> Phase6[Phase 6: Full Integration & Parity Verification<br/>COMPLETED]
 ```
 
 ---

@@ -24,8 +24,10 @@ import { CardIssueStatus, CardIssueReason, CardRevocationReason } from '@hr/doma
 import { CardIssueDTO } from '@hr/schemas';
 import { ReprintReasonModal } from '../../../components/cards/ReprintReasonModal';
 import { RevokeReasonModal } from '../../../components/cards/RevokeReasonModal';
+import { useActiveOrg } from '../../../context/ActiveOrgContext';
 
 export default function CardIssuesPage() {
+  const { activeOrgId, activeOrg } = useActiveOrg();
   const [issues, setIssues] = useState<CardIssueDTO[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -53,12 +55,16 @@ export default function CardIssuesPage() {
       params.set('page', String(pagination.page));
       params.set('limit', String(pagination.limit));
 
+      if (activeOrgId) params.set('organizationId', activeOrgId);
       if (searchTerm.trim()) params.set('search', searchTerm.trim());
       if (statusFilter !== 'ALL') params.set('status', statusFilter);
       if (isCurrentFilter !== 'ALL')
         params.set('isCurrent', isCurrentFilter === 'CURRENT' ? 'true' : 'false');
 
-      const res = await fetch(`/api/cards/issues?${params.toString()}`);
+      const headers: Record<string, string> = {};
+      if (activeOrgId) headers['X-Organization-Id'] = activeOrgId;
+
+      const res = await fetch(`/api/cards/issues?${params.toString()}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setIssues(data.items || []);
@@ -75,7 +81,7 @@ export default function CardIssuesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [pagination.page, pagination.limit, searchTerm, statusFilter, isCurrentFilter]);
+  }, [activeOrgId, pagination.page, pagination.limit, searchTerm, statusFilter, isCurrentFilter]);
 
   useEffect(() => {
     fetchIssues();

@@ -19,6 +19,7 @@ import {
 import { Button, Badge } from '@hr/ui';
 import { CardIssueStatus, CardIssueReason, CardRevocationReason } from '@hr/domain';
 import { CardReadinessResultDTO, CardIssueDTO } from '@hr/schemas';
+import { CardRenderer } from './CardRenderer';
 import { ReprintReasonModal } from './ReprintReasonModal';
 import { RevokeReasonModal } from './RevokeReasonModal';
 
@@ -431,55 +432,82 @@ export function CardOperationsPanel({
               </div>
             </div>
 
-            {/* Visual Preview Box (60x90 Aspect Ratio) */}
-            <div className="w-full aspect-[2/3] max-w-[240px] mx-auto rounded-2xl bg-white border-2 border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between p-3 relative">
-              {previewSide === 'FRONT' ? (
-                <>
-                  <div className="bg-[#134E4A] -m-3 p-2 text-white flex items-center justify-between">
-                    <span className="text-[9px] font-bold tracking-wider uppercase">
-                      COMPANY ID
-                    </span>
-                    <span className="text-[7px] px-1 py-0.5 bg-teal-800 rounded">60×90mm</span>
-                  </div>
-
-                  <div className="text-center py-2 space-y-1">
-                    <div className="w-16 h-20 bg-teal-50 border border-teal-200 rounded-lg mx-auto overflow-hidden flex items-center justify-center font-bold text-[#0F766E]">
-                      {workerName.charAt(0)}
-                    </div>
-                    <div className="font-bold text-xs text-slate-900 leading-tight pt-1 truncate">
-                      {workerName}
-                    </div>
-                    <div className="text-[10px] font-mono text-slate-500">{employeeNumber}</div>
-                  </div>
-
-                  <div className="border-t border-slate-200 pt-1 text-[8px] text-slate-400 flex justify-between">
-                    <span>AUTH SIGN</span>
-                    <span className="font-mono">{activeIssue?.cardSerial || 'PREVIEW'}</span>
-                  </div>
-                </>
+            {/* Visual Preview Box (Canonical CardRenderer) */}
+            <div className="flex flex-col items-center justify-center p-2">
+              {readiness?.resolvedTemplate?.layout ? (
+                <CardRenderer
+                  layout={readiness.resolvedTemplate.layout}
+                  worker={{
+                    displayName: workerName,
+                    displayNameLatin: workerName,
+                    displayNameNative: (readiness as any)?.worker?.displayNameNative || null,
+                    jobTitle: (readiness as any)?.worker?.jobTitle || '',
+                    department: (readiness as any)?.worker?.orgUnitName || '',
+                    employeeNumber: employeeNumber,
+                    bloodGroup: (readiness as any)?.worker?.bloodGroup || null,
+                    joinDate: (readiness as any)?.worker?.joinDate || new Date().toISOString().split('T')[0],
+                    emergencyContact: (readiness as any)?.worker?.primaryPhone || null,
+                    photoUrl: personId ? `/api/people/${personId}/photo` : null,
+                    orgName: readiness.resolvedTemplate.templateName || 'London Boy Apparel Ltd.',
+                    orgNameBangla: 'লন্ডন বয় অ্যাপারেল লি.',
+                    serialNumber: activeIssue?.cardSerial || 'PREVIEW-CARD',
+                  }}
+                  side={previewSide === 'FRONT' ? 'front' : 'back'}
+                  showBleed={false}
+                  showSafeArea={false}
+                  allowFlip={false}
+                />
               ) : (
-                <>
-                  <div className="bg-[#134E4A] -m-3 p-2 text-white text-center">
-                    <span className="text-[9px] font-bold">জরুরি নির্দেশিকা</span>
-                  </div>
-
-                  <div className="py-2 text-left space-y-1.5 text-[9px] text-slate-700">
-                    <div>
-                      <span className="text-slate-400 block text-[7px]">নাম</span>
-                      <span className="font-bold text-slate-900">{workerName}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block text-[7px]">ডিজিটাল যাচাইকরণ</span>
-                      <div className="p-1 border border-slate-200 rounded bg-slate-50 font-mono text-[8px]">
-                        QR CODE • {activeIssue?.cardSerial || 'CARD-SEC'}
+                <div className="w-full aspect-[2/3] max-w-[240px] mx-auto rounded-2xl bg-white border-2 border-slate-800 shadow-xl overflow-hidden flex flex-col justify-between p-3 relative">
+                  {previewSide === 'FRONT' ? (
+                    <>
+                      <div className="bg-[#134E4A] -m-3 p-2 text-white flex items-center justify-between">
+                        <span className="text-[9px] font-bold tracking-wider uppercase">
+                          COMPANY ID
+                        </span>
+                        <span className="text-[7px] px-1 py-0.5 bg-teal-800 rounded">60×90mm</span>
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="border-t border-slate-200 pt-1 text-[7px] text-slate-400 text-center">
-                    কার্ডটি প্রতিষ্ঠানের সম্পত্তি
-                  </div>
-                </>
+                      <div className="text-center py-2 space-y-1">
+                        <div className="w-16 h-20 bg-teal-50 border border-teal-200 rounded-lg mx-auto overflow-hidden flex items-center justify-center font-bold text-[#0F766E]">
+                          {workerName.charAt(0)}
+                        </div>
+                        <div className="font-bold text-xs text-slate-900 leading-tight pt-1 truncate">
+                          {workerName}
+                        </div>
+                        <div className="text-[10px] font-mono text-slate-500">{employeeNumber}</div>
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-1 text-[8px] text-slate-400 flex justify-between">
+                        <span>AUTH SIGN</span>
+                        <span className="font-mono">{activeIssue?.cardSerial || 'PREVIEW'}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="bg-[#134E4A] -m-3 p-2 text-white text-center">
+                        <span className="text-[9px] font-bold">জরুরি নির্দেশিকা</span>
+                      </div>
+
+                      <div className="py-2 text-left space-y-1.5 text-[9px] text-slate-700">
+                        <div>
+                          <span className="text-slate-400 block text-[7px]">নাম</span>
+                          <span className="font-bold text-slate-900">{workerName}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block text-[7px]">ডিজিটাল যাচাইকরণ</span>
+                          <div className="p-1 border border-slate-200 rounded bg-slate-50 font-mono text-[8px]">
+                            QR CODE • {activeIssue?.cardSerial || 'CARD-SEC'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-200 pt-1 text-[7px] text-slate-400 text-center">
+                        কার্ডটি প্রতিষ্ঠানের সম্পত্তি
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 

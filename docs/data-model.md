@@ -21,31 +21,33 @@ erDiagram
     TENANT ||--o{ ORG_UNIT : "structures"
     TENANT ||--o{ PERSON : "registers"
     TENANT ||--o{ EMPLOYMENT : "employs"
+    TENANT ||--o{ EMPLOYMENT_ASSIGNMENT : "assigns"
+    TENANT ||--o{ JOB_PROFILE : "catalogs"
+    TENANT ||--o{ WORKER_CATEGORY : "categorizes"
     TENANT ||--o{ IDENTITY_DOCUMENT : "protects"
     TENANT ||--o{ USER : "has"
     TENANT ||--o{ ROLE : "defines"
     TENANT ||--o{ AUDIT_EVENT : "records"
-    TENANT ||--o{ JOB_QUEUE : "executes"
 
     ORGANIZATION ||--o{ LOCATION : "operates"
     ORGANIZATION ||--o{ ORG_UNIT : "structures"
     ORGANIZATION ||--o{ EMPLOYMENT : "contracts"
-    ORGANIZATION ||--o{ ROLE_GRANT : "scopes"
+    ORGANIZATION ||--o{ EMPLOYMENT_ASSIGNMENT : "scopes"
 
     LOCATION ||--o{ ORG_UNIT : "hosts"
-    LOCATION ||--o{ EMPLOYMENT : "assigns"
-    LOCATION ||--o{ ROLE_GRANT : "scopes"
+    LOCATION ||--o{ EMPLOYMENT_ASSIGNMENT : "locates"
 
     ORG_UNIT ||--o{ ORG_UNIT : "parent_of"
-    ORG_UNIT ||--o{ EMPLOYMENT : "assigns"
+    ORG_UNIT ||--o{ EMPLOYMENT_ASSIGNMENT : "places"
 
     PERSON ||--o{ EMPLOYMENT : "holds"
     PERSON ||--o{ IDENTITY_DOCUMENT : "owns"
     PERSON ||--o{ CUSTOM_FIELD_VALUE : "has"
 
-    USER ||--o{ ROLE_GRANT : "granted"
-    ROLE ||--o{ ROLE_GRANT : "assigned"
-    USER ||--o{ SESSION : "authenticates"
+    EMPLOYMENT ||--o{ EMPLOYMENT_ASSIGNMENT : "effective_timeline"
+    EMPLOYMENT_ASSIGNMENT }o--|| JOB_PROFILE : "occupies"
+    EMPLOYMENT_ASSIGNMENT }o--|| WORKER_CATEGORY : "classified_as"
+    EMPLOYMENT_ASSIGNMENT }o--o| EMPLOYMENT_ASSIGNMENT : "reports_to"
 ```
 
 ---

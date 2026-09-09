@@ -1,114 +1,131 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Printer, ArrowUpRight, Sparkles, CheckCircle2 } from 'lucide-react';
-import { Badge } from '@hr/ui';
+import { LayoutTemplate, ArrowUpRight, RefreshCw, CheckCircle2, Sliders } from 'lucide-react';
+import { CardRenderer, SAMPLE_WORKER } from '../cards/CardRenderer';
+import { CardLayoutSpecification } from '@hr/domain';
 
 interface TemplateSummary {
   id: string;
   name: string;
-  code: string;
-  format: string;
-  isDefault: boolean;
+  presetId: string;
+  versionNumber: number;
+  checksumSha256: string;
+  layout: CardLayoutSpecification;
+  resolutionReason?: string;
 }
 
-export function TemplatePreviewBentoPanel() {
-  const [template, setTemplate] = useState<TemplateSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface TemplatePreviewBentoPanelProps {
+  template: TemplateSummary | null;
+  orgName?: string;
+  isLoading?: boolean;
+}
 
-  useEffect(() => {
-    async function loadTemplate() {
-      try {
-        const res = await fetch('/api/cards/templates?limit=1');
-        if (res.ok) {
-          const data = await res.json();
-          const items = data.items || [];
-          const def = items.find((t: any) => t.isDefault) || items[0] || null;
-          setTemplate(def);
-        }
-      } catch {
-        // Safe fallback
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadTemplate();
-  }, []);
+export function TemplatePreviewBentoPanel({
+  template,
+  orgName,
+  isLoading = false,
+}: TemplatePreviewBentoPanelProps) {
+  const [previewSide, setPreviewSide] = useState<'front' | 'back'>('front');
+
+  const customWorker = {
+    ...SAMPLE_WORKER,
+    orgName: orgName || template?.layout?.front?.header?.customTitle || 'London Boy Apparel Ltd.',
+  };
+
+  const dimensionsLabel = template?.layout?.dimensions
+    ? `${template.layout.dimensions.widthMm} × ${template.layout.dimensions.heightMm} mm (Exact Size)`
+    : '60 × 90 mm Dual-Sided Master';
 
   return (
-    <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col justify-between space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-teal-50 text-[#0F766E] border border-teal-200/60">
-            <Printer className="w-4 h-4" />
+    <div className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between space-y-4 h-full">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="p-2 rounded-xl bg-teal-50 text-teal-800 border border-teal-200/60 shrink-0">
+            <LayoutTemplate className="w-4 h-4" aria-hidden="true" />
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900">Active Card Template</h3>
-            <span className="text-[11px] text-slate-500">60 × 90 mm Dual-Sided Master</span>
+          <div className="min-w-0">
+            <h3 className="text-sm sm:text-base font-bold text-slate-900 truncate">
+              Active Card Template
+            </h3>
+            <span className="text-xs text-slate-500 font-mono block truncate">
+              {template?.resolutionReason || dimensionsLabel}
+            </span>
           </div>
         </div>
 
-        <Badge variant="primary" size="sm">
-          Factory Standard
-        </Badge>
+        {template ? (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-teal-50 text-teal-900 border border-teal-200/80 shrink-0">
+            <CheckCircle2 className="w-3 h-3 text-teal-700" aria-hidden="true" />
+            <span>v{template.versionNumber} Published</span>
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 shrink-0">
+            <span>No Template</span>
+          </span>
+        )}
       </div>
 
-      {/* Visual Dual-Sided Miniature Previews */}
-      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-center gap-4">
-        {/* Front Miniature */}
-        <div className="w-24 h-36 bg-white rounded-lg shadow-sm border border-slate-300 p-2 flex flex-col justify-between relative overflow-hidden">
-          <div className="h-2 w-full bg-[#134E4A] rounded-t-sm -mx-2 -mt-2 mb-1.5" />
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-7 bg-slate-200 rounded-sm shrink-0 border border-slate-300" />
-            <div className="space-y-1 w-full">
-              <div className="h-1.5 w-10 bg-slate-700 rounded-sm" />
-              <div className="h-1 w-8 bg-slate-300 rounded-sm" />
+      {/* Real CardRenderer Preview Canvas */}
+      <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 sm:p-4 flex flex-col items-center justify-center relative overflow-hidden min-h-[220px]">
+        {isLoading ? (
+          <div className="py-12 text-center text-xs text-slate-500">Loading template preview...</div>
+        ) : template?.layout ? (
+          <div className="flex flex-col items-center gap-3">
+            {/* Scaled Render Container */}
+            <div className="transform scale-[0.62] sm:scale-[0.72] origin-center -my-10 transition-transform">
+              <CardRenderer
+                layout={template.layout}
+                worker={customWorker}
+                side={previewSide}
+                allowFlip={false}
+              />
             </div>
-          </div>
-          <div className="space-y-1 mt-auto">
-            <div className="h-1 w-12 bg-slate-400 rounded-sm" />
-            <div className="h-1 w-7 bg-slate-300 rounded-sm" />
-          </div>
-          <span className="text-[8px] font-bold text-center text-slate-400 uppercase tracking-wider block border-t border-slate-100 pt-0.5">
-            Front (EN)
-          </span>
-        </div>
 
-        {/* Back Miniature */}
-        <div className="w-24 h-36 bg-white rounded-lg shadow-sm border border-slate-300 p-2 flex flex-col justify-between relative overflow-hidden">
-          <div className="space-y-1">
-            <div className="h-1.5 w-12 bg-[#0F766E] rounded-sm mx-auto" />
-            <div className="h-1 w-full bg-slate-200 rounded-sm" />
-            <div className="h-1 w-full bg-slate-200 rounded-sm" />
+            {/* Side Switcher Pill */}
+            <button
+              type="button"
+              onClick={() => setPreviewSide((prev) => (prev === 'front' ? 'back' : 'front'))}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-800 hover:text-teal-950 bg-white px-3 py-1.5 rounded-full border border-teal-200/80 hover:border-teal-300 transition-colors shadow-2xs z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600"
+            >
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Flip to {previewSide === 'front' ? 'Bangla Back (বাংলা)' : 'English Front'}</span>
+            </button>
           </div>
-          <div className="w-10 h-10 bg-slate-100 border border-slate-300 rounded-sm mx-auto flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-slate-400 border-dashed" />
+        ) : (
+          <div className="py-12 text-center space-y-2">
+            <p className="text-xs text-slate-600 font-medium">No published template assigned to this scope.</p>
+            <Link href="/cards/templates/new">
+              <span className="text-xs font-semibold text-teal-800 hover:underline">
+                Create Organization Template →
+              </span>
+            </Link>
           </div>
-          <span className="text-[8px] font-bold text-center text-[#0F766E] uppercase tracking-wider block border-t border-slate-100 pt-0.5">
-            Back (বাংলা)
-          </span>
-        </div>
+        )}
       </div>
 
-      <div className="flex items-center justify-between text-xs pt-1">
-        <div>
-          <span className="font-bold text-slate-800 block truncate">
-            {isLoading ? 'Loading...' : template?.name || 'Classic Vertical Preset'}
+      {/* Footer Info */}
+      <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100 gap-3">
+        <div className="min-w-0 pr-2">
+          <span className="font-bold text-slate-900 block truncate">
+            {isLoading ? 'Loading...' : template?.name || 'No Template Assigned'}
           </span>
-          <span className="text-[11px] text-slate-500 font-mono">
-            {template?.code || 'CLASSIC_VERTICAL_60X90'}
+          <span className="text-xs text-slate-500 font-mono block truncate">
+            {template ? `${template.presetId} • ${dimensionsLabel}` : 'Configure layout in studio'}
           </span>
         </div>
 
         <Link
-          href="/cards/templates"
-          className="text-xs font-bold text-[#0F766E] hover:underline flex items-center gap-1 shrink-0"
+          href={template ? `/cards/templates/${template.id}` : '/cards/templates/new'}
+          className="text-xs font-semibold text-teal-800 hover:text-teal-950 hover:underline flex items-center gap-1 shrink-0"
         >
-          <span>Manage</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
+          <span>{template ? 'Manage Layout' : 'Create Template'}</span>
+          <ArrowUpRight className="w-3.5 h-3.5" aria-hidden="true" />
         </Link>
       </div>
     </div>
   );
 }
+

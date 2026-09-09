@@ -1,4 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
+import { prisma } from '@hr/db';
 import { Permission, AuditAction } from '@hr/domain';
 import {
   createOrgUnitRequestSchema,
@@ -41,6 +42,17 @@ export const orgUnitRoutes: FastifyPluginAsync = async (fastify) => {
           statusCode: 400,
           error: 'Bad Request',
           message: 'organizationId query parameter is required.',
+        });
+      }
+
+      const org = await prisma.organization.findFirst({
+        where: { id: organizationId, tenantId },
+      });
+      if (!org) {
+        return reply.code(404).send({
+          statusCode: 404,
+          error: 'Not Found',
+          message: 'Organization not found in workspace.',
         });
       }
 

@@ -20,6 +20,7 @@ import {
 import { checkCardReadiness } from './card-readiness.service.js';
 import { computeLayoutChecksum } from './template.service.js';
 import { recordAuditEvent } from './audit.service.js';
+import { getPhotoBuffer } from './photo-processing.service.js';
 
 export class CardIssueError extends Error {
   constructor(
@@ -612,7 +613,11 @@ export async function getCardIssueById(tenantId: string, issueId: string) {
   const issue = await prisma.cardIssue.findFirst({
     where: { id: issueId, tenantId },
     include: {
-      person: true,
+      person: {
+        include: {
+          photoMedia: true,
+        },
+      },
       employment: {
         include: {
           organization: true,
@@ -653,6 +658,17 @@ export async function renderCardIssuePdfBuffer(tenantId: string, issueId: string
   const rawSnap = issue.printedSnapshot as any;
   const layout = issue.layoutSnapshot as unknown as CardLayoutSpecification;
 
+  // Embed base64 data URI for zero-trust renderer worker
+  let photoBase64: string | null = null;
+  if (issue.person?.photoMedia?.storageKeyCardReady || issue.person?.photoMedia?.storageKeyMaster) {
+    const key =
+      issue.person.photoMedia.storageKeyCardReady || issue.person.photoMedia.storageKeyMaster;
+    const photoData = await getPhotoBuffer(key, tenantId);
+    if (photoData) {
+      photoBase64 = `data:${photoData.mimeType};base64,${photoData.buffer.toString('base64')}`;
+    }
+  }
+
   const worker: CardRenderWorkerPayload = {
     displayName: rawSnap?.worker?.displayName || issue.person?.displayName || 'Worker',
     displayNameLatin: rawSnap?.worker?.displayNameLatin || issue.person?.displayNameLatin || null,
@@ -664,7 +680,8 @@ export async function renderCardIssuePdfBuffer(tenantId: string, issueId: string
     bloodGroup: rawSnap?.worker?.bloodGroup || null,
     joinDate: rawSnap?.worker?.joinDate || '2026-01-01',
     emergencyContact: rawSnap?.worker?.emergencyContact || null,
-    photoUrl: rawSnap?.worker?.photoMediaId ? `/api/people/${issue.personId}/photo` : null,
+    photoUrl: photoBase64 || (rawSnap?.worker?.photoMediaId ? `/api/people/${issue.personId}/photo` : null),
+    photoBase64,
     orgName: rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'Company',
     orgNameBangla:
       rawSnap?.organization?.displayName || rawSnap?.organization?.name || 'প্রতিষ্ঠান',

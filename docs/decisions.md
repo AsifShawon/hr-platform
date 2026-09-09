@@ -165,3 +165,17 @@
   7. Built a lockfile-driven CycloneDX 1.5 SBOM generator parsing `pnpm-lock.yaml` with automated test verification (`tests/sbom-consistency.test.ts`).
   8. Created root `README.md` and automated Compose smoke tests (`tests/compose-smoke.test.ts`).
 - **Consequences:** Provides clean workspace package boundaries, deterministic container builds, verified lockfile provenance, genuine linting, and a complete onboarding guide.
+
+## DEC-0013: Non-Destructive HR Core Domain Evolution & Effective-Dated Assignments
+
+- **Date:** 2026-08-26
+- **Status:** Accepted
+- **Context:** The platform has established a reliable operational baseline for worker identity, bilingual card design, and print queue workflows. To prepare for future HR modules (e.g. transfers, matrix reporting structures, job family catalogs, grade bands) without breaking active card issuance or requiring destructive migrations, we need a decoupled, non-destructive domain architecture.
+- **Decision:**
+  1. **Legal Contract vs. Operational Placement**: Decoupled `Employment` (the legal contract: `employeeNumber`, `joinDate`, `endDate`, `status`) from `EmploymentAssignment` (effective-dated placement: `organizationId`, `locationId`, `orgUnitId`, `jobProfileId`, `customJobTitle`, `reportsToAssignmentId`, `isPrimary`, `fte`).
+  2. **Effective-Dated Timeline**: Every assignment record carries `effectiveStartDate` and nullable `effectiveEndDate` (`@db.Date`), guaranteeing historical point-in-time organization charts and headcount reporting.
+  3. **Configurable Position & Job Catalogs**: Introduced tenant-scoped `WorkerCategory`, `EmploymentType`, `JobFamily`, `JobProfile`, and optional `JobGrade` tables with stable alphanumeric codes (e.g. `SEW-OP-01`).
+  4. **Reporting Lines & Matrix Support**: Manager relationships link assignment-to-assignment (`reportsToAssignmentId`) with cycle detection and support for concurrent roles governed by `isPrimary = true` and `fte` allocation.
+  5. **Zero-Downtime Dual-Write Transition**: Legacy `Employment` fields remain populated as shadow mirrors during migration. Existing dashboard overview endpoints, card issuance workflows, and printable PDF renders continue functioning without interruption.
+  6. **HR Open Standards Alignment**: Semantically aligned core entity concepts with HR Open Standards Consortium (HR-JSON) definitions without protocol bloat.
+- **Consequences:** Establishes a scalable, future-ready core HR data foundation, enables seamless employee transfers and title progressions, and guarantees zero disruption to active physical ID-card operations.

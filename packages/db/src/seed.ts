@@ -7,7 +7,11 @@ import {
   EmploymentStatus,
   JobCategory,
   IdentityDocumentType,
+  TemplatePresetId,
+  TemplateVersionStatus,
+  TemplateAssignmentTarget,
 } from '@hr/domain';
+import { createClassicVerticalPreset } from '@hr/card-kit';
 import { hash } from '@node-rs/argon2';
 import { FICTIONAL_PEOPLE } from '@hr/fixtures';
 import crypto from 'crypto';
@@ -481,6 +485,70 @@ export async function seed() {
   }
 
   console.log('✅ Built-in roles seeded successfully.');
+
+  // 4.1 Seed Default Published Card Template & Organization Assignment
+  const defaultLayout = createClassicVerticalPreset();
+  const defaultTemplate = await prisma.cardTemplate.upsert({
+    where: {
+      id: 'default-classic-template',
+    },
+    update: {},
+    create: {
+      id: 'default-classic-template',
+      tenantId: tenant.id,
+      organizationId: org.id,
+      name: 'London Boy Dual-Sided Master (60×90mm)',
+      description: 'Standard 60×90 mm bilingual factory credential for production workforce',
+      presetId: TemplatePresetId.CLASSIC_VERTICAL,
+      isArchived: false,
+    },
+  });
+
+  const defaultVersion = await prisma.templateVersion.upsert({
+    where: {
+      templateId_versionNumber: {
+        templateId: defaultTemplate.id,
+        versionNumber: 1,
+      },
+    },
+    update: {
+      status: TemplateVersionStatus.PUBLISHED,
+      layout: defaultLayout as any,
+    },
+    create: {
+      tenantId: tenant.id,
+      templateId: defaultTemplate.id,
+      versionNumber: 1,
+      status: TemplateVersionStatus.PUBLISHED,
+      layoutSchemaVersion: '1.0.0',
+      layout: defaultLayout as any,
+      publishedAt: new Date(),
+    },
+  });
+
+  await prisma.cardTemplate.update({
+    where: { id: defaultTemplate.id },
+    data: { activeVersionId: defaultVersion.id },
+  });
+
+  await prisma.templateAssignment.upsert({
+    where: {
+      id: 'default-org-assignment',
+    },
+    update: {
+      templateId: defaultTemplate.id,
+    },
+    create: {
+      id: 'default-org-assignment',
+      tenantId: tenant.id,
+      templateId: defaultTemplate.id,
+      targetType: TemplateAssignmentTarget.ORGANIZATION,
+      targetId: org.id,
+      priority: 50,
+    },
+  });
+
+  console.log('✅ Default Card Template & Organization Assignment seeded.');
 
   // 5. Seed Initial Temporary Bootstrap User if system is unactivated
   if (!installation.isActivated) {

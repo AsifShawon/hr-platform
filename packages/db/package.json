@@ -22,6 +22,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@hr/card-kit": "workspace:*",
     "@hr/config": "workspace:*",
     "@hr/domain": "workspace:*",
     "@hr/fixtures": "workspace:*",
